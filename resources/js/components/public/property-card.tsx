@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { Bath, BedDouble, Maximize, MapPin } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { Bath, BedDouble, MapPin, Maximize } from 'lucide-react';
 import { type Listing } from './listings';
 
 const statusBadge: Record<Listing['status'], { label: string; className: string }> = {
@@ -13,7 +14,10 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
     const badge = statusBadge[listing.status];
 
     return (
-        <article className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+        <Link
+            href={route('property.show', listing.ref ?? listing.id)}
+            className="group block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+        >
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                 <img
                     src={listing.image}
@@ -45,6 +49,6 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                     </span>
                 </div>
             </div>
-        </article>
+        </Link>
     );
 }

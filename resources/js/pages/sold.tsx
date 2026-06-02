@@ -1,11 +1,9 @@
-import { sampleListings } from '@/components/public/listings';
+import { type Listing } from '@/components/public/listings';
 import PageHero from '@/components/public/page-hero';
 import PropertyGrid from '@/components/public/property-grid';
 import PublicLayout from '@/layouts/public-layout';
 
-export default function Sold() {
-    const listings = sampleListings.filter((listing) => listing.status === 'sold');
-
+export default function Sold({ listings = [] }: { listings?: Listing[] }) {
     return (
         <PublicLayout title="Sold">
             <PageHero

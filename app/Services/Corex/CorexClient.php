@@ -1,0 +1,218 @@
+<?php
+
+namespace App\Services\Corex;
+
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Thin wrapper around the CoreX "website" API.
+ *
+ * Exposes the read-only endpoints the public site needs (agency, agents,
+ * listings) and transparently caches GET responses so we don't hammer CoreX
+ * on every page view. All methods fail soft: on a network/auth error they
+ * log and return an empty result so the public pages still render.
+ *
+ * @see https://91.99.130.85:8084/api/v1/website CoreX website API
+ */
+class CorexClient
+{
+    public function __construct(
+        protected string $baseUrl,
+        protected ?string $apiKey,
+        protected int $timeout = 10,
+        protected int $cacheTtl = 300,
+    ) {}
+
+    /**
+     * Health check. Returns true when CoreX answers the ping with a 2xx.
+     */
+    public function ping(): bool
+    {
+        try {
+            return $this->request()->get('/ping')->successful();
+        } catch (ConnectionException $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Fetch the agency profile.
+     *
+     * @return array<string, mixed>
+     */
+    public function agency(): array
+    {
+        return $this->cachedGet('agency', '/agency');
+    }
+
+    /**
+     * Fetch every agent, transparently following pagination.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function agents(array $query = []): array
+    {
+        return $this->allPages('agents', '/agents', $query, perPage: 100);
+    }
+
+    /**
+     * Fetch a single agent by id.
+     *
+     * @return array<string, mixed>
+     */
+    public function agent(int|string $id): array
+    {
+        $response = $this->cachedGet('agent:'.$id, '/agents/'.$id);
+
+        return $this->extractData($response);
+    }
+
+    /**
+     * Fetch every syndicated listing, transparently following pagination.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function listings(array $query = []): array
+    {
+        return $this->allPages('listings', '/listings', $query, perPage: 50);
+    }
+
+    /**
+     * Fetch a single listing by its id or reference.
+     *
+     * @return array<string, mixed>
+     */
+    public function listing(int|string $idOrRef): array
+    {
+        $response = $this->cachedGet('listing:'.$idOrRef, '/listings/'.$idOrRef);
+
+        return $this->extractData($response);
+    }
+
+    /**
+     * Fetch all pages of a Laravel-paginated collection and return the merged
+     * `data` rows. The whole set is cached under one key.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    protected function allPages(string $key, string $path, array $query, int $perPage): array
+    {
+        $cacheKey = $key.':'.md5(serialize($query)).':'.$perPage;
+
+        $fetch = function () use ($path, $query, $perPage): array {
+            $rows = [];
+            $page = 1;
+
+            do {
+                $response = $this->get($path, array_merge($query, [
+                    'per_page' => $perPage,
+                    'page' => $page,
+                ]));
+
+                $data = $response['data'] ?? [];
+
+                if ($data === []) {
+                    break;
+                }
+
+                array_push($rows, ...$data);
+
+                $lastPage = (int) ($response['meta']['last_page'] ?? $page);
+            } while (++$page <= $lastPage);
+
+            return $rows;
+        };
+
+        if ($this->cacheTtl <= 0) {
+            return $fetch();
+        }
+
+        return Cache::remember('corex:'.$cacheKey, $this->cacheTtl, $fetch);
+    }
+
+    /**
+     * Perform a cached GET request, returning the decoded JSON body. On
+     * failure an empty array is returned and the error is logged.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>
+     */
+    protected function cachedGet(string $key, string $path, array $query = []): array
+    {
+        if ($this->cacheTtl <= 0) {
+            return $this->get($path, $query);
+        }
+
+        return Cache::remember(
+            'corex:'.$key,
+            $this->cacheTtl,
+            fn (): array => $this->get($path, $query),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>
+     */
+    protected function get(string $path, array $query = []): array
+    {
+        try {
+            $response = $this->request()->get($path, $query);
+
+            if ($response->failed()) {
+                Log::warning('CoreX request failed', [
+                    'path' => $path,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (ConnectionException|RequestException $e) {
+            Log::warning('CoreX request errored', [
+                'path' => $path,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Build a pre-configured pending request (base URL, auth, retries).
+     */
+    protected function request(): PendingRequest
+    {
+        return Http::baseUrl($this->baseUrl)
+            ->acceptJson()
+            ->withToken($this->apiKey)
+            ->timeout($this->timeout)
+            ->retry(2, 200, throw: false);
+    }
+
+    /**
+     * Unwrap a JSON:API style envelope. CoreX may return either the payload
+     * directly or wrapped under a "data" key — handle both.
+     *
+     * @param  array<string, mixed>  $response
+     * @return array<mixed>
+     */
+    protected function extractData(array $response): array
+    {
+        if (array_key_exists('data', $response)) {
+            return $response['data'] ?? [];
+        }
+
+        return $response;
+    }
+}

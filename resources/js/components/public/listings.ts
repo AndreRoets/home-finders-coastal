@@ -1,7 +1,8 @@
 export type ListingStatus = 'for-sale' | 'to-rent' | 'exclusive' | 'sold';
 
 export interface Listing {
-    id: number;
+    id: number | string;
+    ref?: string | null;
     title: string;
     location: string;
     price: string;
@@ -10,6 +11,7 @@ export interface Listing {
     area: string;
     status: ListingStatus;
     image: string;
+    url?: string | null;
 }
 
 /**

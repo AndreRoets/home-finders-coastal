@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'corex' => [
+        'base_url' => env('COREX_API_BASE', 'http://91.99.130.85:8084/api/v1/website'),
+        'api_key' => env('COREX_API_KEY'),
+        'webhook_secret' => env('COREX_WEBHOOK_SECRET'),
+        'timeout' => (int) env('COREX_API_TIMEOUT', 10),
+        'cache_ttl' => (int) env('COREX_CACHE_TTL', 300),
+    ],
+
 ];

@@ -1,4 +1,4 @@
-import { sampleListings } from '@/components/public/listings';
+import { sampleListings, type Listing } from '@/components/public/listings';
 import PropertyGrid from '@/components/public/property-grid';
 import PublicLayout from '@/layouts/public-layout';
 import { Link } from '@inertiajs/react';
@@ -11,8 +11,8 @@ const valueProps = [
     { icon: Users, title: 'Local Specialists', description: 'Agents who live and work in the neighbourhoods they sell.' },
 ];
 
-export default function Home() {
-    const featured = sampleListings.slice(0, 3);
+export default function Home({ featured = [] }: { featured?: Listing[] }) {
+    const featuredListings = featured.length > 0 ? featured : sampleListings.slice(0, 3);
 
     return (
         <PublicLayout title="Home">
@@ -30,8 +30,7 @@ export default function Home() {
                         Find your place on the coast
                     </h1>
                     <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-200">
-                        Browse homes for sale and to rent, discover HFC Exclusive listings, and work with agents who know the coastline
-                        inside out.
+                        Browse homes for sale and to rent, discover HFC Exclusive listings, and work with agents who know the coastline inside out.
                     </p>
 
                     {/* Search bar */}
@@ -78,7 +77,7 @@ export default function Home() {
                     </Link>
                 </div>
                 <div className="mt-8">
-                    <PropertyGrid listings={featured} />
+                    <PropertyGrid listings={featuredListings} />
                 </div>
             </section>
 

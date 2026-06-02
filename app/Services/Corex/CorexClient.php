@@ -21,6 +21,15 @@ use Illuminate\Support\Facades\Log;
  */
 class CorexClient
 {
+    /**
+     * Page size used when fetching the full listings/agents collections. Kept
+     * as constants so cache reads (allPages) and cache busting (forget*) agree
+     * on the exact cache key.
+     */
+    protected const LISTINGS_PER_PAGE = 50;
+
+    protected const AGENTS_PER_PAGE = 100;
+
     public function __construct(
         protected string $baseUrl,
         protected ?string $apiKey,
@@ -58,7 +67,7 @@ class CorexClient
      */
     public function agents(array $query = []): array
     {
-        return $this->allPages('agents', '/agents', $query, perPage: 100);
+        return $this->allPages('agents', '/agents', $query, self::AGENTS_PER_PAGE);
     }
 
     /**
@@ -81,7 +90,7 @@ class CorexClient
      */
     public function listings(array $query = []): array
     {
-        return $this->allPages('listings', '/listings', $query, perPage: 50);
+        return $this->allPages('listings', '/listings', $query, self::LISTINGS_PER_PAGE);
     }
 
     /**
@@ -105,7 +114,7 @@ class CorexClient
      */
     protected function allPages(string $key, string $path, array $query, int $perPage): array
     {
-        $cacheKey = $key.':'.md5(serialize($query)).':'.$perPage;
+        $cacheKey = $this->collectionCacheKey($key, $query, $perPage);
 
         $fetch = function () use ($path, $query, $perPage): array {
             $rows = [];
@@ -135,7 +144,46 @@ class CorexClient
             return $fetch();
         }
 
-        return Cache::remember('corex:'.$cacheKey, $this->cacheTtl, $fetch);
+        return Cache::remember($cacheKey, $this->cacheTtl, $fetch);
+    }
+
+    /**
+     * Cache key for a paginated collection. Centralised so cache reads and
+     * cache busting derive the same key from the same inputs.
+     *
+     * @param  array<string, mixed>  $query
+     */
+    protected function collectionCacheKey(string $key, array $query, int $perPage): string
+    {
+        return 'corex:'.$key.':'.md5(serialize($query)).':'.$perPage;
+    }
+
+    /**
+     * Bust the caches affected by a listing change so the next page view pulls
+     * fresh data from CoreX. Both the single-resource entry (which may be keyed
+     * by id or by reference) and the listings collection are dropped.
+     */
+    public function forgetListing(int|string|null $id = null, ?string $reference = null): void
+    {
+        foreach ([$id, $reference] as $idOrRef) {
+            if ($idOrRef !== null && $idOrRef !== '') {
+                Cache::forget('corex:listing:'.$idOrRef);
+            }
+        }
+
+        Cache::forget($this->collectionCacheKey('listings', [], self::LISTINGS_PER_PAGE));
+    }
+
+    /**
+     * Bust the caches affected by an agent change.
+     */
+    public function forgetAgent(int|string|null $id = null): void
+    {
+        if ($id !== null && $id !== '') {
+            Cache::forget('corex:agent:'.$id);
+        }
+
+        Cache::forget($this->collectionCacheKey('agents', [], self::AGENTS_PER_PAGE));
     }
 
     /**

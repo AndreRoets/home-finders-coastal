@@ -34,11 +34,81 @@ class ListingController extends Controller
      */
     public function home(): Response
     {
+        return Inertia::render('home', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Luxe Editorial design variant.
+     */
+    public function homeLuxe(): Response
+    {
+        return Inertia::render('home-luxe', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Vibrant Modern design variant.
+     */
+    public function homeVibrant(): Response
+    {
+        return Inertia::render('home-vibrant', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Minimal architectural design variant.
+     */
+    public function homeMinimal(): Response
+    {
+        return Inertia::render('home-minimal', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Portal design variant (industry best-practice layout).
+     */
+    public function homePortal(): Response
+    {
+        return Inertia::render('home-portal', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Motion design variant (scroll-driven animations).
+     */
+    public function homeMotion(): Response
+    {
+        return Inertia::render('home-motion', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * Home page — Coastal/beach themed design variant.
+     */
+    public function homeCoastal(): Response
+    {
+        return Inertia::render('home-coastal', [
+            'featured' => $this->featured(),
+        ]);
+    }
+
+    /**
+     * A handful of featured (sole-mandate) listings shared by the home variants.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function featured(): array
+    {
         $exclusive = $this->filter(fn (array $l): bool => $this->isExclusive($l));
 
-        return Inertia::render('home', [
-            'featured' => array_slice(ListingMapper::collection($exclusive, 'exclusive'), 0, 3),
-        ]);
+        return array_slice(ListingMapper::collection($exclusive, 'exclusive'), 0, 6);
     }
 
     /**

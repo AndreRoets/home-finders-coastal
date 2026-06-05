@@ -27,11 +27,11 @@ interface Property extends Listing {
     agent: PropertyAgent | null;
 }
 
-const statusBadge: Record<ListingStatus, { label: string; className: string }> = {
-    'for-sale': { label: 'For Sale', className: 'bg-sky-600 text-white' },
-    'to-rent': { label: 'To Rent', className: 'bg-emerald-600 text-white' },
-    exclusive: { label: 'HFC Exclusive', className: 'bg-amber-500 text-slate-900' },
-    sold: { label: 'Sold', className: 'bg-slate-700 text-white' },
+const statusBadge: Record<ListingStatus, string> = {
+    'for-sale': 'For Sale',
+    'to-rent': 'To Rent',
+    exclusive: 'HFC Exclusive',
+    sold: 'Sold',
 };
 
 function formatRand(amount: number): string {
@@ -39,7 +39,6 @@ function formatRand(amount: number): string {
 }
 
 export default function PropertyDetail({ property }: { property: Property }) {
-    const badge = statusBadge[property.status];
     const images = property.images.length > 0 ? property.images : [property.image];
     const [cover, ...rest] = images;
 
@@ -59,24 +58,34 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
     return (
         <PublicLayout title={property.title}>
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <Link href={route('for-sale')} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-sky-700">
+            <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+                <Link
+                    href={route('for-sale')}
+                    className="inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-400 transition-colors hover:text-marine"
+                >
                     <ArrowLeft className="h-4 w-4" />
                     Back to listings
                 </Link>
 
                 {/* Gallery */}
                 <div className="mt-6 grid gap-3 md:grid-cols-[2fr_1fr]">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100 md:aspect-[16/10]">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-ink-soft md:aspect-[16/10]">
                         <img src={cover} alt={property.title} className="h-full w-full object-cover" />
-                        <span className={cn('absolute top-4 left-4 rounded-full px-3 py-1 text-xs font-semibold', badge.className)}>
-                            {badge.label}
+                        <span
+                            className={cn(
+                                'absolute top-4 left-4 rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] uppercase backdrop-blur',
+                                property.status === 'sold'
+                                    ? 'border-brand-red/50 bg-ink/50 text-brand-red-bright'
+                                    : 'border-marine/40 bg-ink/50 text-marine',
+                            )}
+                        >
+                            {statusBadge[property.status]}
                         </span>
                     </div>
                     {rest.length > 0 && (
                         <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
                             {rest.slice(0, 2).map((src, i) => (
-                                <div key={i} className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                                <div key={i} className="aspect-[4/3] overflow-hidden bg-ink-soft">
                                     <img src={src} alt={`${property.title} ${i + 2}`} className="h-full w-full object-cover" />
                                 </div>
                             ))}
@@ -87,42 +96,42 @@ export default function PropertyDetail({ property }: { property: Property }) {
                 <div className="mt-8 grid gap-10 lg:grid-cols-[2fr_1fr]">
                     {/* Main column */}
                     <div>
-                        <p className="text-2xl font-bold text-sky-700">{property.price}</p>
-                        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{property.title}</h1>
-                        <p className="mt-2 flex items-center gap-1.5 text-slate-500">
-                            <MapPin className="h-4 w-4 text-slate-400" />
+                        <p className="text-2xl text-marine">{property.price}</p>
+                        <h1 className="mt-2 text-3xl font-light tracking-tight text-white sm:text-4xl">{property.title}</h1>
+                        <p className="mt-3 flex items-center gap-1.5 text-neutral-400">
+                            <MapPin className="h-4 w-4 text-neutral-500" />
                             {property.address ? `${property.address}, ${property.location}` : property.location}
                         </p>
                         {property.propertyType && (
-                            <p className="mt-1 text-sm text-slate-500">{[property.propertyType, property.category].filter(Boolean).join(' · ')}</p>
+                            <p className="mt-1 text-sm text-neutral-500">{[property.propertyType, property.category].filter(Boolean).join(' · ')}</p>
                         )}
 
                         {/* Specs */}
-                        <div className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-3 lg:grid-cols-5">
+                        <div className="mt-8 grid grid-cols-2 gap-4 rounded-sm border border-white/10 bg-ink-soft/60 p-6 sm:grid-cols-3 lg:grid-cols-5">
                             {specs.map((spec) => (
-                                <div key={spec.label} className="flex flex-col items-center gap-1 text-center">
-                                    <spec.icon className="h-5 w-5 text-sky-600" />
-                                    <span className="text-sm font-semibold text-slate-900">{spec.value}</span>
-                                    <span className="text-xs text-slate-500">{spec.label}</span>
+                                <div key={spec.label} className="flex flex-col items-center gap-1.5 text-center">
+                                    <spec.icon className="h-5 w-5 text-marine" />
+                                    <span className="text-sm font-medium text-white">{spec.value}</span>
+                                    <span className="text-xs tracking-wide text-neutral-500 uppercase">{spec.label}</span>
                                 </div>
                             ))}
                         </div>
 
                         {property.description && (
-                            <section className="mt-8">
-                                <h2 className="text-lg font-semibold text-slate-900">Description</h2>
-                                {property.headline && <p className="mt-2 font-medium text-slate-700">{property.headline}</p>}
-                                <p className="mt-2 leading-relaxed whitespace-pre-line text-slate-600">{property.description}</p>
+                            <section className="mt-10">
+                                <h2 className="text-2xl font-light text-white">Description</h2>
+                                {property.headline && <p className="mt-3 font-medium text-neutral-200">{property.headline}</p>}
+                                <p className="mt-3 leading-relaxed whitespace-pre-line text-neutral-400">{property.description}</p>
                             </section>
                         )}
 
                         {property.features.length > 0 && (
-                            <section className="mt-8">
-                                <h2 className="text-lg font-semibold text-slate-900">Features</h2>
-                                <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            <section className="mt-10">
+                                <h2 className="text-2xl font-light text-white">Features</h2>
+                                <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                                     {property.features.map((feature) => (
-                                        <li key={feature} className="flex items-center gap-2 text-sm text-slate-600">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                                        <li key={feature} className="flex items-center gap-2 text-sm text-neutral-400">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-marine" />
                                             {feature}
                                         </li>
                                     ))}
@@ -131,18 +140,18 @@ export default function PropertyDetail({ property }: { property: Property }) {
                         )}
 
                         {(costs.length > 0 || property.petFriendly) && (
-                            <section className="mt-8">
-                                <h2 className="text-lg font-semibold text-slate-900">Monthly costs</h2>
-                                <dl className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+                            <section className="mt-10">
+                                <h2 className="text-2xl font-light text-white">Monthly costs</h2>
+                                <dl className="mt-4 divide-y divide-white/10 rounded-sm border border-white/10 bg-ink-soft/60">
                                     {costs.map((cost) => (
-                                        <div key={cost.label} className="flex justify-between px-5 py-3 text-sm">
-                                            <dt className="text-slate-500">{cost.label}</dt>
-                                            <dd className="font-medium text-slate-900">{formatRand(cost.value)}</dd>
+                                        <div key={cost.label} className="flex justify-between px-5 py-3.5 text-sm">
+                                            <dt className="text-neutral-400">{cost.label}</dt>
+                                            <dd className="font-medium text-white">{formatRand(cost.value)}</dd>
                                         </div>
                                     ))}
                                 </dl>
                                 {property.petFriendly && (
-                                    <p className="mt-3 inline-flex items-center gap-2 text-sm text-emerald-700">
+                                    <p className="mt-4 inline-flex items-center gap-2 text-sm text-marine">
                                         <PawPrint className="h-4 w-4" />
                                         Pet friendly
                                     </p>
@@ -153,47 +162,47 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
                     {/* Agent sidebar */}
                     <aside>
-                        <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="sticky top-24 rounded-sm border border-white/10 bg-ink-soft/60 p-6">
                             {property.agent ? (
                                 <>
                                     <div className="flex items-center gap-4">
                                         <img src={property.agent.photo} alt={property.agent.name} className="h-16 w-16 rounded-full object-cover" />
                                         <div>
-                                            <p className="text-xs tracking-wide text-slate-400 uppercase">Listed by</p>
-                                            <p className="font-semibold text-slate-900">{property.agent.name}</p>
+                                            <p className="text-xs tracking-[0.2em] text-marine/80 uppercase">Listed by</p>
+                                            <p className="text-lg font-light text-white">{property.agent.name}</p>
                                         </div>
                                     </div>
-                                    <div className="mt-5 space-y-2 text-sm">
+                                    <div className="mt-6 space-y-2.5 text-sm">
                                         {property.agent.phone && (
                                             <a
                                                 href={`tel:${property.agent.phone.replace(/\s/g, '')}`}
-                                                className="flex items-center gap-2 text-slate-600 hover:text-sky-700"
+                                                className="flex items-center gap-2 text-neutral-400 transition-colors hover:text-marine"
                                             >
-                                                <Phone className="h-4 w-4 text-slate-400" />
+                                                <Phone className="h-4 w-4 text-neutral-500" />
                                                 {property.agent.phone}
                                             </a>
                                         )}
                                         {property.agent.email && (
                                             <a
                                                 href={`mailto:${property.agent.email}`}
-                                                className="flex items-center gap-2 text-slate-600 hover:text-sky-700"
+                                                className="flex items-center gap-2 text-neutral-400 transition-colors hover:text-marine"
                                             >
-                                                <Mail className="h-4 w-4 text-slate-400" />
+                                                <Mail className="h-4 w-4 text-neutral-500" />
                                                 <span className="truncate">{property.agent.email}</span>
                                             </a>
                                         )}
                                     </div>
                                 </>
                             ) : (
-                                <p className="text-sm text-slate-500">Contact our office for more information on this property.</p>
+                                <p className="text-sm text-neutral-400">Contact our office for more information on this property.</p>
                             )}
                             <Link
                                 href={route('contact')}
-                                className="mt-6 flex w-full items-center justify-center rounded-lg bg-sky-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-sky-700"
+                                className="mt-6 flex w-full items-center justify-center rounded-full bg-brand-red px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
                             >
                                 Enquire about this property
                             </Link>
-                            {property.ref && <p className="mt-4 text-center text-xs text-slate-400">Ref: {property.ref}</p>}
+                            {property.ref && <p className="mt-4 text-center text-xs tracking-wide text-neutral-500">Ref: {property.ref}</p>}
                         </div>
                     </aside>
                 </div>

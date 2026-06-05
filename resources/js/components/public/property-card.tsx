@@ -3,51 +3,60 @@ import { Link } from '@inertiajs/react';
 import { Bath, BedDouble, MapPin, Maximize } from 'lucide-react';
 import { type Listing } from './listings';
 
-const statusBadge: Record<Listing['status'], { label: string; className: string }> = {
-    'for-sale': { label: 'For Sale', className: 'bg-sky-600 text-white' },
-    'to-rent': { label: 'To Rent', className: 'bg-emerald-600 text-white' },
-    exclusive: { label: 'HFC Exclusive', className: 'bg-amber-500 text-slate-900' },
-    sold: { label: 'Sold', className: 'bg-slate-700 text-white' },
+const statusBadge: Record<Listing['status'], string> = {
+    'for-sale': 'For Sale',
+    'to-rent': 'To Rent',
+    exclusive: 'HFC Exclusive',
+    sold: 'Sold',
 };
 
 export default function PropertyCard({ listing }: { listing: Listing }) {
-    const badge = statusBadge[listing.status];
-
     return (
-        <Link
-            href={route('property.show', listing.ref ?? listing.id)}
-            className="group block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-        >
-            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        <Link href={route('property.show', listing.ref ?? listing.id)} className="group block">
+            <div className="relative aspect-[4/5] overflow-hidden bg-ink-soft">
                 <img
                     src={listing.image}
                     alt={listing.title}
                     loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
-                <span className={cn('absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold', badge.className)}>{badge.label}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+                <span
+                    className={cn(
+                        'absolute top-4 left-4 rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] uppercase backdrop-blur',
+                        listing.status === 'sold'
+                            ? 'border-brand-red/50 bg-ink/50 text-brand-red-bright'
+                            : 'border-marine/40 bg-ink/50 text-marine',
+                    )}
+                >
+                    {statusBadge[listing.status]}
+                </span>
             </div>
-            <div className="p-5">
-                <p className="text-lg font-semibold text-sky-700">{listing.price}</p>
-                <h3 className="mt-1 line-clamp-1 font-semibold text-slate-900">{listing.title}</h3>
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-                    <MapPin className="h-4 w-4 text-slate-400" />
-                    {listing.location}
-                </p>
-                <div className="mt-4 flex items-center gap-4 border-t border-slate-100 pt-4 text-sm text-slate-600">
-                    <span className="flex items-center gap-1.5">
-                        <BedDouble className="h-4 w-4 text-slate-400" />
-                        {listing.beds} beds
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <Bath className="h-4 w-4 text-slate-400" />
-                        {listing.baths} baths
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <Maximize className="h-4 w-4 text-slate-400" />
-                        {listing.area}
-                    </span>
+            <div className="mt-5 flex items-start justify-between gap-4">
+                <div>
+                    <h3 className="line-clamp-1 text-xl font-light text-white transition-colors group-hover:text-marine">
+                        {listing.title}
+                    </h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-400">
+                        <MapPin className="h-4 w-4 text-neutral-500" />
+                        {listing.location}
+                    </p>
                 </div>
+                <p className="shrink-0 text-sm text-marine">{listing.price}</p>
+            </div>
+            <div className="mt-4 flex items-center gap-5 border-t border-white/10 pt-4 text-xs tracking-wide text-neutral-400">
+                <span className="flex items-center gap-1.5">
+                    <BedDouble className="h-4 w-4" />
+                    {listing.beds} beds
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <Bath className="h-4 w-4" />
+                    {listing.baths} baths
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <Maximize className="h-4 w-4" />
+                    {listing.area}
+                </span>
             </div>
         </Link>
     );

@@ -6,12 +6,6 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [ListingController::class, 'home'])->name('home');
-Route::get('/home/luxe', [ListingController::class, 'homeLuxe'])->name('home.luxe');
-Route::get('/home/vibrant', [ListingController::class, 'homeVibrant'])->name('home.vibrant');
-Route::get('/home/minimal', [ListingController::class, 'homeMinimal'])->name('home.minimal');
-Route::get('/home/portal', [ListingController::class, 'homePortal'])->name('home.portal');
-Route::get('/home/motion', [ListingController::class, 'homeMotion'])->name('home.motion');
-Route::get('/home/coastal', [ListingController::class, 'homeCoastal'])->name('home.coastal');
 
 Route::get('/for-sale', [ListingController::class, 'forSale'])->name('for-sale');
 Route::get('/to-rent', [ListingController::class, 'toRent'])->name('to-rent');

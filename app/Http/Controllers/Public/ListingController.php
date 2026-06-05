@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
+use App\Services\Corex\ListingSearch;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,66 +38,7 @@ class ListingController extends Controller
     {
         return Inertia::render('home', [
             'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Luxe Editorial design variant.
-     */
-    public function homeLuxe(): Response
-    {
-        return Inertia::render('home-luxe', [
-            'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Vibrant Modern design variant.
-     */
-    public function homeVibrant(): Response
-    {
-        return Inertia::render('home-vibrant', [
-            'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Minimal architectural design variant.
-     */
-    public function homeMinimal(): Response
-    {
-        return Inertia::render('home-minimal', [
-            'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Portal design variant (industry best-practice layout).
-     */
-    public function homePortal(): Response
-    {
-        return Inertia::render('home-portal', [
-            'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Motion design variant (scroll-driven animations).
-     */
-    public function homeMotion(): Response
-    {
-        return Inertia::render('home-motion', [
-            'featured' => $this->featured(),
-        ]);
-    }
-
-    /**
-     * Home page — Coastal/beach themed design variant.
-     */
-    public function homeCoastal(): Response
-    {
-        return Inertia::render('home-coastal', [
-            'featured' => $this->featured(),
+            'filters' => ListingSearch::facets($this->filter(fn (array $l): bool => $this->isAvailable($l))),
         ]);
     }
 
@@ -114,25 +57,47 @@ class ListingController extends Controller
     /**
      * Properties for sale.
      */
-    public function forSale(): Response
+    public function forSale(Request $request): Response
     {
+        $sales = $this->filter(fn (array $l): bool => $this->isActiveSale($l));
+
         return Inertia::render('for-sale', [
-            'listings' => ListingMapper::collection(
-                $this->filter(fn (array $l): bool => $this->isActiveSale($l)),
-            ),
+            'listings' => ListingMapper::collection(ListingSearch::apply($sales, $request->all())),
+            'filters' => ListingSearch::facets($sales),
+            'search' => $this->searchValues($request),
         ]);
     }
 
     /**
      * Properties to rent.
      */
-    public function toRent(): Response
+    public function toRent(Request $request): Response
     {
+        $rentals = $this->filter(fn (array $l): bool => $this->isActiveRental($l));
+
         return Inertia::render('to-rent', [
-            'listings' => ListingMapper::collection(
-                $this->filter(fn (array $l): bool => $this->isActiveRental($l)),
-            ),
+            'listings' => ListingMapper::collection(ListingSearch::apply($rentals, $request->all())),
+            'filters' => ListingSearch::facets($rentals),
+            'search' => $this->searchValues($request),
         ]);
+    }
+
+    /**
+     * The current search-bar values, echoed back so the bar can pre-fill.
+     *
+     * @return array<string, mixed>
+     */
+    protected function searchValues(Request $request): array
+    {
+        return [
+            'q' => (string) $request->query('q', ''),
+            'suburb' => (string) $request->query('suburb', ''),
+            'type' => (string) $request->query('type', ''),
+            'beds' => (int) $request->query('beds', 0),
+            'baths' => (int) $request->query('baths', 0),
+            'min_price' => is_numeric($request->query('min_price')) ? (int) $request->query('min_price') : null,
+            'max_price' => is_numeric($request->query('max_price')) ? (int) $request->query('max_price') : null,
+        ];
     }
 
     /**

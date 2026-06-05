@@ -10,6 +10,14 @@
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /* Home Finders Coastal brand palette (derived from the logo). */
+    --color-ink: #060a1c; /* page background — deep navy */
+    --color-ink-soft: #0d1430; /* raised surfaces — navy */
+    --color-navy: #141a4d; /* brand navy (logo wordmark) */
+    --color-marine: #3ba1e6; /* coastal blue — fine accent */
+    --color-brand-red: #df1f2c; /* brand red — bold accent */
+    --color-brand-red-bright: #f5404d; /* brand red — hover */
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -155,4 +163,18 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Slow "Ken Burns" drift for feature imagery. */
+@keyframes kenburns {
+    from {
+        transform: scale(1.05) translate(0, 0);
+    }
+    to {
+        transform: scale(1.2) translate(-3%, -2%);
+    }
+}
+
+.animate-kenburns {
+    animation: kenburns 16s ease-in-out infinite alternate;
 }

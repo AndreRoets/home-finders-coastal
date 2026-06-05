@@ -4,23 +4,23 @@ import { siteNavItems } from './site-nav';
 
 export default function SiteFooter() {
     return (
-        <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
-            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-8">
+        <footer className="border-t border-white/10 bg-ink text-neutral-400">
+            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-4 lg:px-8">
                 <div className="lg:col-span-2">
                     <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-sky-600 font-bold text-white">HFC</span>
-                        <span className="text-sm font-semibold tracking-tight text-white">Home Finders Coastal</span>
+                        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white font-bold text-navy">HFC</span>
+                        <span className="text-sm font-medium tracking-tight text-white">Home Finders Coastal</span>
                     </div>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
-                        Your trusted partner for buying, selling, and renting along the coast. Browse exclusive listings and connect with
-                        local specialists who know the area best.
+                    <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-400">
+                        A quietly curated portfolio of the coast’s finest residences. We guide discerning buyers and sellers with discretion,
+                        informed by two decades on this coastline.
                     </p>
-                    <div className="mt-5 flex gap-3">
+                    <div className="mt-6 flex gap-3">
                         {[Facebook, Instagram, Linkedin].map((Icon, index) => (
                             <a
                                 key={index}
                                 href="#"
-                                className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-800 text-slate-300 transition-colors hover:bg-sky-600 hover:text-white"
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-neutral-400 transition-colors hover:border-marine/50 hover:text-marine"
                             >
                                 <Icon className="h-4 w-4" />
                             </a>
@@ -29,11 +29,11 @@ export default function SiteFooter() {
                 </div>
 
                 <div>
-                    <h3 className="text-sm font-semibold text-white">Explore</h3>
-                    <ul className="mt-4 space-y-2 text-sm">
+                    <h3 className="text-xs font-medium tracking-[0.25em] text-marine/80 uppercase">Explore</h3>
+                    <ul className="mt-5 space-y-2.5 text-sm">
                         {siteNavItems.map((item) => (
                             <li key={item.routeName}>
-                                <Link href={route(item.routeName)} className="text-slate-400 transition-colors hover:text-white">
+                                <Link href={route(item.routeName)} className="text-neutral-400 transition-colors hover:text-marine">
                                     {item.title}
                                 </Link>
                             </li>
@@ -42,26 +42,26 @@ export default function SiteFooter() {
                 </div>
 
                 <div>
-                    <h3 className="text-sm font-semibold text-white">Get in touch</h3>
-                    <ul className="mt-4 space-y-3 text-sm text-slate-400">
+                    <h3 className="text-xs font-medium tracking-[0.25em] text-marine/80 uppercase">Get in touch</h3>
+                    <ul className="mt-5 space-y-3 text-sm text-neutral-400">
                         <li className="flex items-start gap-2.5">
-                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-marine/70" />
                             12 Beachfront Road, Coastal Bay
                         </li>
                         <li className="flex items-center gap-2.5">
-                            <Phone className="h-4 w-4 shrink-0 text-sky-500" />
+                            <Phone className="h-4 w-4 shrink-0 text-marine/70" />
                             +27 21 000 0000
                         </li>
                         <li className="flex items-center gap-2.5">
-                            <Mail className="h-4 w-4 shrink-0 text-sky-500" />
+                            <Mail className="h-4 w-4 shrink-0 text-marine/70" />
                             hello@homefinderscoastal.com
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <div className="border-t border-slate-800">
-                <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs text-slate-500 sm:px-6 lg:px-8">
+            <div className="border-t border-white/10">
+                <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs tracking-wide text-neutral-500 sm:px-6 lg:px-8">
                     &copy; {new Date().getFullYear()} Home Finders Coastal. All rights reserved.
                 </div>
             </div>

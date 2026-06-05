@@ -20,36 +20,36 @@ export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }
                 description="A private collection of premium and off-market coastal properties, available only through Home Finders Coastal."
             />
 
-            <section className="border-b border-slate-200 bg-white">
-                <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-3 lg:px-8">
+            <section className="border-b border-white/10 bg-ink-soft/40">
+                <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-3 lg:px-8">
                     {perks.map((perk) => (
                         <div key={perk.title} className="flex gap-4">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                                <perk.icon className="h-6 w-6" />
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-marine/40 text-marine">
+                                <perk.icon className="h-5 w-5" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-slate-900">{perk.title}</h3>
-                                <p className="mt-1 text-sm leading-relaxed text-slate-600">{perk.description}</p>
+                                <h3 className="text-lg font-light text-white">{perk.title}</h3>
+                                <p className="mt-1.5 text-sm leading-relaxed text-neutral-400">{perk.description}</p>
                             </div>
                         </div>
                     ))}
                 </div>
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Exclusive Listings</h2>
-                <div className="mt-8">
+            <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                <h2 className="text-3xl font-light text-white">Exclusive Listings</h2>
+                <div className="mt-10">
                     <PropertyGrid listings={listings} emptyMessage="No exclusive listings are available right now." />
                 </div>
 
-                <div className="mt-12 rounded-2xl border border-amber-200 bg-amber-50 px-8 py-10 text-center">
-                    <h3 className="text-xl font-semibold text-slate-900">Want early access to exclusive homes?</h3>
-                    <p className="mx-auto mt-2 max-w-xl text-slate-600">
+                <div className="mt-16 rounded-sm border border-marine/20 bg-ink-soft/60 px-8 py-12 text-center">
+                    <h3 className="text-2xl font-light text-white">Want early access to exclusive homes?</h3>
+                    <p className="mx-auto mt-3 max-w-xl text-neutral-400">
                         Register your interest and our team will notify you when matching properties become available.
                     </p>
                     <Link
                         href={route('contact')}
-                        className="mt-6 inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                        className="mt-7 inline-flex items-center justify-center rounded-full bg-brand-red px-7 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
                     >
                         Register Your Interest
                     </Link>

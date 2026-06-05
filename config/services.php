@@ -41,6 +41,9 @@ return [
         'webhook_secret' => env('COREX_WEBHOOK_SECRET'),
         'timeout' => (int) env('COREX_API_TIMEOUT', 10),
         'cache_ttl' => (int) env('COREX_CACHE_TTL', 300),
+        // When true, the site is served from the local demo dataset instead of
+        // the live CoreX API (handy while the feed is unavailable).
+        'demo' => (bool) env('COREX_DEMO', false),
     ],
 
 ];

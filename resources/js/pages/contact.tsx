@@ -29,12 +29,12 @@ export default function Contact() {
                 <div className="space-y-6 lg:col-span-1">
                     {contactDetails.map((detail) => (
                         <div key={detail.label} className="flex gap-4">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-marine/40 text-marine">
                                 <detail.icon className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-slate-900">{detail.label}</p>
-                                <p className="mt-0.5 text-sm text-slate-600">{detail.value}</p>
+                                <p className="text-xs tracking-[0.2em] text-marine/80 uppercase">{detail.label}</p>
+                                <p className="mt-1 text-sm text-neutral-300">{detail.value}</p>
                             </div>
                         </div>
                     ))}
@@ -42,60 +42,60 @@ export default function Contact() {
 
                 {/* Contact form */}
                 <div className="lg:col-span-2">
-                    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    <form onSubmit={handleSubmit} className="rounded-sm border border-white/10 bg-ink-soft/60 p-6 sm:p-8">
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
-                                <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
+                                <label htmlFor="name" className="mb-1.5 block text-xs tracking-[0.15em] text-neutral-400 uppercase">
                                     Full name
                                 </label>
                                 <input
                                     id="name"
                                     name="name"
                                     type="text"
-                                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                    className="w-full rounded-sm border border-white/15 bg-ink/50 px-3.5 py-2.5 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-marine/60"
                                     placeholder="Jane Smith"
                                 />
                             </div>
                             <div>
-                                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                                <label htmlFor="email" className="mb-1.5 block text-xs tracking-[0.15em] text-neutral-400 uppercase">
                                     Email
                                 </label>
                                 <input
                                     id="email"
                                     name="email"
                                     type="email"
-                                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                    className="w-full rounded-sm border border-white/15 bg-ink/50 px-3.5 py-2.5 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-marine/60"
                                     placeholder="jane@example.com"
                                 />
                             </div>
                             <div className="sm:col-span-2">
-                                <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-slate-700">
+                                <label htmlFor="phone" className="mb-1.5 block text-xs tracking-[0.15em] text-neutral-400 uppercase">
                                     Phone
                                 </label>
                                 <input
                                     id="phone"
                                     name="phone"
                                     type="tel"
-                                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                    className="w-full rounded-sm border border-white/15 bg-ink/50 px-3.5 py-2.5 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-marine/60"
                                     placeholder="+27 ..."
                                 />
                             </div>
                             <div className="sm:col-span-2">
-                                <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-slate-700">
+                                <label htmlFor="message" className="mb-1.5 block text-xs tracking-[0.15em] text-neutral-400 uppercase">
                                     Message
                                 </label>
                                 <textarea
                                     id="message"
                                     name="message"
                                     rows={5}
-                                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                    className="w-full rounded-sm border border-white/15 bg-ink/50 px-3.5 py-2.5 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-marine/60"
                                     placeholder="How can we help?"
                                 />
                             </div>
                         </div>
                         <button
                             type="submit"
-                            className="mt-6 inline-flex items-center justify-center rounded-lg bg-sky-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-sky-700"
+                            className="mt-7 inline-flex items-center justify-center rounded-full bg-brand-red px-7 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
                         >
                             Send Message
                         </button>

@@ -9,7 +9,9 @@ interface PropertyGridProps {
 export default function PropertyGrid({ listings, emptyMessage = 'No properties to show yet.' }: PropertyGridProps) {
     if (listings.length === 0) {
         return (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">{emptyMessage}</div>
+            <div className="rounded-sm border border-dashed border-white/15 bg-ink-soft/40 p-12 text-center text-neutral-400">
+                {emptyMessage}
+            </div>
         );
     }
 

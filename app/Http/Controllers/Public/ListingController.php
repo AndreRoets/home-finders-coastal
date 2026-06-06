@@ -39,11 +39,29 @@ class ListingController extends Controller
      */
     public function home(): Response
     {
-        return Inertia::render('home', [
+        return Inertia::render('home', $this->homeData());
+    }
+
+    /**
+     * White-background variant of the home page, for A/B comparison.
+     */
+    public function homeWhite(): Response
+    {
+        return Inertia::render('home-white', $this->homeData());
+    }
+
+    /**
+     * Shared props for the home page and its white variant.
+     *
+     * @return array<string, mixed>
+     */
+    protected function homeData(): array
+    {
+        return [
             'recent' => $this->recent(),
             'filters' => ListingSearch::facets($this->filter(fn (array $l): bool => $this->isAvailable($l))),
             'agents' => AgentMapper::collection($this->agents()),
-        ]);
+        ];
     }
 
     /**

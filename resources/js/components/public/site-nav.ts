@@ -16,7 +16,11 @@ export interface SiteNavItem {
  * Items with `children` render as a dropdown menu.
  */
 export const siteNavItems: SiteNavItem[] = [
-    { title: 'Home', routeName: 'home' },
+    {
+        title: 'Home',
+        routeName: 'home',
+        children: [{ title: 'White', routeName: 'white', description: 'White-background variant' }],
+    },
     { title: 'For Sale', routeName: 'for-sale' },
     { title: 'To Rent', routeName: 'to-rent' },
     { title: 'HFC Exclusive', routeName: 'hfc-exclusive' },

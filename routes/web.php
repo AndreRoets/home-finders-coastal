@@ -40,6 +40,9 @@ Route::middleware(['auth'])->get('dashboard', fn () => redirect()->route('admin.
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
+// White-background home page variant (A/B test). Kept off the CMS page system.
+Route::get('white', [ListingController::class, 'homeWhite'])->name('white');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 

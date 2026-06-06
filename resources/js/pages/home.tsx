@@ -1,10 +1,29 @@
+import HomeAgents, { type Agent } from '@/components/public/home-agents';
 import { sampleListings, type Listing } from '@/components/public/listings';
 import PropertySearch, { type SearchFacets } from '@/components/public/property-search';
 import PublicLayout from '@/layouts/public-layout';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowUpRight, Bath, BedDouble, ChevronDown, Maximize, MoveRight } from 'lucide-react';
+import { ArrowUpRight, Bath, BedDouble, ChevronDown, ChevronLeft, ChevronRight, Maximize, Quote, Star } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+
+const testimonials = [
+    {
+        quote: 'They understood exactly the kind of home we were after and found it before it ever hit the market. The whole sale was handled with real discretion.',
+        name: 'Helena & Marcus Bauer',
+        location: 'Camps Bay',
+    },
+    {
+        quote: 'Our clifftop home sold within three weeks at a price we did not think possible. Two decades on this coastline clearly counts for something.',
+        name: 'Pieter van Niekerk',
+        location: 'Llandudno',
+    },
+    {
+        quote: 'Calm, considered and always a step ahead. From the first viewing to the keys, it felt like we had the whole coast working for us.',
+        name: 'Aisha Daniels',
+        location: 'Hermanus',
+    },
+];
 
 const categories = [
     { label: 'For Sale', routeName: 'for-sale', image: 'photo-1568605114967-8130f3a36994' },
@@ -68,27 +87,6 @@ function CategoryTile({ category }: { category: Category }) {
     );
 }
 
-const collections = [
-    {
-        index: '01',
-        title: 'Oceanfront',
-        copy: 'Homes where the Atlantic is your front garden — infinity edges, glass walls, salt air.',
-        image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1400&q=70',
-    },
-    {
-        index: '02',
-        title: 'Clifftop Estates',
-        copy: 'Elevated landmark residences with panoramic, protected views that cannot be built out.',
-        image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1400&q=70',
-    },
-    {
-        index: '03',
-        title: 'Village Retreats',
-        copy: 'Restored cottages and quiet sanctuaries tucked into the coast’s most storied villages.',
-        image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1400&q=70',
-    },
-];
-
 /**
  * Fades and lifts its children into view the first time they are scrolled near.
  */
@@ -124,8 +122,101 @@ function Reveal({ children, className }: { children: ReactNode; className?: stri
     );
 }
 
-export default function Home({ featured = [], filters }: { featured?: Listing[]; filters?: SearchFacets }) {
-    const listings = featured.length > 0 ? featured : sampleListings;
+/**
+ * Rotating testimonials. A single testimonial renders static; two or more get
+ * carousel controls (dots + arrows) and auto-advance every 8s, holding 15s
+ * after a manual interaction.
+ */
+function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
+    const [active, setActive] = useState(0);
+    const holdUntil = useRef(0);
+    const hasControls = items.length > 1;
+
+    useEffect(() => {
+        if (!hasControls) {
+            return;
+        }
+        const id = setInterval(() => {
+            if (Date.now() < holdUntil.current) {
+                return;
+            }
+            setActive((index) => (index + 1) % items.length);
+        }, 10000);
+        return () => clearInterval(id);
+    }, [hasControls, items.length]);
+
+    const go = (index: number) => {
+        setActive((index + items.length) % items.length);
+        holdUntil.current = Date.now() + 15000;
+    };
+
+    return (
+        <div className="relative mx-auto mt-12 max-w-3xl rounded-2xl border border-white/15 bg-white/10 px-6 py-10 text-center backdrop-blur sm:px-14 sm:py-14">
+            <Quote className="mx-auto h-10 w-10 text-marine/60" />
+            {/* All testimonials share one grid cell so the box never resizes. */}
+            <div className="mt-5 grid">
+                {items.map((item, index) => (
+                    <div
+                        key={item.name}
+                        aria-hidden={index !== active}
+                        className={cn(
+                            'col-start-1 row-start-1 transition-opacity duration-700 ease-out',
+                            index === active ? 'opacity-100' : 'pointer-events-none opacity-0',
+                        )}
+                    >
+                        <div className="flex justify-center gap-0.5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Star key={i} className="h-4 w-4 fill-marine text-marine" />
+                            ))}
+                        </div>
+                        <blockquote className="mt-6 text-2xl leading-relaxed font-light text-neutral-200 sm:text-3xl">
+                            “{item.quote}”
+                        </blockquote>
+                        <p className="mt-7 text-white">{item.name}</p>
+                        <p className="mt-0.5 text-sm tracking-wide text-marine/80">{item.location}</p>
+                    </div>
+                ))}
+            </div>
+
+            {hasControls && (
+                <>
+                    <div className="mt-9 flex justify-center gap-2">
+                        {items.map((item, index) => (
+                            <button
+                                key={item.name}
+                                type="button"
+                                onClick={() => go(index)}
+                                aria-label={`Show testimonial ${index + 1}`}
+                                aria-current={index === active}
+                                className={cn('h-2 rounded-full transition-all', index === active ? 'w-6 bg-marine' : 'w-2 bg-white/30 hover:bg-white/60')}
+                            />
+                        ))}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => go(active - 1)}
+                        aria-label="Previous testimonial"
+                        className="absolute top-1/2 left-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink/70 text-white backdrop-blur transition-colors hover:bg-ink sm:flex"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => go(active + 1)}
+                        aria-label="Next testimonial"
+                        className="absolute top-1/2 right-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink/70 text-white backdrop-blur transition-colors hover:bg-ink sm:flex"
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                </>
+            )}
+        </div>
+    );
+}
+
+export default function Home({ recent = [], filters, agents = [] }: { recent?: Listing[]; filters?: SearchFacets; agents?: Agent[] }) {
+    const listings = recent.length > 0 ? recent : sampleListings;
     const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
@@ -192,8 +283,8 @@ export default function Home({ featured = [], filters }: { featured?: Listing[];
                 <Reveal>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Featured Residences</p>
-                        <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">Currently in our care</h2>
+                        <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Just Listed</p>
+                        <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">Recent Listings</h2>
                     </div>
                     <Link
                         href={route('for-sale')}
@@ -207,7 +298,7 @@ export default function Home({ featured = [], filters }: { featured?: Listing[];
                 <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
                     {listings.slice(0, 6).map((listing) => (
                         <Link key={listing.id} href={route('property.show', listing.ref ?? listing.id)} className="group block">
-                            <div className="relative aspect-[4/5] overflow-hidden bg-ink-soft">
+                            <div className="relative aspect-[8/5] overflow-hidden bg-ink-soft">
                                 <img
                                     src={listing.image}
                                     alt={listing.title}
@@ -215,7 +306,7 @@ export default function Home({ featured = [], filters }: { featured?: Listing[];
                                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                                <span className="absolute top-4 left-4 rounded-full border border-marine/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-marine uppercase backdrop-blur">
+                                <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
                                     {listing.location}
                                 </span>
                             </div>
@@ -245,55 +336,24 @@ export default function Home({ featured = [], filters }: { featured?: Listing[];
                 </Reveal>
             </section>
 
-            {/* Collections — editorial split rows */}
-            <section className="border-t border-white/10 bg-ink-soft/40">
-                <Reveal className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
-                    <h2 className="text-4xl font-light text-white sm:text-5xl">Collections</h2>
-                    <div className="mt-14 space-y-px">
-                        {collections.map((c) => (
-                            <div
-                                key={c.index}
-                                className="group grid items-center gap-8 border-t border-white/10 py-10 first:border-t-0 md:grid-cols-[8rem_1fr_22rem]"
-                            >
-                                <span className="text-5xl font-light text-brand-red/80">{c.index}</span>
-                                <div>
-                                    <h3 className="text-3xl font-light text-white">{c.title}</h3>
-                                    <p className="mt-3 max-w-md text-neutral-400">{c.copy}</p>
-                                </div>
-                                <div className="relative aspect-[16/10] overflow-hidden rounded-sm">
-                                    <img
-                                        src={c.image}
-                                        alt={c.title}
-                                        loading="lazy"
-                                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Reveal>
-            </section>
+            {/* Meet the team */}
+            <HomeAgents agents={agents} />
 
-            {/* Closing CTA */}
-            <section className="relative overflow-hidden">
+            {/* Testimonials */}
+            <section className="relative overflow-hidden border-t border-white/10">
                 <img
                     src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=70"
                     alt="Coastline"
                     className="absolute inset-0 h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-ink/85" />
-                <Reveal className="relative mx-auto max-w-3xl px-6 py-28 text-center lg:px-8">
-                    <h2 className="text-4xl font-light text-white sm:text-5xl">Considering selling a landmark home?</h2>
-                    <p className="mx-auto mt-5 max-w-xl text-neutral-300">
-                        Our private valuation is discreet, considered, and informed by two decades on this coastline.
-                    </p>
-                    <Link
-                        href={route('contact')}
-                        className="mt-9 inline-flex items-center gap-3 rounded-full bg-brand-red px-8 py-3.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
-                    >
-                        Request a Private Valuation
-                        <MoveRight className="h-4 w-4" />
-                    </Link>
+                <div className="absolute inset-0 bg-ink/80" />
+                <Reveal className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
+                    <div className="text-center">
+                        <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Testimonials</p>
+                        <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">What our clients say</h2>
+                    </div>
+
+                    <TestimonialsCarousel items={testimonials} />
                 </Reveal>
             </section>
         </PublicLayout>

@@ -1,6 +1,5 @@
 import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PublicLayout from '@/layouts/public-layout';
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Trees } from 'lucide-react';
 
@@ -71,14 +70,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                 <div className="mt-6 grid gap-3 md:grid-cols-[2fr_1fr]">
                     <div className="relative aspect-[4/3] overflow-hidden bg-ink-soft md:aspect-[16/10]">
                         <img src={cover} alt={property.title} className="h-full w-full object-cover" />
-                        <span
-                            className={cn(
-                                'absolute top-4 left-4 rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] uppercase backdrop-blur',
-                                property.status === 'sold'
-                                    ? 'border-brand-red/50 bg-ink/50 text-brand-red-bright'
-                                    : 'border-marine/40 bg-ink/50 text-marine',
-                            )}
-                        >
+                        <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
                             {statusBadge[property.status]}
                         </span>
                     </div>

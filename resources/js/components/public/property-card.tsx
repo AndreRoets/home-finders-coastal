@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Bath, BedDouble, MapPin, Maximize } from 'lucide-react';
 import { type Listing } from './listings';
@@ -13,7 +12,7 @@ const statusBadge: Record<Listing['status'], string> = {
 export default function PropertyCard({ listing }: { listing: Listing }) {
     return (
         <Link href={route('property.show', listing.ref ?? listing.id)} className="group block">
-            <div className="relative aspect-[4/5] overflow-hidden bg-ink-soft">
+            <div className="relative aspect-[8/5] overflow-hidden bg-ink-soft">
                 <img
                     src={listing.image}
                     alt={listing.title}
@@ -21,14 +20,7 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                <span
-                    className={cn(
-                        'absolute top-4 left-4 rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] uppercase backdrop-blur',
-                        listing.status === 'sold'
-                            ? 'border-brand-red/50 bg-ink/50 text-brand-red-bright'
-                            : 'border-marine/40 bg-ink/50 text-marine',
-                    )}
-                >
+                <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
                     {statusBadge[listing.status]}
                 </span>
             </div>

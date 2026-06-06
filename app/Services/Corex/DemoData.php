@@ -176,6 +176,8 @@ class DemoData
         $listing = [
             'id' => 1000 + $i,
             'reference' => 'HFC'.str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+            // Higher index = more recently listed (today back to ~7 weeks ago).
+            'listed_at' => date('Y-m-d', strtotime('-'.(self::LISTING_COUNT - $i).' days')),
             'title' => "{$descriptor} {$type} in {$suburb}",
             'headline' => self::headline($descriptor, $type, $suburb),
             'description' => self::description($descriptor, $type, $suburb, $beds),

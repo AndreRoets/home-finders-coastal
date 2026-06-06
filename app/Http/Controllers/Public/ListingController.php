@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Services\Corex\AgentMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -37,21 +40,69 @@ class ListingController extends Controller
     public function home(): Response
     {
         return Inertia::render('home', [
-            'featured' => $this->featured(),
+            'recent' => $this->recent(),
             'filters' => ListingSearch::facets($this->filter(fn (array $l): bool => $this->isAvailable($l))),
+            'agents' => AgentMapper::collection($this->agents()),
         ]);
     }
 
     /**
-     * A handful of featured (sole-mandate) listings shared by the home variants.
+     * The agency's agents, falling back to the agents embedded on listings when
+     * the standalone endpoint is empty (mirrors AgentController).
      *
      * @return array<int, array<string, mixed>>
      */
-    protected function featured(): array
+    protected function agents(): array
     {
-        $exclusive = $this->filter(fn (array $l): bool => $this->isExclusive($l));
+        $agents = $this->corex->agents();
 
-        return array_slice(ListingMapper::collection($exclusive, 'exclusive'), 0, 6);
+        if ($agents !== []) {
+            return $agents;
+        }
+
+        return Collection::make($this->corex->listings())
+            ->map(fn (array $listing): mixed => Arr::get($listing, 'agent'))
+            ->filter(fn (mixed $agent): bool => is_array($agent) && Arr::has($agent, 'id'))
+            ->unique(fn (array $agent): mixed => $agent['id'])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The six most recently listed available properties, shown on the home page.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function recent(): array
+    {
+        $available = $this->filter(fn (array $l): bool => $this->isAvailable($l));
+
+        usort($available, fn (array $a, array $b): int => $this->listedAt($b) <=> $this->listedAt($a));
+
+        return ListingMapper::collection(array_slice($available, 0, 6));
+    }
+
+    /**
+     * A sortable "recency" value for a listing. Prefers a listing date when
+     * CoreX provides one, otherwise falls back to the (incrementing) id.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    protected function listedAt(array $listing): int
+    {
+        foreach (['listed_at', 'published_at', 'created_at', 'date_listed', 'updated_at'] as $key) {
+            $value = $listing[$key] ?? null;
+
+            if (is_int($value)) {
+                return $value;
+            }
+
+            if (is_string($value) && $value !== '' && ($timestamp = strtotime($value)) !== false) {
+                return $timestamp;
+            }
+        }
+
+        return (int) ($listing['id'] ?? 0);
     }
 
     /**

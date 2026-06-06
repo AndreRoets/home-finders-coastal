@@ -3,8 +3,8 @@
 namespace App\Support;
 
 use App\Http\Controllers\Public\AgentController;
+use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\ListingController;
-use Inertia\Inertia;
 
 class PageRoutes
 {
@@ -23,7 +23,7 @@ class PageRoutes
             'hfc-exclusive' => [ListingController::class, 'exclusive'],
             'sold' => [ListingController::class, 'sold'],
             'agents' => [AgentController::class, 'index'],
-            'contact' => fn () => Inertia::render('contact'),
+            'contact' => [ContactController::class, 'show'],
         ];
     }
 

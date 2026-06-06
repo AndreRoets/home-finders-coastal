@@ -1,6 +1,6 @@
 import { type Agency, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Clock, Facebook, Instagram, Linkedin, type LucideIcon, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, type LucideIcon, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import { siteNavItems } from './site-nav';
 
 /** Social networks we render, in display order, paired with their icon. */
@@ -17,7 +17,6 @@ export default function SiteFooter() {
     const socials = agency?.socials ?? {};
     const presentSocials = socialIcons.filter(({ key }) => socials[key]);
     const contact = agency?.contact;
-    const openHours = agency?.openHours ?? [];
 
     return (
         <footer className="bg-ink border-t border-white/10 text-neutral-400">
@@ -82,24 +81,6 @@ export default function SiteFooter() {
                                     </a>
                                 </li>
                             )}
-                        </ul>
-                    </div>
-                )}
-
-                {/* Opening hours — render the whole block only when CoreX has rows. */}
-                {openHours.length > 0 && (
-                    <div>
-                        <h3 className="text-marine/80 text-xs font-medium tracking-[0.25em] uppercase">Opening hours</h3>
-                        <ul className="mt-5 space-y-3 text-sm text-neutral-400">
-                            {openHours.map((row) => (
-                                <li key={row.days} className="flex items-start gap-2.5">
-                                    <Clock className="text-marine/70 mt-0.5 h-4 w-4 shrink-0" />
-                                    <span>
-                                        <span className="block text-neutral-300">{row.days}</span>
-                                        <span className="block text-neutral-500">{row.hours}</span>
-                                    </span>
-                                </li>
-                            ))}
                         </ul>
                     </div>
                 )}

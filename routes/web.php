@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\AgentController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\ListingController;
 use App\Http\Controllers\SitemapController;
 use App\Models\Page;
@@ -72,6 +73,14 @@ foreach (PageRoutes::actions() as $key => $action) {
     $uri = $slug === '/' ? '/' : ltrim($slug, '/');
 
     Route::get($uri, $action)->name($key);
+
+    // The contact page also accepts a form submission at its own slug, rate
+    // limited as a first line of defence against spam (the honeypot is second).
+    if ($key === 'contact') {
+        Route::post($uri, [ContactController::class, 'send'])
+            ->middleware('throttle:6,1')
+            ->name('contact.send');
+    }
 }
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.

@@ -74,6 +74,35 @@ class AgencyContactTest extends TestCase
             );
     }
 
+    public function test_the_contact_page_is_backed_by_agency_details(): void
+    {
+        Http::fake([
+            '*/agency*' => Http::response(['data' => [
+                'name' => 'Home Finders Coastal',
+                'contact' => [
+                    'email' => 'info@example.co.za',
+                    'phone' => '039 000 0000',
+                    'address' => '12 Marina Drive, Uvongo, 4275',
+                ],
+                'open_hours' => [
+                    ['days' => 'Monday – Friday', 'hours' => '08:00 – 17:00'],
+                ],
+            ]]),
+            '*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('contact'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('contact')
+                // The page reads contact/phone/email/hours from the shared agency prop.
+                ->where('agency.contact.email', 'info@example.co.za')
+                ->where('agency.contact.phoneHref', '0390000000')
+                ->where('agency.contact.address', '12 Marina Drive, Uvongo, 4275')
+                ->has('agency.openHours', 1)
+            );
+    }
+
     public function test_agency_is_null_when_corex_is_unavailable(): void
     {
         Http::fake([

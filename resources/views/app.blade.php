@@ -4,7 +4,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ ($seoPage->meta_title ?? null) ?: config('app.name', 'Laravel') }}</title>
+
+        @include('partials.seo')
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
@@ -15,6 +17,7 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        @include('partials.body-scripts')
         @inertia
     </body>
 </html>

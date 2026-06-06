@@ -67,7 +67,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                 <div className="mt-10 grid gap-8 md:grid-cols-[1fr_1.1fr] md:items-center">
                     <Link
                         href={agentUrl(agent.id)}
-                        className={cn('group aspect-square overflow-hidden rounded-sm', light ? 'bg-slate-200' : 'bg-ink-soft')}
+                        className={cn('group aspect-square overflow-hidden rounded-2xl', light ? 'bg-slate-200' : 'bg-ink-soft')}
                     >
                         <img
                             key={agent.id}

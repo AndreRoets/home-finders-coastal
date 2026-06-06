@@ -93,4 +93,21 @@ class DemoCorexClient extends CorexClient
     {
         return DemoData::findTestimonial($id);
     }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function articles(array $query = []): array
+    {
+        return DemoData::articles($query);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function article(int|string $id): array
+    {
+        return DemoData::findArticle($id);
+    }
 }

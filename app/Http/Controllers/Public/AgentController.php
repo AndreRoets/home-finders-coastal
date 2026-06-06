@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Services\Corex\AgentMapper;
+use App\Services\Corex\ArticleMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\TestimonialMapper;
@@ -69,6 +70,9 @@ class AgentController extends Controller
             'listings' => ListingMapper::collection($listings),
             'testimonials' => TestimonialMapper::collection(
                 $this->corex->testimonials(['agent_id' => $id]),
+            ),
+            'articles' => ArticleMapper::collection(
+                $this->corex->articles(['agent_id' => $id]),
             ),
         ])->toResponse($request);
     }

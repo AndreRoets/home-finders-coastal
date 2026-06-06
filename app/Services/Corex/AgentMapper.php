@@ -8,9 +8,10 @@ use Illuminate\Support\Arr;
  * Transforms a raw CoreX agent resource into the shape the React Agents page
  * expects (see resources/js/pages/agents.tsx).
  *
- * CoreX exposes id, name, designation, email, phone, cell and photo_url for
- * agents. It does not provide a coverage area, and designation may be null for
- * some agents, so the frontend hides it when absent.
+ * CoreX exposes id, name, designation, email, phone, cell, photo_url and the
+ * richer about/socials profile fields for agents. It does not provide a
+ * coverage area, and designation/about may be null for some agents, so the
+ * frontend hides them when absent.
  */
 class AgentMapper
 {
@@ -35,6 +36,8 @@ class AgentMapper
      *     phone: string,
      *     email: string,
      *     photo: string,
+     *     about: string|null,
+     *     socials: array<string, string>,
      * }
      */
     public static function map(array $agent): array
@@ -46,6 +49,8 @@ class AgentMapper
             'phone' => (string) (Arr::get($agent, 'cell') ?? Arr::get($agent, 'phone', '')),
             'email' => (string) Arr::get($agent, 'email', ''),
             'photo' => self::photo($agent),
+            'about' => self::about($agent),
+            'socials' => self::socials($agent),
         ];
     }
 
@@ -75,5 +80,72 @@ class AgentMapper
         return is_string($photo) && $photo !== ''
             ? $photo
             : 'https://placehold.co/600x600?text=Agent';
+    }
+
+    /**
+     * The agent's free-text "Get to Know Me" bio. CoreX may return null, so
+     * collapse empty values to null and let the frontend hide the section.
+     *
+     * @param  array<string, mixed>  $agent
+     */
+    protected static function about(array $agent): ?string
+    {
+        $about = Arr::get($agent, 'about');
+
+        return is_string($about) && trim($about) !== '' ? trim($about) : null;
+    }
+
+    /**
+     * The agent's social links, keyed by lower-cased platform. CoreX only
+     * returns the platforms the agent filled in, and a value may be either a
+     * full URL or a bare handle (e.g. Instagram), so normalise everything to an
+     * absolute URL and drop anything empty. Returns an empty array when the
+     * agent has no socials, so the frontend hides the icon row.
+     *
+     * @param  array<string, mixed>  $agent
+     * @return array<string, string>
+     */
+    protected static function socials(array $agent): array
+    {
+        $socials = Arr::get($agent, 'socials');
+
+        if (! is_array($socials)) {
+            return [];
+        }
+
+        $normalised = [];
+
+        foreach ($socials as $platform => $value) {
+            if (! is_string($platform) || ! is_string($value) || trim($value) === '') {
+                continue;
+            }
+
+            $normalised[strtolower($platform)] = self::socialUrl(strtolower($platform), trim($value));
+        }
+
+        return $normalised;
+    }
+
+    /**
+     * Build an absolute URL for a social link. Full URLs pass through; bare
+     * handles are expanded against the platform's canonical profile path.
+     */
+    protected static function socialUrl(string $platform, string $value): string
+    {
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        $handle = ltrim($value, '@/');
+
+        return match ($platform) {
+            'facebook' => 'https://facebook.com/'.$handle,
+            'instagram' => 'https://instagram.com/'.$handle,
+            'linkedin' => 'https://linkedin.com/in/'.$handle,
+            'youtube' => 'https://youtube.com/@'.$handle,
+            'twitter', 'x' => 'https://x.com/'.$handle,
+            'tiktok' => 'https://tiktok.com/@'.$handle,
+            default => 'https://'.$handle,
+        };
     }
 }

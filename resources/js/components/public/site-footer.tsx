@@ -7,22 +7,14 @@ export default function SiteFooter() {
         <footer className="border-t border-white/10 bg-ink text-neutral-400">
             <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-4 lg:px-8">
                 <div className="lg:col-span-2">
-                    <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white font-bold text-navy">HFC</span>
-                        <span className="text-sm font-medium tracking-tight text-white">Home Finders Coastal</span>
-                    </div>
-                    <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-400">
-                        A quietly curated portfolio of the coast’s finest residences. We guide discerning buyers and sellers with discretion,
-                        informed by two decades on this coastline.
-                    </p>
-                    <div className="mt-6 flex gap-3">
+                    <div className="flex justify-center gap-3">
                         {[Facebook, Instagram, Linkedin].map((Icon, index) => (
                             <a
                                 key={index}
                                 href="#"
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-neutral-400 transition-colors hover:border-marine/50 hover:text-marine"
+                                className="flex h-[62px] w-[62px] items-center justify-center rounded-full border border-white/10 text-neutral-400 transition-colors hover:border-marine/50 hover:text-marine"
                             >
-                                <Icon className="h-4 w-4" />
+                                <Icon className="h-[31px] w-[31px]" />
                             </a>
                         ))}
                     </div>

@@ -9,9 +9,9 @@ export default function Sold({ listings = [] }: { listings?: Listing[] }) {
             <PageHero
                 eyebrow="Track Record"
                 title="Recently Sold"
-                description="A snapshot of homes we’ve recently sold along the coast — proof of results in your neighbourhood."
+                image="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=2400&q=70"
             />
-            <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <section className="mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
                 <p className="mb-8 text-xs tracking-[0.2em] text-marine/80 uppercase">{listings.length} recently sold</p>
                 <PropertyGrid listings={listings} emptyMessage="No sold properties to display yet." />
             </section>

@@ -19,10 +19,10 @@ export default function Agents({ agents = [] }: { agents?: Agent[] }) {
             <PageHero
                 eyebrow="Meet the Team"
                 title="Our Agents"
-                description="Local specialists who live and work along the coast — ready to help you buy, sell, or rent."
+                image="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=70"
             />
 
-            <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <section className="mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
                 {agents.length === 0 ? (
                     <p className="rounded-sm border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-neutral-500">
                         Our team details are being updated. Please check back soon.
@@ -30,8 +30,8 @@ export default function Agents({ agents = [] }: { agents?: Agent[] }) {
                 ) : (
                     <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
                         {agents.map((agent) => (
-                            <article key={agent.id} className="group">
-                                <Link href={agentUrl(agent.id)} className="block aspect-square overflow-hidden bg-slate-100">
+                            <article key={agent.id} className="group flex h-full flex-col">
+                                <Link href={agentUrl(agent.id)} className="block aspect-square overflow-hidden rounded-2xl bg-slate-100">
                                     <img
                                         src={agent.photo}
                                         alt={agent.name}
@@ -39,12 +39,13 @@ export default function Agents({ agents = [] }: { agents?: Agent[] }) {
                                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                     />
                                 </Link>
-                                <div className="mt-5">
+                                <div className="mt-5 flex flex-1 flex-col">
                                     <Link href={agentUrl(agent.id)}>
                                         <h3 className="text-lg font-light text-navy transition-colors group-hover:text-marine">{agent.name}</h3>
                                     </Link>
                                     {agent.designation && <p className="mt-1 text-sm text-neutral-500">{agent.designation}</p>}
-                                    <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 text-sm">
+                                    {/* Pinned to the bottom so phone/email line up across cards of differing text length. */}
+                                    <div className="mt-auto space-y-2 border-t border-slate-200 pt-4 text-sm">
                                         {agent.phone && (
                                             <a
                                                 href={`tel:${agent.phone.replace(/\s/g, '')}`}
@@ -69,17 +70,6 @@ export default function Agents({ agents = [] }: { agents?: Agent[] }) {
                         ))}
                     </div>
                 )}
-
-                <div className="mt-16 rounded-sm border border-slate-200 bg-slate-50 px-8 py-12 text-center">
-                    <h3 className="text-2xl font-light text-navy">Want to join the Home Finders Coastal team?</h3>
-                    <p className="mx-auto mt-3 max-w-xl text-neutral-600">We’re always looking for passionate agents who know the coastline.</p>
-                    <Link
-                        href={route('contact')}
-                        className="mt-7 inline-flex items-center justify-center rounded-full bg-brand-red px-7 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
-                    >
-                        Get in Touch
-                    </Link>
-                </div>
             </section>
         </PublicLayout>
     );

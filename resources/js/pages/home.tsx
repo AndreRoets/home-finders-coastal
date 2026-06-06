@@ -64,8 +64,10 @@ function CategoryTile({ category }: { category: Category }) {
                 />
             </svg>
 
-            {/* Default navy accent on the bottom-right; fades out as the full frame traces in on hover. */}
-            <span className="pointer-events-none absolute -bottom-1.5 right-4 h-0.5 w-12 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
+            {/* Default navy corner bracket hugging the bottom-right; aligned with the hover
+                frame so it reads as a partial outline that completes as the full frame traces in. */}
+            <span className="pointer-events-none absolute -right-1.5 -bottom-1.5 h-0.5 w-14 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
+            <span className="pointer-events-none absolute -right-1.5 -bottom-1.5 h-14 w-0.5 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-5">
                 <h3 className="text-xl font-light text-white sm:text-2xl">{label}</h3>

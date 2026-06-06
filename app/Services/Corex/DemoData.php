@@ -19,6 +19,8 @@ class DemoData
 
     private const TESTIMONIAL_COUNT = 12;
 
+    private const ARTICLE_COUNT = 9;
+
     /** @var list<string> Coastal suburbs paired with their city below. */
     private const SUBURBS = [
         ['Camps Bay', 'Cape Town', 'Western Cape'],
@@ -205,6 +207,113 @@ class DemoData
         }
 
         return [];
+    }
+
+    /**
+     * All demo articles in raw CoreX shape.
+     *
+     * @param  array<string, mixed>  $query  Supports an `agent_id` filter.
+     * @return array<int, array<string, mixed>>
+     */
+    public static function articles(array $query = []): array
+    {
+        $articles = [];
+
+        for ($i = 1; $i <= self::ARTICLE_COUNT; $i++) {
+            $articles[] = self::makeArticle($i);
+        }
+
+        if (isset($query['agent_id'])) {
+            $agentId = (string) $query['agent_id'];
+
+            $articles = array_values(array_filter(
+                $articles,
+                static fn (array $a): bool => (string) ($a['agent_id'] ?? '') === $agentId,
+            ));
+        }
+
+        return $articles;
+    }
+
+    /**
+     * Find a single article by id.
+     *
+     * @return array<string, mixed>
+     */
+    public static function findArticle(int|string $id): array
+    {
+        foreach (self::articles() as $article) {
+            if ((string) $article['id'] === (string) $id) {
+                return $article;
+            }
+        }
+
+        return [];
+    }
+
+    /** @var list<array{string, string, list<string>}> Article title, lead, tags. */
+    private const ARTICLE_TOPICS = [
+        ['Pre-Approval vs Final Bond Approval', 'When buying a property, knowing the difference between pre-approval and final bond approval can save you weeks of stress.', ['BondApproval', 'HomeBuying']],
+        ['5 Questions to Ask Before You Make an Offer', 'A strong offer starts long before you sign — these are the questions that protect you.', ['Buying', 'OfferToPurchase']],
+        ['Staging Your Home to Sell on the Coast', 'Coastal buyers are buying a lifestyle. Here is how to present your home so they can picture themselves living it.', ['Selling', 'HomeStaging']],
+        ['Understanding Levies and Special Levies', 'Sectional-title living comes with monthly levies — and the occasional special levy. Here is what to expect.', ['SectionalTitle', 'Levies']],
+        ['Is Now a Good Time to Buy?', 'Interest rates, stock levels and seasonality all play a part. A practical look at timing your purchase.', ['MarketUpdate', 'Buying']],
+        ['The True Cost of Buying a Home', 'Transfer duty, bond costs, attorney fees — the price on the listing is only the start.', ['HomeBuying', 'Costs']],
+        ['Why a Sole Mandate Sells for More', 'A focused marketing effort beats a scattered one. The case for an exclusive mandate.', ['Selling', 'SoleMandate']],
+        ['Moving With Pets to the Coast', 'A calm, well-planned move makes all the difference for four-legged family members.', ['Lifestyle', 'Moving']],
+        ['First-Time Buyer? Start Here', 'A plain-language roadmap from saving a deposit to collecting your keys.', ['FirstTimeBuyer', 'HomeBuying']],
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function makeArticle(int $i): array
+    {
+        [$title, $lead, $tags] = self::ARTICLE_TOPICS[($i - 1) % count(self::ARTICLE_TOPICS)];
+        $agent = self::makeAgent((($i - 1) % self::AGENT_COUNT) + 1);
+        $body = self::articleBody($lead);
+        $wordCount = str_word_count($body);
+
+        return [
+            'id' => 700 + $i,
+            'agent_id' => $agent['id'],
+            'title' => $title,
+            'slug' => self::slugify($title),
+            'excerpt' => $lead,
+            // Every 4th article has no cover to exercise the placeholder tile.
+            'cover_image_url' => $i % 4 === 0
+                ? null
+                : 'https://images.unsplash.com/'.self::IMAGES[$i % count(self::IMAGES)].'?auto=format&fit=crop&w=1200&q=70',
+            'body' => $body,
+            // A couple of articles carry an external "Read more" link.
+            'link_url' => $i % 3 === 0 ? 'https://homefinderscoastal.com/blog' : null,
+            'tags' => $tags,
+            'read_minutes' => max(1, (int) ceil($wordCount / 200)),
+            'word_count' => $wordCount,
+            'date' => date('Y-m-d', strtotime('-'.($i * 11).' days')),
+        ];
+    }
+
+    private static function articleBody(string $lead): string
+    {
+        return $lead."\n\n"
+            .'It is one of the most common questions we hear, and the answer matters more than most '
+            .'buyers realise. Getting it right up front means a smoother offer, a faster transfer and '
+            ."far fewer surprises along the way.\n\n"
+            .'Start by speaking to a bond originator early — ideally before you fall in love with a '
+            .'home. They will give you a realistic budget and flag anything that needs tidying up on '
+            ."your credit profile.\n\n"
+            .'From there, work with a practitioner who knows the area. Local knowledge is the '
+            .'difference between a fair price and a great one, and it is exactly what we bring to '
+            ."every mandate along this coastline.\n\n"
+            .'Have a question of your own? Get in touch — we are always happy to help.';
+    }
+
+    private static function slugify(string $title): string
+    {
+        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $title));
+
+        return trim($slug, '-');
     }
 
     /** @var list<string> */
@@ -396,6 +505,7 @@ class DemoData
     {
         [$first, $last] = self::AGENT_NAMES[($i - 1) % count(self::AGENT_NAMES)];
         $slug = strtolower($first.'.'.preg_replace('/[^a-z]/i', '', $last));
+        $handle = strtolower($first.preg_replace('/[^a-z]/i', '', $last));
 
         return [
             'id' => 20 + $i,
@@ -404,6 +514,50 @@ class DemoData
             'email' => "{$slug}@homefinderscoastal.com",
             'cell' => sprintf('+27 8%d %03d %04d', $i % 5 + 1, ($i * 137) % 1000, ($i * 911) % 10000),
             'photo_url' => "https://i.pravatar.cc/600?img={$i}",
+            // A couple of agents have no bio (every 4th) to exercise the
+            // hide-when-null "Get to Know Me" path.
+            'about' => $i % 4 === 0 ? null : self::about($first, $i),
+            'socials' => self::agentSocials($i, $handle),
         ];
+    }
+
+    private static function about(string $first, int $i): string
+    {
+        $suburb = self::SUBURBS[($i - 1) % count(self::SUBURBS)][0];
+
+        return "With over a decade selling along the coast, {$first} pairs deep local knowledge of "
+            ."{$suburb} with a calm, honest approach to every mandate. Whether you're buying your "
+            ."first home or selling a clifftop estate, you'll have a practitioner who knows the street, "
+            ."the neighbours and exactly what your property is worth.\n\n"
+            .'Get in touch for an obligation-free valuation or a quiet chat about the market.';
+    }
+
+    /**
+     * A varied socials object — agents fill in different platforms, and an
+     * Instagram handle (not a full URL) exercises the normalisation path. Every
+     * 5th agent has no socials at all to exercise the hide-when-empty path.
+     *
+     * @return array<string, string>
+     */
+    private static function agentSocials(int $i, string $handle): array
+    {
+        if ($i % 5 === 0) {
+            return [];
+        }
+
+        $socials = [
+            'facebook' => "https://facebook.com/{$handle}.hfc",
+            'instagram' => $handle, // bare handle on purpose
+        ];
+
+        if ($i % 2 === 0) {
+            $socials['linkedin'] = "https://linkedin.com/in/{$handle}";
+        }
+
+        if ($i % 3 === 0) {
+            $socials['youtube'] = "https://youtube.com/@{$handle}";
+        }
+
+        return $socials;
     }
 }

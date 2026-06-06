@@ -17,7 +17,7 @@ export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }
             <PageHero
                 eyebrow="By Invitation"
                 title="HFC Exclusive"
-                description="A private collection of premium and off-market coastal properties, available only through Home Finders Coastal."
+                image="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=2400&q=70"
             />
 
             <section className="border-b border-slate-200 bg-slate-50">

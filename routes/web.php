@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\AgentController;
+use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ListingController;
 use App\Http\Controllers\SitemapController;
 use App\Models\Page;
@@ -79,3 +80,7 @@ Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('prop
 // Agent detail pages are dynamic (CoreX-backed), not CMS-managed. Registered as
 // a sub-path of the agents index so it never collides with a managed page slug.
 Route::get('agents/{id}', [AgentController::class, 'show'])->name('agents.show');
+
+// Article pages are dynamic (CoreX-backed), not CMS-managed. The /articles/
+// prefix keeps the slug from colliding with a managed page slug.
+Route::get('articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');

@@ -32,6 +32,8 @@ class CorexClient
 
     protected const TESTIMONIALS_PER_PAGE = 100;
 
+    protected const ARTICLES_PER_PAGE = 50;
+
     public function __construct(
         protected string $baseUrl,
         protected ?string $apiKey,
@@ -132,6 +134,30 @@ class CorexClient
     }
 
     /**
+     * Fetch published articles, transparently following pagination.
+     * Supports filtering by agent via the `agent_id` query parameter.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function articles(array $query = []): array
+    {
+        return $this->allPages('articles', '/articles', $query, self::ARTICLES_PER_PAGE);
+    }
+
+    /**
+     * Fetch a single published article by id.
+     *
+     * @return array<string, mixed>
+     */
+    public function article(int|string $id): array
+    {
+        $response = $this->cachedGet('article:'.$id, '/articles/'.$id);
+
+        return $this->extractData($response);
+    }
+
+    /**
      * Fetch all pages of a Laravel-paginated collection and return the merged
      * `data` rows. The whole set is cached under one key.
      *
@@ -222,6 +248,18 @@ class CorexClient
         }
 
         Cache::forget($this->collectionCacheKey('testimonials', [], self::TESTIMONIALS_PER_PAGE));
+    }
+
+    /**
+     * Bust the caches affected by an article change.
+     */
+    public function forgetArticle(int|string|null $id = null): void
+    {
+        if ($id !== null && $id !== '') {
+            Cache::forget('corex:article:'.$id);
+        }
+
+        Cache::forget($this->collectionCacheKey('articles', [], self::ARTICLES_PER_PAGE));
     }
 
     /**

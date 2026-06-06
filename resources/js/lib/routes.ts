@@ -10,3 +10,10 @@
 export function agentUrl(id: number | string): string {
     return route('agents.show', id);
 }
+
+/**
+ * URL of an article's full page.
+ */
+export function articleUrl(slug: string): string {
+    return route('articles.show', slug);
+}

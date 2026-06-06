@@ -21,10 +21,10 @@ export default function Contact() {
             <PageHero
                 eyebrow="Get in Touch"
                 title="Contact Us"
-                description="Have a question about a listing or thinking of selling? We’d love to hear from you."
+                image="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=2400&q=70"
             />
 
-            <section className="mx-auto grid max-w-7xl gap-12 px-4 py-12 sm:px-6 lg:grid-cols-3 lg:px-8">
+            <section className="mx-auto grid max-w-7xl gap-12 px-4 pt-6 pb-12 sm:px-6 lg:grid-cols-3 lg:px-8">
                 {/* Contact details */}
                 <div className="space-y-6 lg:col-span-1">
                     {contactDetails.map((detail) => (

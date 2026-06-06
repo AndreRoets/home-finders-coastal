@@ -105,4 +105,20 @@ class CorexWebhookTest extends TestCase
         $this->assertFalse(Cache::has('corex:agent:7'));
         $this->assertFalse(Cache::has('corex:agents:'.md5(serialize([])).':100'));
     }
+
+    public function test_an_article_event_busts_the_article_caches(): void
+    {
+        Cache::put('corex:article:12', ['stale'], 600);
+        Cache::put('corex:articles:'.md5(serialize([])).':50', ['stale'], 600);
+
+        $payload = [
+            'event' => 'article.published',
+            'data' => ['id' => 12, 'slug' => 'pre-approval'],
+        ];
+
+        $this->deliver($payload, 'article.published')->assertOk();
+
+        $this->assertFalse(Cache::has('corex:article:12'));
+        $this->assertFalse(Cache::has('corex:articles:'.md5(serialize([])).':50'));
+    }
 }

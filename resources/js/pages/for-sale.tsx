@@ -10,9 +10,9 @@ export default function ForSale({ listings = [], filters, search }: { listings?:
             <PageHero
                 eyebrow="Buy"
                 title="Properties For Sale"
-                description="Explore homes for sale along the coast, from beachfront apartments to family estates."
+                image="https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=2400&q=70"
             />
-            <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <section className="mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
                 {filters && (
                     <div className="mb-10">
                         <PropertySearch filters={filters} mode="sale" values={search} variant="page" />

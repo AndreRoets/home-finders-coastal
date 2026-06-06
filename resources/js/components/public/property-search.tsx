@@ -169,13 +169,14 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                             {formatPrice(minPrice)} — {formatPrice(maxPrice)}
                         </span>
                     </div>
-                    <div className="relative mt-3 h-5">
+                    <div className="relative mt-3 h-6">
                         <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
                         <div
                             className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-marine"
                             style={{ left: `${pct(minPrice)}%`, width: `${pct(maxPrice) - pct(minPrice)}%` }}
                         />
                         <RangeThumb
+                            label="Minimum price"
                             min={range.min}
                             max={range.max}
                             step={step}
@@ -183,6 +184,7 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                             onChange={(v) => setMinPrice(Math.min(v, maxPrice - step))}
                         />
                         <RangeThumb
+                            label="Maximum price"
                             min={range.min}
                             max={range.max}
                             step={step}
@@ -260,19 +262,36 @@ function SelectControl({
     );
 }
 
-function RangeThumb({ min, max, step, value, onChange }: { min: number; max: number; step: number; value: number; onChange: (value: number) => void }) {
+function RangeThumb({
+    label,
+    min,
+    max,
+    step,
+    value,
+    onChange,
+}: {
+    label: string;
+    min: number;
+    max: number;
+    step: number;
+    value: number;
+    onChange: (value: number) => void;
+}) {
     return (
         <input
             type="range"
+            aria-label={label}
             min={min}
             max={max}
             step={step}
             value={value}
             onChange={(event) => onChange(Number(event.target.value))}
+            // Full-height track + touch-action:none so the thumb is easy to grab and
+            // dragging it doesn't scroll the page on touch devices.
             className={cn(
-                'pointer-events-none absolute top-1/2 h-1 w-full -translate-y-1/2 appearance-none bg-transparent',
-                '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-marine [&::-webkit-slider-thumb]:bg-white',
-                '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-marine [&::-moz-range-thumb]:bg-white',
+                'pointer-events-none absolute top-1/2 h-6 w-full -translate-y-1/2 appearance-none bg-transparent [touch-action:none]',
+                '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-marine [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:[touch-action:none]',
+                '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-marine [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:[touch-action:none]',
             )}
         />
     );

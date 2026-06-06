@@ -110,6 +110,14 @@ export default function AgentDetail({
                     </section>
                 )}
 
+                {/* Listings — always first on the profile */}
+                <section className="mt-16">
+                    <h2 className="text-navy text-2xl font-light sm:text-3xl">{agent.name.split(' ')[0]}’s listings</h2>
+                    <div className="mt-8">
+                        <PropertyGrid listings={listings} emptyMessage={`${agent.name} has no active listings right now.`} />
+                    </div>
+                </section>
+
                 {/* Articles */}
                 {articles.length > 0 && (
                     <section className="mt-16">
@@ -121,14 +129,6 @@ export default function AgentDetail({
                         </div>
                     </section>
                 )}
-
-                {/* Listings */}
-                <section className="mt-16">
-                    <h2 className="text-navy text-2xl font-light sm:text-3xl">{agent.name.split(' ')[0]}’s listings</h2>
-                    <div className="mt-8">
-                        <PropertyGrid listings={listings} emptyMessage={`${agent.name} has no active listings right now.`} />
-                    </div>
-                </section>
 
                 {/* Testimonials */}
                 {testimonials.length > 0 && (

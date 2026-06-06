@@ -1,5 +1,5 @@
 import HomeAgents, { type Agent } from '@/components/public/home-agents';
-import { sampleListings, type Listing } from '@/components/public/listings';
+import { type Listing } from '@/components/public/listings';
 import PropertySearch, { type SearchFacets } from '@/components/public/property-search';
 import PublicLayout from '@/layouts/public-layout';
 import { cn } from '@/lib/utils';
@@ -216,7 +216,7 @@ function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
 }
 
 export default function Home({ recent = [], filters, agents = [] }: { recent?: Listing[]; filters?: SearchFacets; agents?: Agent[] }) {
-    const listings = recent.length > 0 ? recent : sampleListings;
+    const listings = recent;
     const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
@@ -295,6 +295,11 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
                     </Link>
                 </div>
 
+                {listings.length === 0 ? (
+                    <div className="mt-14 rounded-sm border border-dashed border-white/15 bg-ink-soft/40 p-12 text-center text-neutral-400">
+                        New listings are on their way — please check back soon.
+                    </div>
+                ) : (
                 <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
                     {listings.slice(0, 6).map((listing) => (
                         <Link key={listing.id} href={route('property.show', listing.ref ?? listing.id)} className="group block">
@@ -333,6 +338,7 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
                         </Link>
                     ))}
                 </div>
+                )}
                 </Reveal>
             </section>
 

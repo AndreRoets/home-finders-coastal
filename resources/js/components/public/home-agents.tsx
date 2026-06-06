@@ -59,7 +59,7 @@ export default function HomeAgents({ agents }: { agents: Agent[] }) {
                 </div>
 
                 <div className="mt-10 grid gap-8 md:grid-cols-[1fr_1.1fr] md:items-center">
-                    <div className="aspect-[4/3] overflow-hidden rounded-sm bg-ink-soft">
+                    <div className="aspect-square overflow-hidden rounded-sm bg-ink-soft">
                         <img
                             key={agent.id}
                             src={agent.photo}

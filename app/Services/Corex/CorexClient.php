@@ -251,15 +251,23 @@ class CorexClient
     }
 
     /**
-     * Bust the caches affected by an article change.
+     * Bust the caches affected by an article change. Clears the single-article
+     * entry, the agency-wide articles collection and — when the change carries
+     * an agent id — that agent's filtered articles collection, which is what the
+     * agent profile page reads. Without the latter a freshly published article
+     * stays invisible on the author's profile until the TTL lapses.
      */
-    public function forgetArticle(int|string|null $id = null): void
+    public function forgetArticle(int|string|null $id = null, int|string|null $agentId = null): void
     {
         if ($id !== null && $id !== '') {
             Cache::forget('corex:article:'.$id);
         }
 
         Cache::forget($this->collectionCacheKey('articles', [], self::ARTICLES_PER_PAGE));
+
+        if ($agentId !== null && $agentId !== '') {
+            Cache::forget($this->collectionCacheKey('articles', ['agent_id' => $agentId], self::ARTICLES_PER_PAGE));
+        }
     }
 
     /**

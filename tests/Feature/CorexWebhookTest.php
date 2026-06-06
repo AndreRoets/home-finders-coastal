@@ -110,15 +110,18 @@ class CorexWebhookTest extends TestCase
     {
         Cache::put('corex:article:12', ['stale'], 600);
         Cache::put('corex:articles:'.md5(serialize([])).':50', ['stale'], 600);
+        // The agent-filtered collection is what the agent profile page reads.
+        Cache::put('corex:articles:'.md5(serialize(['agent_id' => 7])).':50', ['stale'], 600);
 
         $payload = [
             'event' => 'article.published',
-            'data' => ['id' => 12, 'slug' => 'pre-approval'],
+            'data' => ['id' => 12, 'agent_id' => 7, 'slug' => 'pre-approval'],
         ];
 
         $this->deliver($payload, 'article.published')->assertOk();
 
         $this->assertFalse(Cache::has('corex:article:12'));
         $this->assertFalse(Cache::has('corex:articles:'.md5(serialize([])).':50'));
+        $this->assertFalse(Cache::has('corex:articles:'.md5(serialize(['agent_id' => 7])).':50'));
     }
 }

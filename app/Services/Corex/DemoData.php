@@ -86,6 +86,19 @@ class DemoData
     ];
 
     /**
+     * Agent designations, aligned by index with AGENT_NAMES. A couple are null
+     * to mirror CoreX (designation is optional) and exercise the hide-when-empty
+     * path on the cards.
+     *
+     * @var list<string|null>
+     */
+    private const AGENT_DESIGNATIONS = [
+        'Principal Property Practitioner', 'Candidate Property Practitioner', 'Property Practitioner', null,
+        'Property Practitioner', 'Candidate Property Practitioner', 'Principal Property Practitioner', 'Property Practitioner',
+        null, 'Candidate Property Practitioner',
+    ];
+
+    /**
      * All demo listings in raw CoreX shape.
      *
      * @return array<int, array<string, mixed>>
@@ -298,6 +311,7 @@ class DemoData
         return [
             'id' => 20 + $i,
             'name' => "{$first} {$last}",
+            'designation' => self::AGENT_DESIGNATIONS[($i - 1) % count(self::AGENT_DESIGNATIONS)],
             'email' => "{$slug}@homefinderscoastal.com",
             'cell' => sprintf('+27 8%d %03d %04d', $i % 5 + 1, ($i * 137) % 1000, ($i * 911) % 10000),
             'photo_url' => "https://i.pravatar.cc/600?img={$i}",

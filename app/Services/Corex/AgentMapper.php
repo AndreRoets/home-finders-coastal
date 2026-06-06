@@ -8,9 +8,9 @@ use Illuminate\Support\Arr;
  * Transforms a raw CoreX agent resource into the shape the React Agents page
  * expects (see resources/js/pages/agents.tsx).
  *
- * CoreX exposes id, name, email, phone, cell and photo_url for agents — it
- * does not provide a job title or coverage area, so those are left empty and
- * the frontend hides them when absent.
+ * CoreX exposes id, name, designation, email, phone, cell and photo_url for
+ * agents. It does not provide a coverage area, and designation may be null for
+ * some agents, so the frontend hides it when absent.
  */
 class AgentMapper
 {
@@ -31,6 +31,7 @@ class AgentMapper
      * @return array{
      *     id: int|string,
      *     name: string,
+     *     designation: string|null,
      *     phone: string,
      *     email: string,
      *     photo: string,
@@ -41,10 +42,27 @@ class AgentMapper
         return [
             'id' => Arr::get($agent, 'id', ''),
             'name' => (string) (Arr::get($agent, 'name') ?: 'Agent'),
+            'designation' => self::designation($agent),
             'phone' => (string) (Arr::get($agent, 'cell') ?? Arr::get($agent, 'phone', '')),
             'email' => (string) Arr::get($agent, 'email', ''),
             'photo' => self::photo($agent),
         ];
+    }
+
+    /**
+     * The agent's role/title (e.g. "Principal Property Practitioner"). CoreX
+     * may return null or omit it, so collapse empty values to null and let the
+     * frontend hide the sub-line entirely.
+     *
+     * @param  array<string, mixed>  $agent
+     */
+    protected static function designation(array $agent): ?string
+    {
+        $designation = Arr::get($agent, 'designation');
+
+        return is_string($designation) && trim($designation) !== ''
+            ? trim($designation)
+            : null;
     }
 
     /**

@@ -6,6 +6,7 @@ import { Mail, Phone } from 'lucide-react';
 interface Agent {
     id: number | string;
     name: string;
+    designation: string | null;
     phone: string;
     email: string;
     photo: string;
@@ -39,6 +40,7 @@ export default function Agents({ agents = [] }: { agents?: Agent[] }) {
                                 </div>
                                 <div className="mt-5">
                                     <h3 className="text-lg font-light text-white">{agent.name}</h3>
+                                    {agent.designation && <p className="mt-1 text-sm text-neutral-400">{agent.designation}</p>}
                                     <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
                                         {agent.phone && (
                                             <a

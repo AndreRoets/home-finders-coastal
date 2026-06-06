@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 export interface Agent {
     id: number | string;
     name: string;
+    designation: string | null;
     phone: string;
     email: string;
     photo: string;
@@ -70,7 +71,7 @@ export default function HomeAgents({ agents }: { agents: Agent[] }) {
                     <div>
                         <div key={agent.id} className="animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
                             <h3 className="text-3xl font-light text-white sm:text-4xl">{agent.name}</h3>
-                            <p className="mt-2 text-neutral-400">Coastal property specialist</p>
+                            {agent.designation && <p className="mt-2 text-neutral-400">{agent.designation}</p>}
                             <div className="mt-5 space-y-2 text-sm">
                                 {agent.phone && (
                                     <a

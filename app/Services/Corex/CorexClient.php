@@ -271,6 +271,27 @@ class CorexClient
     }
 
     /**
+     * Respond to an article.* webhook: "this agent's articles changed — refresh
+     * them". Busts the caches the change touches (single article, agency-wide
+     * collection and the agent-scoped collection that backs the agent profile),
+     * then eagerly re-pulls GET /articles?agent_id={agentId} so the next profile
+     * view is already warm rather than paying a cold CoreX fetch.
+     *
+     * Idempotent: forget-then-re-pull is safe to run repeatedly, so a redelivered
+     * webhook simply re-warms the same cache with the same result. The re-pull
+     * fails soft (CorexClient::get), so a transient CoreX hiccup never errors the
+     * webhook — it just leaves the cache to fill lazily on the next view.
+     */
+    public function refreshAgentArticles(int|string|null $agentId, int|string|null $id = null): void
+    {
+        $this->forgetArticle($id, $agentId);
+
+        if ($agentId !== null && $agentId !== '') {
+            $this->articles(['agent_id' => $agentId]);
+        }
+    }
+
+    /**
      * Perform a cached GET request, returning the decoded JSON body. On
      * failure an empty array is returned and the error is logged.
      *

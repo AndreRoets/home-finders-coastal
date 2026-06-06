@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -106,12 +108,21 @@ class CorexWebhookTest extends TestCase
         $this->assertFalse(Cache::has('corex:agents:'.md5(serialize([])).':100'));
     }
 
-    public function test_an_article_event_busts_the_article_caches(): void
+    public function test_an_article_event_busts_and_repulls_the_agent_article_cache(): void
     {
+        // The re-pull hits CoreX — stub it so the test stays offline.
+        Http::fake([
+            '*/articles*' => Http::response([
+                'data' => [['id' => 12, 'agent_id' => 7, 'title' => 'Fresh']],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $agentKey = 'corex:articles:'.md5(serialize(['agent_id' => 7])).':50';
+
         Cache::put('corex:article:12', ['stale'], 600);
         Cache::put('corex:articles:'.md5(serialize([])).':50', ['stale'], 600);
-        // The agent-filtered collection is what the agent profile page reads.
-        Cache::put('corex:articles:'.md5(serialize(['agent_id' => 7])).':50', ['stale'], 600);
+        Cache::put($agentKey, ['stale'], 600);
 
         $payload = [
             'event' => 'article.published',
@@ -120,8 +131,58 @@ class CorexWebhookTest extends TestCase
 
         $this->deliver($payload, 'article.published')->assertOk();
 
+        // Single-article + agency-wide collection are dropped (lazy re-pull).
         $this->assertFalse(Cache::has('corex:article:12'));
         $this->assertFalse(Cache::has('corex:articles:'.md5(serialize([])).':50'));
-        $this->assertFalse(Cache::has('corex:articles:'.md5(serialize(['agent_id' => 7])).':50'));
+
+        // The agent-scoped list (which backs the profile) is busted AND eagerly
+        // re-pulled, so it now holds fresh CoreX data rather than the stale value.
+        $this->assertSame([['id' => 12, 'agent_id' => 7, 'title' => 'Fresh']], Cache::get($agentKey));
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/articles')
+            && str_contains($request->url(), 'agent_id=7'));
+    }
+
+    public function test_an_article_removed_event_refreshes_the_agent_articles(): void
+    {
+        // article.removed carries only { id, agent_id } — still a refresh signal.
+        Http::fake([
+            '*/articles*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $agentKey = 'corex:articles:'.md5(serialize(['agent_id' => 7])).':50';
+        Cache::put($agentKey, [['id' => 12, 'agent_id' => 7]], 600);
+
+        $payload = [
+            'event' => 'article.removed',
+            'data' => ['id' => 12, 'agent_id' => 7],
+        ];
+
+        $this->deliver($payload, 'article.removed')->assertOk();
+
+        // Re-pull reflects the removal: the agent now has an empty article list.
+        $this->assertSame([], Cache::get($agentKey));
+    }
+
+    public function test_article_webhooks_are_idempotent_on_redelivery(): void
+    {
+        Http::fake([
+            '*/articles*' => Http::response([
+                'data' => [['id' => 12, 'agent_id' => 7, 'title' => 'Fresh']],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $agentKey = 'corex:articles:'.md5(serialize(['agent_id' => 7])).':50';
+
+        $payload = [
+            'event' => 'article.updated',
+            'data' => ['id' => 12, 'agent_id' => 7, 'slug' => 'pre-approval'],
+        ];
+
+        // Redelivery: busting + re-pulling twice must be safe and converge.
+        $this->deliver($payload, 'article.updated')->assertOk();
+        $this->deliver($payload, 'article.updated')->assertOk();
+
+        $this->assertSame([['id' => 12, 'agent_id' => 7, 'title' => 'Fresh']], Cache::get($agentKey));
     }
 }

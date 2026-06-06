@@ -1,7 +1,7 @@
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowUpRight, Mail, Phone } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, Mail, Phone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface Agent {
@@ -21,7 +21,8 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
     const [active, setActive] = useState(0);
     const holdUntil = useRef(0);
     const stripRef = useRef<HTMLDivElement>(null);
-    const activeRef = useRef<HTMLButtonElement>(null);
+    const secondCopyRef = useRef<HTMLButtonElement>(null);
+    const paused = useRef(false);
     const light = tone === 'light';
 
     useEffect(() => {
@@ -37,15 +38,43 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
         return () => clearInterval(id);
     }, [agents.length]);
 
+    // Continuously drift the thumbnail strip sideways, looping seamlessly. The
+    // list is rendered twice; once scrolled past the first copy we subtract its
+    // width so the motion never visibly resets.
     useEffect(() => {
-        const button = activeRef.current;
         const strip = stripRef.current;
-        if (!button || !strip) {
+        if (!strip || agents.length === 0) {
             return;
         }
-        const offset = button.offsetLeft - (strip.clientWidth - button.clientWidth) / 2;
-        strip.scrollTo({ left: offset, behavior: 'smooth' });
-    }, [active]);
+        let raf = 0;
+        const step = () => {
+            if (!paused.current) {
+                const half = secondCopyRef.current?.offsetLeft ?? strip.scrollWidth / 2;
+                strip.scrollLeft += 0.4;
+                if (half > 0 && strip.scrollLeft >= half) {
+                    strip.scrollLeft -= half;
+                }
+            }
+            raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+        return () => cancelAnimationFrame(raf);
+    }, [agents.length]);
+
+    const nudge = (direction: 1 | -1) => {
+        const strip = stripRef.current;
+        if (!strip) {
+            return;
+        }
+        const half = secondCopyRef.current?.offsetLeft ?? strip.scrollWidth / 2;
+        let next = strip.scrollLeft + direction * 180;
+        if (next < 0) {
+            next += half;
+        } else if (half > 0 && next >= half) {
+            next -= half;
+        }
+        strip.scrollLeft = next;
+    };
 
     if (agents.length === 0) {
         return null;
@@ -130,26 +159,55 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                             </Link>
                         </div>
-                        <div
-                            ref={stripRef}
-                            className="mt-7 flex gap-3 overflow-x-auto pb-2 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                        >
-                            {agents.map((option, index) => (
-                                <button
-                                    key={option.id}
-                                    ref={index === active ? activeRef : undefined}
-                                    type="button"
-                                    onClick={() => select(index)}
-                                    aria-label={option.name}
-                                    aria-pressed={index === active}
-                                    className={cn(
-                                        'h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 transition',
-                                        index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
-                                    )}
-                                >
-                                    <img src={option.photo} alt="" className="h-full w-full object-cover" />
-                                </button>
-                            ))}
+                        <div className="mt-7 flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => nudge(-1)}
+                                aria-label="Previous agents"
+                                className={cn(
+                                    'shrink-0 rounded-full border p-1.5 transition hover:text-marine',
+                                    light ? 'border-slate-300 text-neutral-600' : 'border-white/20 text-neutral-300',
+                                )}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <div
+                                ref={stripRef}
+                                onMouseEnter={() => (paused.current = true)}
+                                onMouseLeave={() => (paused.current = false)}
+                                className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-2 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                            >
+                                {[...agents, ...agents].map((option, i) => {
+                                    const index = i % agents.length;
+                                    return (
+                                        <button
+                                            key={i}
+                                            ref={i === agents.length ? secondCopyRef : undefined}
+                                            type="button"
+                                            onClick={() => select(index)}
+                                            aria-label={option.name}
+                                            aria-pressed={index === active}
+                                            className={cn(
+                                                'h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 transition',
+                                                index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
+                                            )}
+                                        >
+                                            <img src={option.photo} alt="" className="h-full w-full object-cover" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => nudge(1)}
+                                aria-label="Next agents"
+                                className={cn(
+                                    'shrink-0 rounded-full border p-1.5 transition hover:text-marine',
+                                    light ? 'border-slate-300 text-neutral-600' : 'border-white/20 text-neutral-300',
+                                )}
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
                 </div>

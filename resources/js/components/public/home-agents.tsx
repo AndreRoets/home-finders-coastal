@@ -20,6 +20,8 @@ export interface Agent {
 export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[]; tone?: 'dark' | 'light' }) {
     const [active, setActive] = useState(0);
     const holdUntil = useRef(0);
+    const stripRef = useRef<HTMLDivElement>(null);
+    const activeRef = useRef<HTMLButtonElement>(null);
     const light = tone === 'light';
 
     useEffect(() => {
@@ -34,6 +36,16 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
         }, 5000);
         return () => clearInterval(id);
     }, [agents.length]);
+
+    useEffect(() => {
+        const button = activeRef.current;
+        const strip = stripRef.current;
+        if (!button || !strip) {
+            return;
+        }
+        const offset = button.offsetLeft - (strip.clientWidth - button.clientWidth) / 2;
+        strip.scrollTo({ left: offset, behavior: 'smooth' });
+    }, [active]);
 
     if (agents.length === 0) {
         return null;
@@ -76,7 +88,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                             className="h-full w-full animate-in object-cover fade-in zoom-in-105 duration-700 ease-out group-hover:scale-105"
                         />
                     </Link>
-                    <div>
+                    <div className="min-w-0">
                         <div key={agent.id} className="animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
                             <Link href={agentUrl(agent.id)}>
                                 <h3 className={cn('text-3xl font-light transition-colors hover:text-marine sm:text-4xl', light ? 'text-navy' : 'text-white')}>
@@ -118,16 +130,20 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                             </Link>
                         </div>
-                        <div className="mt-7 flex flex-wrap gap-3">
+                        <div
+                            ref={stripRef}
+                            className="mt-7 flex gap-3 overflow-x-auto pb-2 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                        >
                             {agents.map((option, index) => (
                                 <button
                                     key={option.id}
+                                    ref={index === active ? activeRef : undefined}
                                     type="button"
                                     onClick={() => select(index)}
                                     aria-label={option.name}
                                     aria-pressed={index === active}
                                     className={cn(
-                                        'h-12 w-12 overflow-hidden rounded-full ring-2 transition',
+                                        'h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 transition',
                                         index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
                                     )}
                                 >

@@ -61,21 +61,6 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
         return () => cancelAnimationFrame(raf);
     }, [agents.length]);
 
-    const nudge = (direction: 1 | -1) => {
-        const strip = stripRef.current;
-        if (!strip) {
-            return;
-        }
-        const half = secondCopyRef.current?.offsetLeft ?? strip.scrollWidth / 2;
-        let next = strip.scrollLeft + direction * 180;
-        if (next < 0) {
-            next += half;
-        } else if (half > 0 && next >= half) {
-            next -= half;
-        }
-        strip.scrollLeft = next;
-    };
-
     if (agents.length === 0) {
         return null;
     }
@@ -85,6 +70,10 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
     const select = (index: number) => {
         setActive(index);
         holdUntil.current = Date.now() + 20000;
+    };
+
+    const go = (direction: 1 | -1) => {
+        select((active + direction + agents.length) % agents.length);
     };
 
     return (
@@ -162,8 +151,8 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                         <div className="mt-7 flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => nudge(-1)}
-                                aria-label="Previous agents"
+                                onClick={() => go(-1)}
+                                aria-label="Previous agent"
                                 className={cn(
                                     'shrink-0 rounded-full border p-1.5 transition hover:text-marine',
                                     light ? 'border-slate-300 text-neutral-600' : 'border-white/20 text-neutral-300',
@@ -199,8 +188,8 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                             </div>
                             <button
                                 type="button"
-                                onClick={() => nudge(1)}
-                                aria-label="Next agents"
+                                onClick={() => go(1)}
+                                aria-label="Next agent"
                                 className={cn(
                                     'shrink-0 rounded-full border p-1.5 transition hover:text-marine',
                                     light ? 'border-slate-300 text-neutral-600' : 'border-white/20 text-neutral-300',

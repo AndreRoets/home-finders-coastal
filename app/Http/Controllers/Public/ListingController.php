@@ -7,6 +7,7 @@ use App\Services\Corex\AgentMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
+use App\Services\Corex\TestimonialMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -43,15 +44,7 @@ class ListingController extends Controller
     }
 
     /**
-     * White-background variant of the home page, for A/B comparison.
-     */
-    public function homeWhite(): Response
-    {
-        return Inertia::render('home-white', $this->homeData());
-    }
-
-    /**
-     * Shared props for the home page and its white variant.
+     * Shared props for the home page.
      *
      * @return array<string, mixed>
      */
@@ -61,6 +54,9 @@ class ListingController extends Controller
             'recent' => $this->recent(),
             'filters' => ListingSearch::facets($this->filter(fn (array $l): bool => $this->isAvailable($l))),
             'agents' => AgentMapper::collection($this->agents()),
+            'testimonials' => TestimonialMapper::collection(
+                array_slice($this->corex->testimonials(), 0, 12),
+            ),
         ];
     }
 

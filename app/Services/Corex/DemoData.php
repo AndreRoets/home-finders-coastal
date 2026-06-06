@@ -17,6 +17,8 @@ class DemoData
 
     private const AGENT_COUNT = 10;
 
+    private const TESTIMONIAL_COUNT = 12;
+
     /** @var list<string> Coastal suburbs paired with their city below. */
     private const SUBURBS = [
         ['Camps Bay', 'Cape Town', 'Western Cape'],
@@ -161,6 +163,93 @@ class DemoData
         }
 
         return [];
+    }
+
+    /**
+     * All demo testimonials in raw CoreX shape.
+     *
+     * @param  array<string, mixed>  $query  Supports an `agent_id` filter.
+     * @return array<int, array<string, mixed>>
+     */
+    public static function testimonials(array $query = []): array
+    {
+        $testimonials = [];
+
+        for ($i = 1; $i <= self::TESTIMONIAL_COUNT; $i++) {
+            $testimonials[] = self::makeTestimonial($i);
+        }
+
+        if (isset($query['agent_id'])) {
+            $agentId = (string) $query['agent_id'];
+
+            $testimonials = array_values(array_filter(
+                $testimonials,
+                static fn (array $t): bool => (string) ($t['agent_id'] ?? '') === $agentId,
+            ));
+        }
+
+        return $testimonials;
+    }
+
+    /**
+     * Find a single testimonial by id.
+     *
+     * @return array<string, mixed>
+     */
+    public static function findTestimonial(int|string $id): array
+    {
+        foreach (self::testimonials() as $testimonial) {
+            if ((string) $testimonial['id'] === (string) $id) {
+                return $testimonial;
+            }
+        }
+
+        return [];
+    }
+
+    /** @var list<string> */
+    private const TESTIMONIAL_AUTHORS = [
+        'Helena & Marcus Bauer', 'Pieter van Niekerk', 'Aisha Daniels', 'The Ndlovu Family',
+        'Sarah Whitfield', 'James & Rebecca Cole', 'Nomsa Khanyile', 'David Abrahams',
+        'Carla Esterhuizen', 'Mohammed & Fatima Patel', 'Grace Oosthuizen', 'The Reddy Family',
+    ];
+
+    /** @var list<string> */
+    private const TESTIMONIAL_BODIES = [
+        'They understood exactly the kind of home we were after and found it before it ever hit the market. The whole sale was handled with real discretion.',
+        'Our clifftop home sold within three weeks at a price we did not think possible. Two decades on this coastline clearly counts for something.',
+        'Calm, considered and always a step ahead. From the first viewing to the keys, it felt like we had the whole coast working for us.',
+        'Professional from start to finish. Every question was answered honestly and we never felt pressured into a decision.',
+        'We were nervous first-time buyers and they walked us through every step with patience. Could not have asked for better guidance.',
+        'The marketing of our property was exceptional — the photography alone brought buyers through the door within days.',
+        'Honest, hard-working and genuinely invested in getting us the right outcome. We have already recommended them to friends.',
+        'Sold our home and helped us find the next one in the same month. Seamless, stress-free and handled with real care.',
+        'Their local knowledge is unmatched. They knew the street, the neighbours and exactly what our home was worth.',
+        'A truly personal service. We always felt like their only client, even when we knew how busy they were.',
+        'They negotiated firmly on our behalf and secured a price well above what we expected. Worth every cent.',
+        'From the first call to the final signature, everything was handled with warmth and absolute professionalism.',
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function makeTestimonial(int $i): array
+    {
+        // Most testimonials are tied to an agent; a couple are left unattributed
+        // (agent_id null) to exercise the "no agent" rendering path. One rating
+        // is left null to exercise the "hide stars" path.
+        $hasAgent = $i % 6 !== 0;
+        $agent = $hasAgent ? self::makeAgent((($i - 1) % self::AGENT_COUNT) + 1) : null;
+
+        return [
+            'id' => 500 + $i,
+            'author' => self::TESTIMONIAL_AUTHORS[($i - 1) % count(self::TESTIMONIAL_AUTHORS)],
+            'rating' => $i % 7 === 0 ? null : 5 - ($i % 2),
+            'body' => self::TESTIMONIAL_BODIES[($i - 1) % count(self::TESTIMONIAL_BODIES)],
+            'date' => date('Y-m-d', strtotime('-'.($i * 9).' days')),
+            'agent_id' => $agent['id'] ?? null,
+            'agent' => $agent !== null ? ['id' => $agent['id'], 'name' => $agent['name']] : null,
+        ];
     }
 
     /**

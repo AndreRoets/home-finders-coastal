@@ -41,6 +41,8 @@ class CorexWebhookController extends Controller
             );
         } elseif (str_starts_with($event, 'agent.')) {
             $this->corex->forgetAgent($data['id'] ?? null);
+        } elseif (str_starts_with($event, 'testimonial.')) {
+            $this->corex->forgetTestimonial($data['id'] ?? null);
         }
 
         return response()->json(['ok' => true]);

@@ -1,3 +1,4 @@
+import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, Mail, Phone } from 'lucide-react';
@@ -64,17 +65,24 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                 </div>
 
                 <div className="mt-10 grid gap-8 md:grid-cols-[1fr_1.1fr] md:items-center">
-                    <div className={cn('aspect-square overflow-hidden rounded-sm', light ? 'bg-slate-200' : 'bg-ink-soft')}>
+                    <Link
+                        href={agentUrl(agent.id)}
+                        className={cn('group aspect-square overflow-hidden rounded-sm', light ? 'bg-slate-200' : 'bg-ink-soft')}
+                    >
                         <img
                             key={agent.id}
                             src={agent.photo}
                             alt={agent.name}
-                            className="h-full w-full animate-in object-cover fade-in zoom-in-105 duration-700 ease-out"
+                            className="h-full w-full animate-in object-cover fade-in zoom-in-105 duration-700 ease-out group-hover:scale-105"
                         />
-                    </div>
+                    </Link>
                     <div>
                         <div key={agent.id} className="animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
-                            <h3 className={cn('text-3xl font-light sm:text-4xl', light ? 'text-navy' : 'text-white')}>{agent.name}</h3>
+                            <Link href={agentUrl(agent.id)}>
+                                <h3 className={cn('text-3xl font-light transition-colors hover:text-marine sm:text-4xl', light ? 'text-navy' : 'text-white')}>
+                                    {agent.name}
+                                </h3>
+                            </Link>
                             {agent.designation && <p className={cn('mt-2', light ? 'text-neutral-500' : 'text-neutral-400')}>{agent.designation}</p>}
                             <div className="mt-5 space-y-2 text-sm">
                                 {agent.phone && (
@@ -102,6 +110,13 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                     </a>
                                 )}
                             </div>
+                            <Link
+                                href={agentUrl(agent.id)}
+                                className="group mt-5 inline-flex items-center gap-2 text-sm tracking-wide text-marine transition-colors hover:text-marine/80"
+                            >
+                                View profile
+                                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                            </Link>
                         </div>
                         <div className="mt-7 flex flex-wrap gap-3">
                             {agents.map((option, index) => (

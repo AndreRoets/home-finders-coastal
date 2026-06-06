@@ -1,29 +1,13 @@
 import HomeAgents, { type Agent } from '@/components/public/home-agents';
 import { type Listing } from '@/components/public/listings';
 import PropertySearch, { type SearchFacets } from '@/components/public/property-search';
+import { type Testimonial } from '@/components/public/testimonials';
 import PublicLayout from '@/layouts/public-layout';
+import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, Bath, BedDouble, ChevronDown, ChevronLeft, ChevronRight, Maximize, Quote, Star } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-
-const testimonials = [
-    {
-        quote: 'They understood exactly the kind of home we were after and found it before it ever hit the market. The whole sale was handled with real discretion.',
-        name: 'Helena & Marcus Bauer',
-        location: 'Camps Bay',
-    },
-    {
-        quote: 'Our clifftop home sold within three weeks at a price we did not think possible. Two decades on this coastline clearly counts for something.',
-        name: 'Pieter van Niekerk',
-        location: 'Llandudno',
-    },
-    {
-        quote: 'Calm, considered and always a step ahead. From the first viewing to the keys, it felt like we had the whole coast working for us.',
-        name: 'Aisha Daniels',
-        location: 'Hermanus',
-    },
-];
 
 const categories = [
     { label: 'For Sale', routeName: 'for-sale', image: 'photo-1568605114967-8130f3a36994' },
@@ -57,9 +41,10 @@ function CategoryTile({ category }: { category: Category }) {
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/25 to-transparent transition-opacity group-hover:from-ink" />
             </div>
 
-            {/* Outline that traces around the square on hover */}
+            {/* Outline that traces around the square on hover — sits just outside the
+                tile so the navy stroke reads against the white page, not the dark image. */}
             <svg
-                className="pointer-events-none absolute inset-0 h-full w-full text-white"
+                className="pointer-events-none absolute -inset-1.5 h-[calc(100%+0.75rem)] w-[calc(100%+0.75rem)] text-navy"
                 viewBox="0 0 100 100"
                 preserveAspectRatio="none"
                 aria-hidden="true"
@@ -75,9 +60,12 @@ function CategoryTile({ category }: { category: Category }) {
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
                     pathLength={100}
-                    className="[stroke-dasharray:100] [stroke-dashoffset:100] transition-[stroke-dashoffset] duration-500 ease-out group-hover:[stroke-dashoffset:0]"
+                    className="opacity-0 [stroke-dasharray:100] [stroke-dashoffset:100] transition-[stroke-dashoffset,opacity] duration-500 ease-out group-hover:opacity-100 group-hover:[stroke-dashoffset:0]"
                 />
             </svg>
+
+            {/* Default navy accent on the bottom-right; fades out as the full frame traces in on hover. */}
+            <span className="pointer-events-none absolute -bottom-1.5 right-4 h-0.5 w-12 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-5">
                 <h3 className="text-xl font-light text-white sm:text-2xl">{label}</h3>
@@ -127,7 +115,7 @@ function Reveal({ children, className }: { children: ReactNode; className?: stri
  * carousel controls (dots + arrows) and auto-advance every 8s, holding 15s
  * after a manual interaction.
  */
-function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
+function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
     const [active, setActive] = useState(0);
     const holdUntil = useRef(0);
     const hasControls = items.length > 1;
@@ -157,23 +145,29 @@ function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
             <div className="mt-5 grid">
                 {items.map((item, index) => (
                     <div
-                        key={item.name}
+                        key={item.id}
                         aria-hidden={index !== active}
                         className={cn(
                             'col-start-1 row-start-1 transition-opacity duration-700 ease-out',
                             index === active ? 'opacity-100' : 'pointer-events-none opacity-0',
                         )}
                     >
-                        <div className="flex justify-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <Star key={i} className="h-4 w-4 fill-marine text-marine" />
-                            ))}
-                        </div>
+                        {item.rating !== null && (
+                            <div className="flex justify-center gap-0.5">
+                                {Array.from({ length: item.rating }).map((_, i) => (
+                                    <Star key={i} className="h-4 w-4 fill-marine text-marine" />
+                                ))}
+                            </div>
+                        )}
                         <blockquote className="mt-6 text-2xl leading-relaxed font-light text-neutral-200 sm:text-3xl">
-                            “{item.quote}”
+                            “{item.body}”
                         </blockquote>
-                        <p className="mt-7 text-white">{item.name}</p>
-                        <p className="mt-0.5 text-sm tracking-wide text-marine/80">{item.location}</p>
+                        <p className="mt-7 text-white">{item.author}</p>
+                        {item.agent && (
+                            <Link href={agentUrl(item.agent.id)} className="mt-0.5 inline-block text-sm tracking-wide text-marine/80 transition-colors hover:text-marine">
+                                — {item.agent.name}
+                            </Link>
+                        )}
                     </div>
                 ))}
             </div>
@@ -183,7 +177,7 @@ function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
                     <div className="mt-9 flex justify-center gap-2">
                         {items.map((item, index) => (
                             <button
-                                key={item.name}
+                                key={item.id}
                                 type="button"
                                 onClick={() => go(index)}
                                 aria-label={`Show testimonial ${index + 1}`}
@@ -215,7 +209,17 @@ function TestimonialsCarousel({ items }: { items: typeof testimonials }) {
     );
 }
 
-export default function Home({ recent = [], filters, agents = [] }: { recent?: Listing[]; filters?: SearchFacets; agents?: Agent[] }) {
+export default function Home({
+    recent = [],
+    filters,
+    agents = [],
+    testimonials = [],
+}: {
+    recent?: Listing[];
+    filters?: SearchFacets;
+    agents?: Agent[];
+    testimonials?: Testimonial[];
+}) {
     const listings = recent;
     const [scrollY, setScrollY] = useState(0);
 
@@ -233,8 +237,8 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
     }, []);
 
     return (
-        <PublicLayout title="Coastal Property Specialists">
-            {/* Hero */}
+        <PublicLayout title="Coastal Property Specialists" tone="light">
+            {/* Hero — keeps its photographic backdrop so the headline and search stay legible */}
             <section className="relative min-h-[92vh] overflow-hidden">
                 <img
                     src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=2400&q=80"
@@ -242,8 +246,8 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
                     className="absolute inset-0 h-full w-full object-cover will-change-transform"
                     style={{ transform: `translate3d(0, ${scrollY * 0.1}px, 0) scale(1.25)` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-ink/65 via-ink/40 to-ink" />
-                <div className="absolute inset-0 bg-gradient-to-r from-ink/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-ink/55 via-ink/30 to-white" />
+                <div className="absolute inset-0 bg-gradient-to-r from-ink/70 to-transparent" />
 
                 <div
                     className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-6 lg:px-8"
@@ -283,12 +287,12 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
                 <Reveal>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Just Listed</p>
-                        <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">Recent Listings</h2>
+                        <p className="text-xs tracking-[0.3em] text-marine uppercase">Just Listed</p>
+                        <h2 className="mt-4 text-4xl font-light text-navy sm:text-5xl">Recent Listings</h2>
                     </div>
                     <Link
                         href={route('for-sale')}
-                        className="group inline-flex items-center gap-2 text-sm tracking-wide text-neutral-300 transition-colors hover:text-marine"
+                        className="group inline-flex items-center gap-2 text-sm tracking-wide text-neutral-600 transition-colors hover:text-marine"
                     >
                         Browse all properties
                         <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -296,72 +300,95 @@ export default function Home({ recent = [], filters, agents = [] }: { recent?: L
                 </div>
 
                 {listings.length === 0 ? (
-                    <div className="mt-14 rounded-sm border border-dashed border-white/15 bg-ink-soft/40 p-12 text-center text-neutral-400">
+                    <div className="mt-14 rounded-sm border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-neutral-500">
                         New listings are on their way — please check back soon.
                     </div>
                 ) : (
                 <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
-                    {listings.slice(0, 6).map((listing) => (
-                        <Link key={listing.id} href={route('property.show', listing.ref ?? listing.id)} className="group block">
-                            <div className="relative aspect-[8/5] overflow-hidden bg-ink-soft">
-                                <img
-                                    src={listing.image}
-                                    alt={listing.title}
-                                    loading="lazy"
-                                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                                <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                                    {listing.location}
-                                </span>
-                            </div>
-                            <div className="mt-5 flex items-start justify-between gap-4">
-                                <div>
-                                    <h3 className="text-xl font-light text-white transition-colors group-hover:text-marine">
-                                        {listing.title}
-                                    </h3>
-                                    <p className="mt-1 text-sm text-neutral-400">{listing.price}</p>
+                    {listings.slice(0, 6).map((listing) => {
+                        const href = route('property.show', listing.ref ?? listing.id);
+
+                        return (
+                            // Not an <a>: holds both a property link and an agent link.
+                            <div key={listing.id} className="group block">
+                                <Link href={href} className="block">
+                                    <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
+                                        <img
+                                            src={listing.image}
+                                            alt={listing.title}
+                                            loading="lazy"
+                                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+                                        <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                            {listing.location}
+                                        </span>
+                                    </div>
+                                </Link>
+                                <Link href={href} className="mt-5 flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-xl font-light text-navy transition-colors group-hover:text-marine">
+                                            {listing.title}
+                                        </h3>
+                                        <p className="mt-1 text-sm text-neutral-500">{listing.price}</p>
+                                    </div>
+                                    <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-neutral-400 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-marine" />
+                                </Link>
+                                <div className="mt-4 flex items-center gap-5 border-t border-slate-200 pt-4 text-xs tracking-wide text-neutral-500">
+                                    <span className="flex items-center gap-1.5">
+                                        <BedDouble className="h-4 w-4" /> {listing.beds}
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <Bath className="h-4 w-4" /> {listing.baths}
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <Maximize className="h-4 w-4" /> {listing.area}
+                                    </span>
                                 </div>
-                                <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-neutral-500 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-marine" />
+                                {listing.agent && (
+                                    <Link
+                                        href={agentUrl(listing.agent.id)}
+                                        className="mt-4 flex items-center gap-3 border-t border-slate-200 pt-4 text-sm text-neutral-600 transition-colors hover:text-marine"
+                                    >
+                                        <img src={listing.agent.photo} alt={listing.agent.name} className="h-8 w-8 rounded-full object-cover" />
+                                        <span>
+                                            <span className="block leading-tight">{listing.agent.name}</span>
+                                            {listing.agent.designation && (
+                                                <span className="block text-xs leading-tight text-neutral-400">{listing.agent.designation}</span>
+                                            )}
+                                        </span>
+                                    </Link>
+                                )}
                             </div>
-                            <div className="mt-4 flex items-center gap-5 border-t border-white/10 pt-4 text-xs tracking-wide text-neutral-400">
-                                <span className="flex items-center gap-1.5">
-                                    <BedDouble className="h-4 w-4" /> {listing.beds}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <Bath className="h-4 w-4" /> {listing.baths}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <Maximize className="h-4 w-4" /> {listing.area}
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
+                        );
+                    })}
                 </div>
                 )}
                 </Reveal>
             </section>
 
             {/* Meet the team */}
-            <HomeAgents agents={agents} />
+            <HomeAgents agents={agents} tone="light" />
 
-            {/* Testimonials */}
-            <section className="relative overflow-hidden border-t border-white/10">
-                <img
-                    src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=70"
-                    alt="Coastline"
-                    className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-ink/80" />
-                <Reveal className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
-                    <div className="text-center">
-                        <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Testimonials</p>
-                        <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">What our clients say</h2>
-                    </div>
+            {/* Testimonials — hidden entirely when CoreX returns none */}
+            {testimonials.length > 0 && (
+                <section className="relative overflow-hidden border-t border-white/10">
+                    <img
+                        src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=70"
+                        alt="Coastline"
+                        className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-ink/80" />
+                    <Reveal className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
+                        <div className="text-center">
+                            <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Testimonials</p>
+                            <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">What our clients say</h2>
+                        </div>
 
-                    <TestimonialsCarousel items={testimonials} />
-                </Reveal>
-            </section>
+                        <TestimonialsCarousel items={testimonials} />
+                    </Reveal>
+                </section>
+            )}
         </PublicLayout>
     );
 }

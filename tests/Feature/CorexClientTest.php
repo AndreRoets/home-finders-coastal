@@ -78,4 +78,33 @@ class CorexClientTest extends TestCase
 
         Http::assertSentCount(1);
     }
+
+    public function test_it_fetches_testimonials_with_the_bearer_token(): void
+    {
+        Http::fake([
+            'corex.test/*' => Http::response([
+                'data' => [['id' => 1, 'author' => 'A'], ['id' => 2, 'author' => 'B']],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $testimonials = $this->makeClient()->testimonials();
+
+        $this->assertCount(2, $testimonials);
+        Http::assertSent(function (Request $request): bool {
+            return str_contains($request->url(), '/testimonials')
+                && $request->hasHeader('Authorization', 'Bearer test-key');
+        });
+    }
+
+    public function test_it_passes_the_agent_id_filter_to_testimonials(): void
+    {
+        Http::fake([
+            'corex.test/*' => Http::response(['data' => [['id' => 1]], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->makeClient()->testimonials(['agent_id' => 7]);
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'agent_id=7'));
+    }
 }

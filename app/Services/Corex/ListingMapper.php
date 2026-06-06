@@ -43,6 +43,7 @@ class ListingMapper
      *     status: string,
      *     image: string,
      *     url: string|null,
+     *     agent: array{id: int|string, name: string, designation: string|null, photo: string}|null,
      * }
      */
     public static function map(array $listing, ?string $forceStatus = null): array
@@ -60,6 +61,32 @@ class ListingMapper
             'status' => $forceStatus ?? self::status($listing),
             'image' => self::image($listing),
             'url' => Arr::get($listing, 'url') ?? Arr::get($listing, 'permalink'),
+            'agent' => self::cardAgent($listing),
+        ];
+    }
+
+    /**
+     * The compact agent shown on a listing card (name + photo, linked to the
+     * agent detail page). Null when the listing has no attributed agent.
+     *
+     * @param  array<string, mixed>  $listing
+     * @return array{id: int|string, name: string, designation: string|null, photo: string}|null
+     */
+    protected static function cardAgent(array $listing): ?array
+    {
+        $agent = Arr::get($listing, 'agent');
+
+        if (! is_array($agent) || ! Arr::has($agent, 'id')) {
+            return null;
+        }
+
+        $mapped = AgentMapper::map($agent);
+
+        return [
+            'id' => $mapped['id'],
+            'name' => $mapped['name'],
+            'designation' => $mapped['designation'],
+            'photo' => $mapped['photo'],
         ];
     }
 

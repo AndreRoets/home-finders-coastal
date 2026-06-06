@@ -6,11 +6,11 @@ import { type PropsWithChildren } from 'react';
 
 interface PublicLayoutProps {
     title: string;
-    /** Page background tone. `dark` (default) is the navy theme; `light` is white. */
+    /** Page background tone. `light` (default) is the white theme; `dark` is reserved for inset sections. */
     tone?: 'dark' | 'light';
 }
 
-export default function PublicLayout({ title, tone = 'dark', children }: PropsWithChildren<PublicLayoutProps>) {
+export default function PublicLayout({ title, tone = 'light', children }: PropsWithChildren<PublicLayoutProps>) {
     return (
         <div className={cn('flex min-h-screen flex-col', tone === 'light' ? 'bg-white text-neutral-800' : 'bg-ink text-neutral-100')}>
             <Head title={title} />

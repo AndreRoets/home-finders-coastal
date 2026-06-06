@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Public\AgentController;
 use App\Http\Controllers\Public\ListingController;
 use App\Http\Controllers\SitemapController;
 use App\Models\Page;
@@ -40,9 +41,6 @@ Route::middleware(['auth'])->get('dashboard', fn () => redirect()->route('admin.
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
-// White-background home page variant (A/B test). Kept off the CMS page system.
-Route::get('white', [ListingController::class, 'homeWhite'])->name('white');
-
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 
@@ -77,3 +75,7 @@ foreach (PageRoutes::actions() as $key => $action) {
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');
+
+// Agent detail pages are dynamic (CoreX-backed), not CMS-managed. Registered as
+// a sub-path of the agents index so it never collides with a managed page slug.
+Route::get('agents/{id}', [AgentController::class, 'show'])->name('agents.show');

@@ -6,7 +6,7 @@ import PublicLayout from '@/layouts/public-layout';
 
 export default function ToRent({ listings = [], filters, search }: { listings?: Listing[]; filters?: SearchFacets; search?: SearchValues }) {
     return (
-        <PublicLayout title="To Rent">
+        <PublicLayout title="To Rent" tone="light">
             <PageHero
                 eyebrow="Rent"
                 title="Properties To Rent"

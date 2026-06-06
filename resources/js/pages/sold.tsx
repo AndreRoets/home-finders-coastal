@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/public-layout';
 
 export default function Sold({ listings = [] }: { listings?: Listing[] }) {
     return (
-        <PublicLayout title="Sold">
+        <PublicLayout title="Sold" tone="light">
             <PageHero
                 eyebrow="Track Record"
                 title="Recently Sold"

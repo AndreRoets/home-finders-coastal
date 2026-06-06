@@ -88,15 +88,16 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
 
     const pct = (value: number) => (hasPrice ? ((value - range.min) / (range.max - range.min)) * 100 : 0);
 
-    const container =
-        variant === 'hero'
-            ? 'border-white/15 bg-white/10 backdrop-blur'
-            : 'border-white/10 bg-ink-soft/60';
+    // The hero variant floats over the dark photographic hero (white text); the
+    // page variant sits on the white page background (dark text).
+    const light = variant === 'page';
+
+    const container = light ? 'border-slate-200 bg-white shadow-sm' : 'border-white/15 bg-white/10 backdrop-blur';
 
     return (
         <form onSubmit={handleSubmit} className={cn('w-full rounded-2xl border p-4 text-left sm:p-6', container)}>
             {/* Buy / Rent */}
-            <div className="inline-flex rounded-full border border-white/20 bg-white/15 p-1">
+            <div className={cn('inline-flex rounded-full border p-1', light ? 'border-slate-200 bg-slate-100' : 'border-white/20 bg-white/15')}>
                 {(['sale', 'rent'] as const).map((m) => (
                     <button
                         key={m}
@@ -104,7 +105,7 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                         onClick={() => switchMode(m)}
                         className={cn(
                             'rounded-full px-5 py-1.5 text-sm font-medium tracking-wide transition-colors',
-                            mode === m ? 'bg-navy text-white' : 'text-neutral-200 hover:text-white',
+                            mode === m ? 'bg-navy text-white' : light ? 'text-neutral-600 hover:text-navy' : 'text-neutral-200 hover:text-white',
                         )}
                     >
                         {m === 'sale' ? 'Buy' : 'Rent'}
@@ -114,8 +115,8 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
 
             {/* Selects */}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Location">
-                    <SelectControl value={suburb} onChange={setSuburb}>
+                <Field label="Location" light={light}>
+                    <SelectControl value={suburb} onChange={setSuburb} light={light}>
                         <option value="">Any area</option>
                         {filters.suburbs.map((s) => (
                             <option key={s} value={s}>
@@ -125,8 +126,8 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                     </SelectControl>
                 </Field>
 
-                <Field label="Property type">
-                    <SelectControl value={type} onChange={setType}>
+                <Field label="Property type" light={light}>
+                    <SelectControl value={type} onChange={setType} light={light}>
                         <option value="">Any type</option>
                         {filters.propertyTypes.map((t) => (
                             <option key={t} value={t}>
@@ -136,8 +137,8 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                     </SelectControl>
                 </Field>
 
-                <Field label="Bedrooms">
-                    <SelectControl value={String(beds)} onChange={(v) => setBeds(Number(v))}>
+                <Field label="Bedrooms" light={light}>
+                    <SelectControl value={String(beds)} onChange={(v) => setBeds(Number(v))} light={light}>
                         <option value="0">Any</option>
                         {Array.from({ length: filters.maxBeds }, (_, i) => i + 1).map((n) => (
                             <option key={n} value={n}>
@@ -147,8 +148,8 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                     </SelectControl>
                 </Field>
 
-                <Field label="Bathrooms">
-                    <SelectControl value={String(baths)} onChange={(v) => setBaths(Number(v))}>
+                <Field label="Bathrooms" light={light}>
+                    <SelectControl value={String(baths)} onChange={(v) => setBaths(Number(v))} light={light}>
                         <option value="0">Any</option>
                         {Array.from({ length: filters.maxBaths }, (_, i) => i + 1).map((n) => (
                             <option key={n} value={n}>
@@ -162,14 +163,14 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
             {/* Price range */}
             {hasPrice && (
                 <div className="mt-6">
-                    <div className="flex items-center justify-between text-xs tracking-[0.15em] text-white uppercase">
+                    <div className={cn('flex items-center justify-between text-xs tracking-[0.15em] uppercase', light ? 'text-neutral-700' : 'text-white')}>
                         <span>Price range</span>
-                        <span className="text-neutral-200 normal-case tracking-normal">
+                        <span className={cn('normal-case tracking-normal', light ? 'text-neutral-500' : 'text-neutral-200')}>
                             {formatPrice(minPrice)} — {formatPrice(maxPrice)}
                         </span>
                     </div>
                     <div className="relative mt-3 h-5">
-                        <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-white/20" />
+                        <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
                         <div
                             className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-marine"
                             style={{ left: `${pct(minPrice)}%`, width: `${pct(maxPrice) - pct(minPrice)}%` }}
@@ -194,15 +195,18 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
 
             {/* Keyword + submit */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex flex-1 items-center gap-3 rounded-full border border-white/15 bg-ink/30 px-4">
-                    <Search className="h-5 w-5 shrink-0 text-white" />
+                <div className={cn('flex flex-1 items-center gap-3 rounded-full border px-4', light ? 'border-slate-300 bg-white' : 'border-white/15 bg-ink/30')}>
+                    <Search className={cn('h-5 w-5 shrink-0', light ? 'text-neutral-500' : 'text-white')} />
                     <input
                         type="text"
                         value={q}
                         onChange={(event) => setQ(event.target.value)}
                         placeholder="Keyword — suburb, area or feature…"
                         aria-label="Search keyword"
-                        className="w-full bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-neutral-400"
+                        className={cn(
+                            'w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-neutral-400',
+                            light ? 'text-neutral-800' : 'text-white',
+                        )}
                     />
                 </div>
                 <button
@@ -217,26 +221,41 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
     );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, light, children }: { label: string; light: boolean; children: React.ReactNode }) {
     return (
         <label className="block">
-            <span className="mb-1.5 block text-xs tracking-[0.15em] text-white uppercase">{label}</span>
+            <span className={cn('mb-1.5 block text-xs tracking-[0.15em] uppercase', light ? 'text-neutral-700' : 'text-white')}>{label}</span>
             {children}
         </label>
     );
 }
 
-function SelectControl({ value, onChange, children }: { value: string; onChange: (value: string) => void; children: React.ReactNode }) {
+function SelectControl({
+    value,
+    onChange,
+    light,
+    children,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    light: boolean;
+    children: React.ReactNode;
+}) {
     return (
         <div className="relative">
             <select
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full appearance-none rounded-lg border border-white/15 bg-ink/40 px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-marine/60"
+                className={cn(
+                    'w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-marine',
+                    light ? 'border-slate-300 bg-white text-neutral-800' : 'border-white/15 bg-ink/40 text-white',
+                )}
             >
                 {children}
             </select>
-            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <ChevronDown
+                className={cn('pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2', light ? 'text-neutral-500' : 'text-neutral-400')}
+            />
         </div>
     );
 }

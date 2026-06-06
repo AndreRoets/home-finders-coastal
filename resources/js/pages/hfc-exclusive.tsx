@@ -13,14 +13,14 @@ const perks = [
 
 export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }) {
     return (
-        <PublicLayout title="HFC Exclusive">
+        <PublicLayout title="HFC Exclusive" tone="light">
             <PageHero
                 eyebrow="By Invitation"
                 title="HFC Exclusive"
                 description="A private collection of premium and off-market coastal properties, available only through Home Finders Coastal."
             />
 
-            <section className="border-b border-white/10 bg-ink-soft/40">
+            <section className="border-b border-slate-200 bg-slate-50">
                 <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-3 lg:px-8">
                     {perks.map((perk) => (
                         <div key={perk.title} className="flex gap-4">
@@ -28,8 +28,8 @@ export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }
                                 <perk.icon className="h-5 w-5" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-light text-white">{perk.title}</h3>
-                                <p className="mt-1.5 text-sm leading-relaxed text-neutral-400">{perk.description}</p>
+                                <h3 className="text-lg font-light text-navy">{perk.title}</h3>
+                                <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">{perk.description}</p>
                             </div>
                         </div>
                     ))}
@@ -37,14 +37,14 @@ export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }
             </section>
 
             <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-                <h2 className="text-3xl font-light text-white">Exclusive Listings</h2>
+                <h2 className="text-3xl font-light text-navy">Exclusive Listings</h2>
                 <div className="mt-10">
                     <PropertyGrid listings={listings} emptyMessage="No exclusive listings are available right now." />
                 </div>
 
-                <div className="mt-16 rounded-sm border border-marine/20 bg-ink-soft/60 px-8 py-12 text-center">
-                    <h3 className="text-2xl font-light text-white">Want early access to exclusive homes?</h3>
-                    <p className="mx-auto mt-3 max-w-xl text-neutral-400">
+                <div className="mt-16 rounded-sm border border-slate-200 bg-slate-50 px-8 py-12 text-center">
+                    <h3 className="text-2xl font-light text-navy">Want early access to exclusive homes?</h3>
+                    <p className="mx-auto mt-3 max-w-xl text-neutral-600">
                         Register your interest and our team will notify you when matching properties become available.
                     </p>
                     <Link

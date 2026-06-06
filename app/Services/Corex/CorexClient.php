@@ -30,6 +30,8 @@ class CorexClient
 
     protected const AGENTS_PER_PAGE = 100;
 
+    protected const TESTIMONIALS_PER_PAGE = 100;
+
     public function __construct(
         protected string $baseUrl,
         protected ?string $apiKey,
@@ -101,6 +103,30 @@ class CorexClient
     public function listing(int|string $idOrRef): array
     {
         $response = $this->cachedGet('listing:'.$idOrRef, '/listings/'.$idOrRef);
+
+        return $this->extractData($response);
+    }
+
+    /**
+     * Fetch published testimonials, transparently following pagination.
+     * Supports filtering by agent via the `agent_id` query parameter.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function testimonials(array $query = []): array
+    {
+        return $this->allPages('testimonials', '/testimonials', $query, self::TESTIMONIALS_PER_PAGE);
+    }
+
+    /**
+     * Fetch a single testimonial by id.
+     *
+     * @return array<string, mixed>
+     */
+    public function testimonial(int|string $id): array
+    {
+        $response = $this->cachedGet('testimonial:'.$id, '/testimonials/'.$id);
 
         return $this->extractData($response);
     }
@@ -184,6 +210,18 @@ class CorexClient
         }
 
         Cache::forget($this->collectionCacheKey('agents', [], self::AGENTS_PER_PAGE));
+    }
+
+    /**
+     * Bust the caches affected by a testimonial change.
+     */
+    public function forgetTestimonial(int|string|null $id = null): void
+    {
+        if ($id !== null && $id !== '') {
+            Cache::forget('corex:testimonial:'.$id);
+        }
+
+        Cache::forget($this->collectionCacheKey('testimonials', [], self::TESTIMONIALS_PER_PAGE));
     }
 
     /**

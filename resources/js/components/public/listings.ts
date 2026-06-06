@@ -1,5 +1,12 @@
 export type ListingStatus = 'for-sale' | 'to-rent' | 'exclusive' | 'sold';
 
+export interface ListingAgent {
+    id: number | string;
+    name: string;
+    designation: string | null;
+    photo: string;
+}
+
 export interface Listing {
     id: number | string;
     ref?: string | null;
@@ -12,4 +19,5 @@ export interface Listing {
     status: ListingStatus;
     image: string;
     url?: string | null;
+    agent?: ListingAgent | null;
 }

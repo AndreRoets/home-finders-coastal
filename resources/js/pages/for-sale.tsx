@@ -6,7 +6,7 @@ import PublicLayout from '@/layouts/public-layout';
 
 export default function ForSale({ listings = [], filters, search }: { listings?: Listing[]; filters?: SearchFacets; search?: SearchValues }) {
     return (
-        <PublicLayout title="For Sale">
+        <PublicLayout title="For Sale" tone="light">
             <PageHero
                 eyebrow="Buy"
                 title="Properties For Sale"

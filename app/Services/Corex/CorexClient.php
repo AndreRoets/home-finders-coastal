@@ -54,13 +54,14 @@ class CorexClient
     }
 
     /**
-     * Fetch the agency profile.
+     * Fetch the agency profile (public contact details, social links, opening
+     * hours and branding), unwrapping the JSON:API "data" envelope.
      *
      * @return array<string, mixed>
      */
     public function agency(): array
     {
-        return $this->cachedGet('agency', '/agency');
+        return $this->extractData($this->cachedGet('agency', '/agency'));
     }
 
     /**
@@ -224,6 +225,15 @@ class CorexClient
         }
 
         Cache::forget($this->collectionCacheKey('listings', [], self::LISTINGS_PER_PAGE));
+    }
+
+    /**
+     * Bust the cached agency profile so the next page view pulls fresh public
+     * contact details, social links and opening hours.
+     */
+    public function forgetAgency(): void
+    {
+        Cache::forget('corex:agency');
     }
 
     /**

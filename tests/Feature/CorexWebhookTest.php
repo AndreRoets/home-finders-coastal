@@ -108,6 +108,20 @@ class CorexWebhookTest extends TestCase
         $this->assertFalse(Cache::has('corex:agents:'.md5(serialize([])).':100'));
     }
 
+    public function test_an_agency_event_busts_the_agency_cache(): void
+    {
+        Cache::put('corex:agency', ['stale'], 600);
+
+        $payload = [
+            'event' => 'agency.updated',
+            'data' => ['id' => 1, 'name' => 'Home Finders Coastal'],
+        ];
+
+        $this->deliver($payload, 'agency.updated')->assertOk();
+
+        $this->assertFalse(Cache::has('corex:agency'));
+    }
+
     public function test_an_article_event_busts_and_repulls_the_agent_article_cache(): void
     {
         // The re-pull hits CoreX — stub it so the test stays offline.

@@ -26,9 +26,32 @@ class DemoCorexClient extends CorexClient
     {
         return [
             'name' => 'Home Finders Coastal',
-            'tagline' => 'The Mandate Company',
-            'email' => 'hello@homefinderscoastal.com',
-            'phone' => '+27 21 000 0000',
+            'trading_name' => 'Home Finders Coastal — The Mandate Company',
+            'logo_url' => '/images/hfc-logo.png',
+            'branding' => [
+                'sidebar_color' => '#0b1f33',
+                'icon_color' => '#1f7a8c',
+                'default_color' => '#0b1f33',
+                'button_color' => '#1f7a8c',
+            ],
+            'contact' => [
+                'email' => 'info@homefinderscoastal.com',
+                'phone' => '039 315 0140',
+                'address' => '12 Marina Drive, Uvongo, 4275',
+            ],
+            'social' => [
+                'facebook' => 'homefinderscoastal', // bare handle on purpose
+                'instagram' => 'https://instagram.com/homefinderscoastal',
+                'linkedin' => 'homefinderscoastal',
+                'youtube' => 'homefinderscoastal',
+            ],
+            'open_hours' => [
+                ['days' => 'Monday – Friday', 'hours' => '08:00 – 17:00'],
+                ['days' => 'Saturday', 'hours' => '09:00 – 13:00'],
+                ['days' => 'Sunday', 'hours' => 'Closed'],
+            ],
+            'show' => ['agents' => true, 'listings' => true],
+            'agent_order_mode' => 'alphabetical',
         ];
     }
 

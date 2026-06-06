@@ -2,12 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Corex\AgencyMapper;
+use App\Services\Corex\CorexClient;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(protected CorexClient $corex) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -42,6 +46,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
+            // Agency contact details, social links and opening hours for the
+            // shared footer/header. Cached server-side by CorexClient and fails
+            // soft to null, so the layout renders without it on a fetch error.
+            'agency' => fn (): ?array => AgencyMapper::map($this->corex->agency()),
             'auth' => [
                 'user' => $request->user(),
             ],

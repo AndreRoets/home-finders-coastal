@@ -21,11 +21,39 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+/** Public contact details pulled from CoreX. Keys are only present when set. */
+export interface AgencyContact {
+    email?: string;
+    phone?: string;
+    /** Whitespace-stripped phone for the tel: href; `phone` holds the display value. */
+    phoneHref?: string;
+    address?: string;
+}
+
+export interface AgencyOpenHours {
+    days: string;
+    hours: string;
+}
+
+/** Agency profile from CoreX, shared with the footer/header on every page. */
+export interface Agency {
+    name: string | null;
+    tradingName: string | null;
+    logo: string | null;
+    branding: Partial<Record<'sidebarColor' | 'iconColor' | 'defaultColor' | 'buttonColor', string>> | null;
+    contact: AgencyContact | null;
+    /** Absolute social profile URLs, keyed by platform; only present networks appear. */
+    socials: Partial<Record<'facebook' | 'instagram' | 'linkedin' | 'youtube', string>>;
+    openHours: AgencyOpenHours[];
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
     flash: { success?: string | null; error?: string | null };
+    /** Agency contact/social/hours from CoreX; null on a fetch error. */
+    agency: Agency | null;
     [key: string]: unknown;
 }
 

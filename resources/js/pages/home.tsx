@@ -239,7 +239,7 @@ export default function Home({
     }, []);
 
     return (
-        <PublicLayout title="Coastal Property Specialists" tone="light">
+        <PublicLayout title="Home Finders Coastal" tone="light">
             {/* Hero — keeps its photographic backdrop so the headline and search stay legible */}
             <section className="relative min-h-[92vh] overflow-hidden">
                 <img

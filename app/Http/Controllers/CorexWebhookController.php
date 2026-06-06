@@ -39,6 +39,8 @@ class CorexWebhookController extends Controller
                 id: $data['id'] ?? null,
                 reference: isset($data['reference']) ? (string) $data['reference'] : null,
             );
+        } elseif (str_starts_with($event, 'agency.')) {
+            $this->corex->forgetAgency();
         } elseif (str_starts_with($event, 'agent.')) {
             $this->corex->forgetAgent($data['id'] ?? null);
         } elseif (str_starts_with($event, 'testimonial.')) {

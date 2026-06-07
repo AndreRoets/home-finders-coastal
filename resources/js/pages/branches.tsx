@@ -25,9 +25,14 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
                             <article key={branch.id} className="group flex flex-col overflow-hidden rounded-sm border border-slate-200 bg-white transition-shadow hover:shadow-lg">
                                 <Link href={route('branches.show', branch.id)} className="relative block aspect-[8/5] overflow-hidden bg-slate-100">
                                     <img
-                                        src={branch.logo ?? DEFAULT_BRANCH_IMAGE}
+                                        src={branch.logo || DEFAULT_BRANCH_IMAGE}
                                         alt={branch.tradingName}
                                         loading="lazy"
+                                        onError={(event) => {
+                                            if (event.currentTarget.src !== DEFAULT_BRANCH_IMAGE) {
+                                                event.currentTarget.src = DEFAULT_BRANCH_IMAGE;
+                                            }
+                                        }}
                                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />

@@ -251,8 +251,34 @@ class ListingController extends Controller
      */
     protected function isExclusive(array $listing): bool
     {
-        return $this->isAvailable($listing)
-            && strtolower((string) ($listing['mandate_type'] ?? '')) === 'sole';
+        return $this->isAvailable($listing) && $this->isSole($listing);
+    }
+
+    /**
+     * A sole-mandate (HFC Exclusive) listing. CoreX expresses this on the
+     * `mandate_type` field (value "sole"). We match case-insensitively on a
+     * "sole" substring and also accept a `mandate` field or a boolean sole flag,
+     * so naming/casing variants in the live feed still resolve to Exclusives.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    protected function isSole(array $listing): bool
+    {
+        foreach (['mandate_type', 'mandate'] as $key) {
+            $value = $listing[$key] ?? null;
+
+            if (is_string($value) && str_contains(strtolower($value), 'sole')) {
+                return true;
+            }
+        }
+
+        foreach (['sole_mandate', 'is_sole', 'sole'] as $key) {
+            if (filter_var($listing[$key] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

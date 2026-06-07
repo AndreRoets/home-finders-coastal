@@ -28,7 +28,16 @@ export default function BranchPage({ branch, listings = [] }: { branch: Branch; 
             <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
                 <div className="flex flex-col gap-8 rounded-sm border border-slate-200 bg-slate-50 p-8 sm:flex-row sm:items-center">
                     <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                        <img src={branch.logo ?? DEFAULT_BRANCH_IMAGE} alt={branch.tradingName} className="h-full w-full object-cover" />
+                        <img
+                            src={branch.logo || DEFAULT_BRANCH_IMAGE}
+                            alt={branch.tradingName}
+                            onError={(event) => {
+                                if (event.currentTarget.src !== DEFAULT_BRANCH_IMAGE) {
+                                    event.currentTarget.src = DEFAULT_BRANCH_IMAGE;
+                                }
+                            }}
+                            className="h-full w-full object-cover"
+                        />
                     </div>
                     <dl className="grid flex-1 gap-x-10 gap-y-4 text-sm text-neutral-700 sm:grid-cols-2">
                         {branch.address && (

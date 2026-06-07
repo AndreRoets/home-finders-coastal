@@ -35,6 +35,13 @@ export interface AgencyOpenHours {
     hours: string;
 }
 
+/** Feature toggles from CoreX (`data.show`): whether each section is enabled. */
+export interface AgencyShow {
+    agents: boolean;
+    listings: boolean;
+    branches: boolean;
+}
+
 /** Agency profile from CoreX, shared with the footer/header on every page. */
 export interface Agency {
     name: string | null;
@@ -45,6 +52,8 @@ export interface Agency {
     /** Absolute social profile URLs, keyed by platform; only present networks appear. */
     socials: Partial<Record<'facebook' | 'instagram' | 'linkedin' | 'youtube', string>>;
     openHours: AgencyOpenHours[];
+    /** Section feature toggles; the Offices nav/page only render when `branches` is true. */
+    show: AgencyShow;
 }
 
 export interface SharedData {

@@ -21,6 +21,8 @@ class DemoData
 
     private const ARTICLE_COUNT = 9;
 
+    private const BRANCH_COUNT = 3;
+
     /** @var list<string> Coastal suburbs paired with their city below. */
     private const SUBURBS = [
         ['Camps Bay', 'Cape Town', 'Western Cape'],
@@ -161,6 +163,102 @@ class DemoData
         foreach (self::agents() as $agent) {
             if ((string) $agent['id'] === (string) $id) {
                 return $agent;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Static branch (office) definitions in raw CoreX shape, before the computed
+     * agent_count / listing_count / agents fields are attached. Optional fields
+     * are intentionally omitted on some branches (e.g. no logo_url on Garden
+     * Route, no ppra_number on Dolphin Coast) to exercise the agency-default
+     * fallback and hide-when-blank paths.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function branchDefs(): array
+    {
+        return [
+            [
+                'id' => 1,
+                'trading_name' => 'Home Finders Coastal — Atlantic Seaboard',
+                'tagline' => 'Cape Town’s coastline, from Bloubergstrand to Gordon’s Bay.',
+                'address' => '12 Victoria Road, Camps Bay, Cape Town, 8005',
+                'phone' => '021 555 0140',
+                'phone_label' => 'Office',
+                'phone_secondary' => '082 555 0140',
+                'phone_secondary_label' => 'After hours',
+                'email' => 'atlantic@homefinderscoastal.com',
+                'ppra_number' => 'PPRA-ATL-2025',
+                'logo_url' => 'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=400&q=70',
+            ],
+            [
+                'id' => 2,
+                'trading_name' => 'Home Finders Coastal — Garden Route',
+                'tagline' => 'Hermanus, Plettenberg Bay, Knysna & Mossel Bay.',
+                'address' => '8 Main Street, Plettenberg Bay, 6600',
+                'phone' => '044 555 0142',
+                'phone_label' => 'Office',
+                'email' => 'gardenroute@homefinderscoastal.com',
+                'ppra_number' => 'PPRA-GRT-2025',
+                // logo_url omitted on purpose → falls back to the agency logo.
+            ],
+            [
+                'id' => 3,
+                'trading_name' => 'Home Finders Coastal — Dolphin Coast',
+                'tagline' => 'Umhlanga, Ballito & Salt Rock on the KZN coast.',
+                'address' => '5 Compensation Road, Ballito, 4420',
+                'phone' => '032 555 0144',
+                'phone_label' => 'Office',
+                'email' => 'dolphincoast@homefinderscoastal.com',
+                // ppra_number omitted on purpose → hidden on the card.
+                'logo_url' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=70',
+            ],
+        ];
+    }
+
+    /**
+     * All demo branches in raw CoreX shape, each with its computed agent_count,
+     * listing_count and nested public agents.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function branches(): array
+    {
+        $allAgents = self::agents();
+        $allListings = self::listings();
+
+        return array_map(static function (array $def) use ($allAgents, $allListings): array {
+            $agents = array_values(array_filter(
+                $allAgents,
+                static fn (array $agent): bool => ($agent['branch_id'] ?? null) === $def['id'],
+            ));
+
+            $listingCount = count(array_filter(
+                $allListings,
+                static fn (array $listing): bool => ($listing['branch_id'] ?? null) === $def['id'],
+            ));
+
+            return array_merge($def, [
+                'agent_count' => count($agents),
+                'listing_count' => $listingCount,
+                'agents' => $agents,
+            ]);
+        }, self::branchDefs());
+    }
+
+    /**
+     * Find a single branch by id.
+     *
+     * @return array<string, mixed>
+     */
+    public static function findBranch(int|string $id): array
+    {
+        foreach (self::branches() as $branch) {
+            if ((string) $branch['id'] === (string) $id) {
+                return $branch;
             }
         }
 
@@ -387,6 +485,8 @@ class DemoData
         $listing = [
             'id' => 1000 + $i,
             'reference' => 'HFC'.str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+            // A listing belongs to the same branch as its attributed agent.
+            'branch_id' => ((($i - 1) % self::AGENT_COUNT) % self::BRANCH_COUNT) + 1,
             // Higher index = more recently listed (today back to ~7 weeks ago).
             'listed_at' => date('Y-m-d', strtotime('-'.(self::LISTING_COUNT - $i).' days')),
             'title' => "{$descriptor} {$type} in {$suburb}",
@@ -509,6 +609,7 @@ class DemoData
 
         return [
             'id' => 20 + $i,
+            'branch_id' => (($i - 1) % self::BRANCH_COUNT) + 1,
             'name' => "{$first} {$last}",
             'designation' => self::AGENT_DESIGNATIONS[($i - 1) % count(self::AGENT_DESIGNATIONS)],
             'email' => "{$slug}@homefinderscoastal.com",

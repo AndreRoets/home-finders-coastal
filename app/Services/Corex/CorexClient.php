@@ -34,6 +34,8 @@ class CorexClient
 
     protected const ARTICLES_PER_PAGE = 50;
 
+    protected const BRANCHES_PER_PAGE = 100;
+
     public function __construct(
         protected string $baseUrl,
         protected ?string $apiKey,
@@ -156,6 +158,41 @@ class CorexClient
         $response = $this->cachedGet('article:'.$id, '/articles/'.$id);
 
         return $this->extractData($response);
+    }
+
+    /**
+     * Fetch every branch (physical office), transparently following pagination.
+     * Requires the API key to carry the "branches:read" scope; a 403/401 fails
+     * soft to an empty list (the website then simply hides the branches section).
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function branches(array $query = []): array
+    {
+        return $this->allPages('branches', '/branches', $query, self::BRANCHES_PER_PAGE);
+    }
+
+    /**
+     * Fetch a single branch by id, including its nested public agents.
+     *
+     * @return array<string, mixed>
+     */
+    public function branch(int|string $id): array
+    {
+        return $this->extractData($this->cachedGet('branch:'.$id, '/branches/'.$id));
+    }
+
+    /**
+     * Bust the caches affected by a branch change.
+     */
+    public function forgetBranch(int|string|null $id = null): void
+    {
+        if ($id !== null && $id !== '') {
+            Cache::forget('corex:branch:'.$id);
+        }
+
+        Cache::forget($this->collectionCacheKey('branches', [], self::BRANCHES_PER_PAGE));
     }
 
     /**

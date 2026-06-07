@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\AgentController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\BranchController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\ListingController;
 use App\Http\Controllers\SitemapController;
@@ -82,6 +83,11 @@ foreach (PageRoutes::actions() as $key => $action) {
             ->name('contact.send');
     }
 }
+
+// Our Offices (branches). CoreX-backed and gated behind the agency's
+// show.branches feature toggle — the controller 404s when it is off.
+Route::get('offices', [BranchController::class, 'index'])->name('offices');
+Route::get('offices/{id}', [BranchController::class, 'show'])->name('offices.show');
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');

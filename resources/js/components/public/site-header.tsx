@@ -3,13 +3,14 @@ import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown, Menu, Phone, X } from 'lucide-react';
 import { useState } from 'react';
-import { siteNavItems } from './site-nav';
+import { visibleNavItems } from './site-nav';
 
 export default function SiteHeader() {
     const { url, props } = usePage<SharedData>();
     const { agency } = props;
     const phone = agency?.contact?.phone;
     const phoneHref = agency?.contact?.phoneHref;
+    const navItems = visibleNavItems(agency);
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const isActive = (routeName: string): boolean => {
@@ -27,7 +28,7 @@ export default function SiteHeader() {
                 </Link>
 
                 <nav className="hidden items-center gap-1 lg:flex">
-                    {siteNavItems.map((item) => {
+                    {navItems.map((item) => {
                         const link = (
                             <Link
                                 href={route(item.routeName)}
@@ -98,7 +99,7 @@ export default function SiteHeader() {
             {mobileOpen && (
                 <nav className="border-t border-slate-200 bg-white lg:hidden">
                     <div className="mx-auto flex max-w-7xl flex-col px-4 py-2 sm:px-6">
-                        {siteNavItems.map((item) => (
+                        {navItems.map((item) => (
                             <div key={item.routeName}>
                                 <Link
                                     href={route(item.routeName)}

@@ -30,6 +30,7 @@ class AgencyMapper
      *     contact: array{email?: string, phone?: string, phoneHref?: string, address?: string}|null,
      *     socials: array<string, string>,
      *     openHours: array<int, array{days: string, hours: string}>,
+     *     show: array{agents: bool, listings: bool, branches: bool},
      * }|null
      */
     public static function map(array $agency): ?array
@@ -52,6 +53,26 @@ class AgencyMapper
             'contact' => self::contact($agency),
             'socials' => self::socials($agency),
             'openHours' => self::openHours($agency),
+            'show' => self::show($agency),
+        ];
+    }
+
+    /**
+     * Section feature toggles (`data.show`). Each flag defaults to false when
+     * CoreX omits it, so a section is only ever rendered when explicitly enabled.
+     *
+     * @param  array<string, mixed>  $agency
+     * @return array{agents: bool, listings: bool, branches: bool}
+     */
+    protected static function show(array $agency): array
+    {
+        $show = Arr::get($agency, 'show');
+        $show = is_array($show) ? $show : [];
+
+        return [
+            'agents' => (bool) Arr::get($show, 'agents', false),
+            'listings' => (bool) Arr::get($show, 'listings', false),
+            'branches' => (bool) Arr::get($show, 'branches', false),
         ];
     }
 

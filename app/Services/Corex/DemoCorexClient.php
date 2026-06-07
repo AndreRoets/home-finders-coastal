@@ -50,7 +50,7 @@ class DemoCorexClient extends CorexClient
                 ['days' => 'Saturday', 'hours' => '09:00 – 13:00'],
                 ['days' => 'Sunday', 'hours' => 'Closed'],
             ],
-            'show' => ['agents' => true, 'listings' => true],
+            'show' => ['agents' => true, 'listings' => true, 'branches' => true],
             'agent_order_mode' => 'alphabetical',
         ];
     }
@@ -61,7 +61,18 @@ class DemoCorexClient extends CorexClient
      */
     public function agents(array $query = []): array
     {
-        return DemoData::agents();
+        $agents = DemoData::agents();
+
+        if (isset($query['branch_id'])) {
+            $branchId = (int) $query['branch_id'];
+
+            $agents = array_values(array_filter(
+                $agents,
+                static fn (array $agent): bool => ($agent['branch_id'] ?? null) === $branchId,
+            ));
+        }
+
+        return $agents;
     }
 
     /**
@@ -89,7 +100,33 @@ class DemoCorexClient extends CorexClient
             ));
         }
 
+        if (isset($query['branch_id'])) {
+            $branchId = (int) $query['branch_id'];
+
+            $listings = array_values(array_filter(
+                $listings,
+                static fn (array $listing): bool => ($listing['branch_id'] ?? null) === $branchId,
+            ));
+        }
+
         return $listings;
+    }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function branches(array $query = []): array
+    {
+        return DemoData::branches();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function branch(int|string $id): array
+    {
+        return DemoData::findBranch($id);
     }
 
     /**

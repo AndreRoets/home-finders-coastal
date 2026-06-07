@@ -1,7 +1,7 @@
 import { type Agency, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Facebook, Instagram, Linkedin, type LucideIcon, Mail, MapPin, Phone, Youtube } from 'lucide-react';
-import { siteNavItems } from './site-nav';
+import { visibleNavItems } from './site-nav';
 
 /** Social networks we render, in display order, paired with their icon. */
 const socialIcons: { key: keyof NonNullable<Agency['socials']>; label: string; Icon: LucideIcon }[] = [
@@ -44,7 +44,7 @@ export default function SiteFooter() {
                 <div>
                     <h3 className="text-marine/80 text-xs font-medium tracking-[0.25em] uppercase">Explore</h3>
                     <ul className="mt-5 space-y-2.5 text-sm">
-                        {siteNavItems.map((item) => (
+                        {visibleNavItems(agency).map((item) => (
                             <li key={item.routeName}>
                                 <Link href={route(item.routeName)} className="hover:text-marine text-neutral-400 transition-colors">
                                     {item.title}

@@ -16,7 +16,7 @@ class BranchController extends Controller
     public function __construct(protected CorexClient $corex) {}
 
     /**
-     * "Our Offices" overview — one card per branch. 404s when the agency has the
+     * "Our Branches" overview — one card per branch. 404s when the agency has the
      * branches feature switched off (data.show.branches), so the page never
      * exists for agencies that haven't enabled it.
      */
@@ -26,7 +26,7 @@ class BranchController extends Controller
 
         $this->abortUnlessEnabled($agency);
 
-        return Inertia::render('offices', [
+        return Inertia::render('branches', [
             'branches' => BranchMapper::collection($this->corex->branches(), $agency ?? []),
         ]);
     }
@@ -48,7 +48,7 @@ class BranchController extends Controller
             throw new NotFoundHttpException('Branch not found.');
         }
 
-        return Inertia::render('office', [
+        return Inertia::render('branch', [
             'branch' => BranchMapper::map($branch, $agency ?? []),
             'listings' => ListingMapper::collection($this->corex->listings(['branch_id' => $id])),
         ]);

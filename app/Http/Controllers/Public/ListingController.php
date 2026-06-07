@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Services\Branches\BranchContext;
 use App\Services\Corex\AgentMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
@@ -17,7 +18,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ListingController extends Controller
 {
-    public function __construct(protected CorexClient $corex) {}
+    public function __construct(
+        protected CorexClient $corex,
+        protected BranchContext $branches,
+    ) {}
 
     /**
      * Single property detail page.
@@ -130,6 +134,7 @@ class ListingController extends Controller
             'listings' => ListingMapper::collection(ListingSearch::apply($sales, $request->all())),
             'filters' => ListingSearch::facets($sales),
             'search' => $this->searchValues($request),
+            ...$this->branchProps(),
         ]);
     }
 
@@ -144,7 +149,23 @@ class ListingController extends Controller
             'listings' => ListingMapper::collection(ListingSearch::apply($rentals, $request->all())),
             'filters' => ListingSearch::facets($rentals),
             'search' => $this->searchValues($request),
+            ...$this->branchProps(),
         ]);
+    }
+
+    /**
+     * The Agency/branch filter props shared by the listing index pages: the
+     * branch options ("All" is added on the frontend) and the active branch id.
+     * Both empty/null when the branches feature is off.
+     *
+     * @return array{branches: array<int, array{id: int|string, name: string}>, activeBranch: int|string|null}
+     */
+    protected function branchProps(): array
+    {
+        return [
+            'branches' => $this->branches->summaries(),
+            'activeBranch' => $this->branches->activeId(),
+        ];
     }
 
     /**
@@ -175,6 +196,7 @@ class ListingController extends Controller
                 $this->filter(fn (array $l): bool => $this->isExclusive($l)),
                 'exclusive',
             ),
+            ...$this->branchProps(),
         ]);
     }
 
@@ -187,6 +209,7 @@ class ListingController extends Controller
             'listings' => ListingMapper::collection(
                 $this->filter(fn (array $l): bool => str_contains($this->status($l), 'sold')),
             ),
+            ...$this->branchProps(),
         ]);
     }
 
@@ -195,12 +218,16 @@ class ListingController extends Controller
      * CoreX only paginates the listings endpoint, so the bucket filtering
      * happens here rather than via (unsupported) query parameters.
      *
+     * When a branch is selected (?branch_id={id}) and the branches feature is on,
+     * the request is scoped to that branch so every bucket — recent, for-sale,
+     * rentals, exclusives, sold and the search facets — reflects it.
+     *
      * @param  callable(array<string, mixed>): bool  $predicate
      * @return array<int, array<string, mixed>>
      */
     protected function filter(callable $predicate): array
     {
-        return array_values(array_filter($this->corex->listings(), $predicate));
+        return array_values(array_filter($this->corex->listings($this->branches->query()), $predicate));
     }
 
     /**

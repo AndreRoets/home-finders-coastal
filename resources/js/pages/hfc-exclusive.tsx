@@ -1,3 +1,5 @@
+import BranchFilter from '@/components/public/branch-filter';
+import { type BranchOption } from '@/components/public/branches';
 import { type Listing } from '@/components/public/listings';
 import PageHero from '@/components/public/page-hero';
 import PropertyGrid from '@/components/public/property-grid';
@@ -11,7 +13,15 @@ const perks = [
     { icon: KeyRound, title: 'Priority Viewings', description: 'Be first in line for private viewings before homes go public.' },
 ];
 
-export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }) {
+export default function HfcExclusive({
+    listings = [],
+    branches = [],
+    activeBranch = null,
+}: {
+    listings?: Listing[];
+    branches?: BranchOption[];
+    activeBranch?: number | string | null;
+}) {
     return (
         <PublicLayout title="HFC Exclusive" tone="light">
             <PageHero
@@ -37,6 +47,7 @@ export default function HfcExclusive({ listings = [] }: { listings?: Listing[] }
             </section>
 
             <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                <BranchFilter branches={branches} active={activeBranch} className="mb-8" />
                 <h2 className="text-3xl font-light text-navy">Exclusive Listings</h2>
                 <div className="mt-10">
                     <PropertyGrid listings={listings} emptyMessage="No exclusive listings are available right now." />

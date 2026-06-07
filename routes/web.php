@@ -84,10 +84,10 @@ foreach (PageRoutes::actions() as $key => $action) {
     }
 }
 
-// Our Offices (branches). CoreX-backed and gated behind the agency's
-// show.branches feature toggle — the controller 404s when it is off.
-Route::get('offices', [BranchController::class, 'index'])->name('offices');
-Route::get('offices/{id}', [BranchController::class, 'show'])->name('offices.show');
+// Our Branches. CoreX-backed and gated behind the agency's show.branches
+// feature toggle — the controller 404s when it is off.
+Route::get('branches', [BranchController::class, 'index'])->name('branches');
+Route::get('branches/{id}', [BranchController::class, 'show'])->name('branches.show');
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');

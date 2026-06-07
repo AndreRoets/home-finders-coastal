@@ -28,7 +28,7 @@ export const siteNavItems: SiteNavItem[] = [
     { title: 'HFC Exclusive', routeName: 'hfc-exclusive' },
     { title: 'Sold', routeName: 'sold' },
     { title: 'Agents', routeName: 'agents' },
-    { title: 'Offices', routeName: 'offices', gatedBy: 'branches' },
+    { title: 'Branches', routeName: 'branches', gatedBy: 'branches' },
     { title: 'Contact', routeName: 'contact' },
 ];
 

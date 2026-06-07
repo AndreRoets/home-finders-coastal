@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Services\Branches\BranchContext;
 use App\Services\Corex\AgentMapper;
 use App\Services\Corex\ArticleMapper;
 use App\Services\Corex\CorexClient;
@@ -17,7 +18,10 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AgentController extends Controller
 {
-    public function __construct(protected CorexClient $corex) {}
+    public function __construct(
+        protected CorexClient $corex,
+        protected BranchContext $branches,
+    ) {}
 
     /**
      * List the agency's agents.
@@ -28,14 +32,18 @@ class AgentController extends Controller
      */
     public function index(): Response
     {
-        $agents = $this->corex->agents();
+        $branchQuery = $this->branches->query();
+
+        $agents = $this->corex->agents($branchQuery);
 
         if ($agents === []) {
-            $agents = $this->agentsFromListings();
+            $agents = $this->agentsFromListings($branchQuery);
         }
 
         return Inertia::render('agents', [
             'agents' => AgentMapper::collection($agents),
+            'branches' => $this->branches->summaries(),
+            'activeBranch' => $this->branches->activeId(),
         ]);
     }
 
@@ -97,13 +105,15 @@ class AgentController extends Controller
     }
 
     /**
-     * Extract unique agents embedded on the syndicated listings.
+     * Extract unique agents embedded on the syndicated listings, optionally
+     * scoped to a branch via the query (e.g. ['branch_id' => 12]).
      *
+     * @param  array<string, mixed>  $query
      * @return array<int, array<string, mixed>>
      */
-    protected function agentsFromListings(): array
+    protected function agentsFromListings(array $query = []): array
     {
-        return Collection::make($this->corex->listings())
+        return Collection::make($this->corex->listings($query))
             ->map(fn (array $listing): mixed => Arr::get($listing, 'agent'))
             ->filter(fn (mixed $agent): bool => is_array($agent) && Arr::has($agent, 'id'))
             ->unique(fn (array $agent): mixed => $agent['id'])

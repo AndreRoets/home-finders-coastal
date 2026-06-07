@@ -31,6 +31,8 @@ interface PropertySearchProps {
     mode?: Mode;
     values?: SearchValues;
     variant?: 'hero' | 'page';
+    /** When set, the active branch is preserved in the search so results stay scoped to it. */
+    branchId?: number | string | null;
 }
 
 const EMPTY_FACETS: SearchFacets = {
@@ -41,7 +43,7 @@ const EMPTY_FACETS: SearchFacets = {
     price: { sale: { min: 0, max: 0 }, rent: { min: 0, max: 0 } },
 };
 
-export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMode = 'sale', values, variant = 'hero' }: PropertySearchProps) {
+export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMode = 'sale', values, variant = 'hero', branchId = null }: PropertySearchProps) {
     const [mode, setMode] = useState<Mode>(initialMode);
     const [suburb, setSuburb] = useState(values?.suburb ?? '');
     const [type, setType] = useState(values?.type ?? '');
@@ -82,6 +84,7 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
         if (baths > 0) params.baths = baths;
         if (hasPrice && minPrice > range.min) params.min_price = minPrice;
         if (hasPrice && maxPrice < range.max) params.max_price = maxPrice;
+        if (branchId !== null && branchId !== undefined && branchId !== '') params.branch_id = branchId;
 
         router.get(route(mode === 'sale' ? 'for-sale' : 'to-rent'), params, { preserveScroll: false });
     };

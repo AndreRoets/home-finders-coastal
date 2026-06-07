@@ -7,11 +7,11 @@ use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 /**
- * The Offices (branches) pages are CoreX-backed and gated behind the agency's
+ * The Branches pages are CoreX-backed and gated behind the agency's
  * show.branches feature toggle. When the toggle is off — or the branches feed
  * is unavailable (401/403) — the pages must not exist.
  */
-class OfficesPageTest extends TestCase
+class BranchPagesTest extends TestCase
 {
     /** These tests assert on / control the agency payload, so manage their own stub. */
     protected bool $fakeAgency = false;
@@ -29,7 +29,7 @@ class OfficesPageTest extends TestCase
         ], $overrides);
     }
 
-    public function test_offices_page_lists_branches_when_the_feature_is_on(): void
+    public function test_branches_page_lists_branches_when_the_feature_is_on(): void
     {
         Http::fake([
             '*/agency*' => Http::response(['data' => $this->fakeAgency()]),
@@ -51,10 +51,10 @@ class OfficesPageTest extends TestCase
             ]),
         ]);
 
-        $this->get(route('offices'))
+        $this->get(route('branches'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->component('offices')
+                ->component('branches')
                 ->has('branches', 1)
                 ->where('branches.0.tradingName', 'Coastal Realty Margate')
                 ->where('branches.0.agentCount', 4)
@@ -80,7 +80,7 @@ class OfficesPageTest extends TestCase
             ]),
         ]);
 
-        $this->get(route('offices'))
+        $this->get(route('branches'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('branches.0.logo', 'https://corex.test/agency-logo.png')
@@ -91,7 +91,7 @@ class OfficesPageTest extends TestCase
             );
     }
 
-    public function test_offices_page_is_hidden_when_the_feature_is_off(): void
+    public function test_branches_page_is_hidden_when_the_feature_is_off(): void
     {
         Http::fake([
             '*/agency*' => Http::response(['data' => $this->fakeAgency([
@@ -100,14 +100,14 @@ class OfficesPageTest extends TestCase
             '*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
         ]);
 
-        $this->get(route('offices'))->assertNotFound();
+        $this->get(route('branches'))->assertNotFound();
     }
 
-    public function test_offices_page_is_hidden_when_corex_is_unavailable(): void
+    public function test_branches_page_is_hidden_when_corex_is_unavailable(): void
     {
         Http::fake(['*' => Http::response(['message' => 'forbidden'], 403)]);
 
-        $this->get(route('offices'))->assertNotFound();
+        $this->get(route('branches'))->assertNotFound();
     }
 
     public function test_branch_detail_shows_its_agents_and_listings(): void
@@ -136,10 +136,10 @@ class OfficesPageTest extends TestCase
             ]),
         ]);
 
-        $this->get(route('offices.show', 12))
+        $this->get(route('branches.show', 12))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->component('office')
+                ->component('branch')
                 ->where('branch.tradingName', 'Coastal Realty Margate')
                 ->has('branch.agents', 1)
                 ->where('branch.agents.0.name', 'Thandi Mbeki')
@@ -156,7 +156,7 @@ class OfficesPageTest extends TestCase
             '*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
         ]);
 
-        $this->get(route('offices.show', 999))->assertNotFound();
+        $this->get(route('branches.show', 999))->assertNotFound();
     }
 
     public function test_branch_detail_is_hidden_when_the_feature_is_off(): void
@@ -168,6 +168,6 @@ class OfficesPageTest extends TestCase
             '*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
         ]);
 
-        $this->get(route('offices.show', 12))->assertNotFound();
+        $this->get(route('branches.show', 12))->assertNotFound();
     }
 }

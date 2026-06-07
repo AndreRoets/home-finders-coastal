@@ -38,7 +38,7 @@ class PageRoutes
         return [
             'admin', 'login', 'logout', 'register', 'dashboard',
             'settings', 'forgot-password', 'reset-password', 'verify-email',
-            'confirm-password', 'property', 'offices', 'sitemap.xml', 'robots.txt', 'up',
+            'confirm-password', 'property', 'branches', 'sitemap.xml', 'robots.txt', 'up',
         ];
     }
 }

@@ -47,6 +47,18 @@ class ExclusiveSoldMappingTest extends TestCase
             );
     }
 
+    public function test_for_sale_cards_flag_sole_mandates_as_exclusive(): void
+    {
+        $this->fakeListings();
+
+        $this->get(route('for-sale'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('listings', fn ($listings) => collect($listings)->firstWhere('title', 'Sole lowercase')['exclusive'] === true
+                    && collect($listings)->firstWhere('title', 'Open mandate')['exclusive'] === false)
+            );
+    }
+
     public function test_sold_listing_appears_on_sold_page_with_sold_badge(): void
     {
         $this->fakeListings();

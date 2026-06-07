@@ -26,9 +26,16 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                    <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                        {statusBadge[listing.status]}
-                    </span>
+                    <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                        <span className="rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                            {statusBadge[listing.status]}
+                        </span>
+                        {listing.exclusive && listing.status !== 'exclusive' && listing.status !== 'sold' && (
+                            <span className="rounded-full border border-marine/60 bg-marine/80 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                Exclusive
+                            </span>
+                        )}
+                    </div>
                 </div>
             </Link>
             <Link href={href} className="mt-5 flex items-start justify-between gap-4">

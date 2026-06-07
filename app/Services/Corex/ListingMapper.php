@@ -59,10 +59,39 @@ class ListingMapper
             'baths' => (int) round((float) Arr::get($listing, 'baths', 0)),
             'area' => self::area($listing),
             'status' => $forceStatus ?? self::status($listing),
+            'exclusive' => self::isSole($listing),
             'image' => self::image($listing),
             'url' => Arr::get($listing, 'url') ?? Arr::get($listing, 'permalink'),
             'agent' => self::cardAgent($listing),
         ];
+    }
+
+    /**
+     * Whether the listing is a sole mandate (HFC Exclusive). CoreX expresses
+     * this on the `mandate_type` field (value "sole"); we match a "sole"
+     * substring case-insensitively and also accept a `mandate` field or a
+     * boolean sole flag, so naming/casing variants in the live feed still
+     * resolve. Drives the "Exclusive" tag shown on for-sale/to-rent cards.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    public static function isSole(array $listing): bool
+    {
+        foreach (['mandate_type', 'mandate'] as $key) {
+            $value = $listing[$key] ?? null;
+
+            if (is_string($value) && str_contains(strtolower($value), 'sole')) {
+                return true;
+            }
+        }
+
+        foreach (['sole_mandate', 'is_sole', 'sole'] as $key) {
+            if (filter_var($listing[$key] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

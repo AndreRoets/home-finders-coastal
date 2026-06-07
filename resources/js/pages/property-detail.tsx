@@ -1,8 +1,10 @@
 import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Trees } from 'lucide-react';
+import { useState } from 'react';
 
 interface PropertyAgent {
     id: number | string;
@@ -42,7 +44,9 @@ function formatRand(amount: number): string {
 
 export default function PropertyDetail({ property }: { property: Property }) {
     const images = property.images.length > 0 ? property.images : [property.image];
-    const [cover, ...rest] = images;
+    const [active, setActive] = useState(0);
+    const activeImage = images[active] ?? images[0];
+    const showExclusive = property.exclusive && property.status !== 'exclusive' && property.status !== 'sold';
 
     const specs = [
         { icon: BedDouble, label: 'Beds', value: property.beds },
@@ -69,20 +73,37 @@ export default function PropertyDetail({ property }: { property: Property }) {
                     Back to listings
                 </Link>
 
-                {/* Gallery */}
-                <div className="mt-6 grid gap-3 md:grid-cols-[2fr_1fr]">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 md:aspect-[16/10]">
-                        <img src={cover} alt={property.title} className="h-full w-full object-cover" />
-                        <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                            {statusBadge[property.status]}
-                        </span>
+                {/* Gallery — large active image with a thumbnail strip of every photo */}
+                <div className="mt-6">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 md:aspect-[16/9]">
+                        <img src={activeImage} alt={property.title} className="h-full w-full object-cover" />
+                        <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                            <span className="rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                {statusBadge[property.status]}
+                            </span>
+                            {showExclusive && (
+                                <span className="rounded-full border border-marine/60 bg-marine/80 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                    Exclusive
+                                </span>
+                            )}
+                        </div>
                     </div>
-                    {rest.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-                            {rest.slice(0, 2).map((src, i) => (
-                                <div key={i} className="aspect-[4/3] overflow-hidden bg-slate-100">
-                                    <img src={src} alt={`${property.title} ${i + 2}`} className="h-full w-full object-cover" />
-                                </div>
+                    {images.length > 1 && (
+                        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-6">
+                            {images.map((src, i) => (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setActive(i)}
+                                    aria-label={`View image ${i + 1} of ${images.length}`}
+                                    aria-current={i === active}
+                                    className={cn(
+                                        'relative aspect-[4/3] overflow-hidden rounded-sm bg-slate-100 ring-2 transition',
+                                        i === active ? 'ring-marine' : 'ring-transparent hover:ring-slate-300',
+                                    )}
+                                >
+                                    <img src={src} alt={`${property.title} ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                                </button>
                             ))}
                         </div>
                     )}

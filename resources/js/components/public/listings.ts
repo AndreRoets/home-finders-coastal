@@ -17,6 +17,8 @@ export interface Listing {
     baths: number;
     area: string;
     status: ListingStatus;
+    /** True when the listing is a sole mandate — shows an "Exclusive" tag on the card. */
+    exclusive?: boolean;
     image: string;
     url?: string | null;
     agent?: ListingAgent | null;

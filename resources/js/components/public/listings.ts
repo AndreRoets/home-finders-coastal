@@ -10,6 +10,8 @@ export interface ListingAgent {
 export interface Listing {
     id: number | string;
     ref?: string | null;
+    /** Canonical title-based path segment for property.show, e.g. "apartment-for-sale-in-margate-12345". */
+    slug?: string | null;
     title: string;
     location: string;
     price: string;

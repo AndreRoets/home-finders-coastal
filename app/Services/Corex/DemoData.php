@@ -509,11 +509,11 @@ class DemoData
             'images' => self::images($i),
             'agent' => self::makeAgent((($i - 1) % self::AGENT_COUNT) + 1),
             // Every 4th listing is co-listed by a second agent, exercising the
-            // multi-agent card + detail rendering. CoreX embeds these in an
-            // `agents` array (primary repeated), which the mapper dedupes.
+            // multi-agent card + detail rendering. CoreX embeds every attributed
+            // agent in `agents`, primary first (is_primary: true).
             ...($i % 4 === 0 ? ['agents' => [
-                self::makeAgent((($i - 1) % self::AGENT_COUNT) + 1),
-                self::makeAgent(($i % self::AGENT_COUNT) + 1),
+                ['is_primary' => true, ...self::makeAgent((($i - 1) % self::AGENT_COUNT) + 1)],
+                ['is_primary' => false, ...self::makeAgent(($i % self::AGENT_COUNT) + 1)],
             ]] : []),
             'costs' => [
                 'rates_taxes' => 1500 + (($i * 90) % 6000),

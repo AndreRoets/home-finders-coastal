@@ -99,11 +99,12 @@ class CorexListingMapperTest extends TestCase
     {
         $listing = [
             'id' => 202,
-            'agent' => ['id' => 7, 'name' => 'Lerato Mokoena', 'designation' => 'Principal', 'photo_url' => 'https://corex.test/7.jpg'],
-            // CoreX embeds co-listed agents in `agents`, repeating the primary.
+            // `agent` (singular) still resolves to the primary for back-compat.
+            'agent' => ['id' => 7, 'name' => 'Lerato Mokoena', 'designation' => 'Principal', 'photo_url' => 'https://corex.test/7.jpg', 'is_primary' => true],
+            // CoreX carries every attributed agent in `agents`, primary first.
             'agents' => [
-                ['id' => 7, 'name' => 'Lerato Mokoena', 'photo_url' => 'https://corex.test/7.jpg'],
-                ['id' => 9, 'name' => 'Sipho Dlamini', 'photo_url' => 'https://corex.test/9.jpg'],
+                ['id' => 7, 'name' => 'Lerato Mokoena', 'designation' => 'Principal', 'photo_url' => 'https://corex.test/7.jpg', 'is_primary' => true],
+                ['id' => 9, 'name' => 'Sipho Dlamini', 'photo_url' => 'https://corex.test/9.jpg', 'is_primary' => false],
             ],
         ];
 
@@ -120,6 +121,23 @@ class CorexListingMapperTest extends TestCase
         $this->assertCount(2, $detail['agents']);
         $this->assertSame('Sipho Dlamini', $detail['agents'][1]['name']);
         $this->assertArrayHasKey('email', $detail['agents'][1]);
+    }
+
+    public function test_the_primary_agent_leads_regardless_of_array_order(): void
+    {
+        // Even if CoreX returns the co-agent first, is_primary floats the
+        // primary to the front so the detail/card always lead with it.
+        $mapped = ListingMapper::map([
+            'id' => 206,
+            'agents' => [
+                ['id' => 9, 'name' => 'Sipho Dlamini', 'photo_url' => 'https://corex.test/9.jpg', 'is_primary' => false],
+                ['id' => 7, 'name' => 'Lerato Mokoena', 'photo_url' => 'https://corex.test/7.jpg', 'is_primary' => true],
+            ],
+        ]);
+
+        $this->assertSame(7, $mapped['agents'][0]['id']);
+        $this->assertSame(9, $mapped['agents'][1]['id']);
+        $this->assertSame(7, $mapped['agent']['id']);
     }
 
     public function test_a_single_agent_listing_yields_one_agent(): void
@@ -139,6 +157,35 @@ class CorexListingMapperTest extends TestCase
 
         $this->assertSame([], $mapped['agents']);
         $this->assertNull($mapped['agent']);
+    }
+
+    public function test_it_builds_a_title_based_slug_ending_in_the_id(): void
+    {
+        $mapped = ListingMapper::map([
+            'id' => 12345,
+            'title' => 'Apartment For Sale in Margate, KwaZulu Natal',
+        ]);
+
+        $this->assertSame(
+            'apartment-for-sale-in-margate-kwazulu-natal-12345',
+            $mapped['slug'],
+        );
+    }
+
+    public function test_slug_falls_back_to_the_bare_id_without_a_title(): void
+    {
+        $this->assertSame('77', ListingMapper::slug(['id' => 77]));
+    }
+
+    public function test_id_from_slug_reads_the_trailing_id(): void
+    {
+        $this->assertSame('12345', ListingMapper::idFromSlug('apartment-for-sale-in-margate-kwazulu-natal-12345'));
+    }
+
+    public function test_id_from_slug_passes_through_a_bare_id_or_reference(): void
+    {
+        $this->assertSame('101', ListingMapper::idFromSlug('101'));
+        $this->assertSame('abc-uuid', ListingMapper::idFromSlug('abc-uuid'));
     }
 
     public function test_it_collapses_doubled_storage_segment_in_image_urls(): void

@@ -3,6 +3,7 @@
 namespace App\Services\Corex;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 /**
  * Transforms a raw CoreX listing resource into the shape the React frontend
@@ -64,12 +65,54 @@ class ListingMapper
             'status' => $forceStatus ?? self::status($listing),
             'exclusive' => self::isSole($listing),
             'image' => self::image($listing),
+            // Title-based, search-friendly path segment for property.show, e.g.
+            // "apartment-for-sale-in-margate-kwazulu-natal-12345". The trailing
+            // id is what the controller resolves the listing by.
+            'slug' => self::slug($listing),
             'url' => Arr::get($listing, 'url') ?? Arr::get($listing, 'permalink'),
             // `agent` (the primary) is kept for backwards compatibility; `agents`
             // carries every attributed agent so a co-listed property shows both.
             'agent' => $agents[0] ?? null,
             'agents' => $agents,
         ];
+    }
+
+    /**
+     * Build the canonical, title-based URL slug for a listing:
+     * "{slugified-title}-{id}", e.g. "apartment-for-sale-in-margate-kwazulu-natal-12345".
+     *
+     * The trailing id is the lookup key {@see self::idFromSlug()} reads back, so
+     * the title can change without breaking the URL. Falls back to the bare id
+     * when the listing has no usable title.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    public static function slug(array $listing): string
+    {
+        $id = (string) Arr::get($listing, 'id', '');
+
+        $title = (string) (Arr::get($listing, 'title')
+            ?? Arr::get($listing, 'headline', ''));
+
+        $base = Str::slug($title);
+
+        return $base !== '' ? $base.'-'.$id : $id;
+    }
+
+    /**
+     * Resolve the CoreX lookup key from a property.show path segment.
+     *
+     * A canonical slug ends in "-{id}", so we take the trailing number as the
+     * id. Anything else (a bare id, or an agency reference such as "RX12345")
+     * is returned untouched for backwards-compatible resolution.
+     */
+    public static function idFromSlug(string $idOrSlug): string
+    {
+        if (preg_match('/-(\d+)$/', $idOrSlug, $matches) === 1) {
+            return $matches[1];
+        }
+
+        return $idOrSlug;
     }
 
     /**
@@ -103,33 +146,23 @@ class ListingMapper
     /**
      * Resolve the agents attributed to a listing, primary first, deduped by id.
      *
-     * CoreX historically embedded a single `agent` object; a listing may now be
-     * co-listed by several. We treat `agent` as the primary and merge in any of
-     * the known multi-agent array fields (the live field name is unconfirmed, so
-     * we accept the plausible variants), dropping entries without an id and
-     * collapsing an agent that appears both as primary and in the array while
-     * preserving order.
+     * CoreX now returns an `agents` array on every listing — the primary first
+     * (flagged `is_primary: true`) and any co-listing agent after. We prefer it
+     * and sort `is_primary` to the front so the primary always leads regardless
+     * of array order, then dedupe by id. Older payloads carry only the singular
+     * `agent` (the primary); we fall back to it so single-agent listings keep
+     * working. Entries without an id are dropped.
      *
      * @param  array<string, mixed>  $listing
      * @return array<int, array<string, mixed>>
      */
     public static function extractAgents(array $listing): array
     {
-        $candidates = [];
+        $agents = Arr::get($listing, 'agents');
 
-        $primary = Arr::get($listing, 'agent');
-
-        if (is_array($primary)) {
-            $candidates[] = $primary;
-        }
-
-        foreach (['agents', 'co_agents', 'additional_agents', 'secondary_agents'] as $field) {
-            foreach ((array) Arr::get($listing, $field, []) as $agent) {
-                if (is_array($agent)) {
-                    $candidates[] = $agent;
-                }
-            }
-        }
+        $candidates = is_array($agents) && $agents !== []
+            ? array_values(array_filter($agents, 'is_array'))
+            : array_values(array_filter([Arr::get($listing, 'agent')], 'is_array'));
 
         $resolved = [];
         $seen = [];
@@ -148,6 +181,13 @@ class ListingMapper
             $seen[$id] = true;
             $resolved[] = $agent;
         }
+
+        // Float the primary (is_primary: true) to the front. usort is stable on
+        // PHP 8, so co-agents keep their relative order.
+        usort(
+            $resolved,
+            static fn (array $a, array $b): int => (int) Arr::get($b, 'is_primary', false) <=> (int) Arr::get($a, 'is_primary', false),
+        );
 
         return $resolved;
     }

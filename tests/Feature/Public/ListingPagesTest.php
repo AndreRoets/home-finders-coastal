@@ -134,10 +134,15 @@ class ListingPagesTest extends TestCase
             );
     }
 
-    public function test_property_detail_page_renders_a_single_listing(): void
+    /**
+     * The listing payload used by the property-detail tests. Resolved by id (11).
+     *
+     * @return array<string, mixed>
+     */
+    protected function fakeSingleListing(): void
     {
         Http::fake([
-            '*/listings/abc-ref' => Http::response(['data' => [
+            '*/listings/11' => Http::response(['data' => [
                 'id' => 11,
                 'reference' => 'abc-ref',
                 'title' => 'Uvongo Apartment',
@@ -154,16 +159,32 @@ class ListingPagesTest extends TestCase
                 'agent' => ['id' => 29, 'name' => 'Maggie Venter', 'cell' => '062 604 4068', 'photo_url' => 'https://corex.test/a.jpg'],
             ]]),
         ]);
+    }
 
-        $this->get(route('property.show', 'abc-ref'))
+    public function test_property_detail_page_renders_a_single_listing(): void
+    {
+        $this->fakeSingleListing();
+
+        $this->get(route('property.show', 'uvongo-apartment-11'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('property-detail')
                 ->where('property.title', 'Uvongo Apartment')
+                ->where('property.slug', 'uvongo-apartment-11')
                 ->where('property.price', 'R 799,000')
                 ->where('property.garages', 2)
                 ->where('property.agent.name', 'Maggie Venter')
             );
+    }
+
+    public function test_property_detail_redirects_legacy_url_to_canonical_slug(): void
+    {
+        $this->fakeSingleListing();
+
+        // A bare id (and equally an agency reference) 301s to the title slug.
+        $this->get(route('property.show', '11'))
+            ->assertRedirect(route('property.show', 'uvongo-apartment-11'))
+            ->assertStatus(301);
     }
 
     public function test_property_detail_returns_404_for_unknown_listing(): void

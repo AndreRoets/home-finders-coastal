@@ -9,6 +9,7 @@ use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
 use App\Services\Corex\TestimonialMapper;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -24,17 +25,27 @@ class ListingController extends Controller
 
     /**
      * Single property detail page.
+     *
+     * Accepts the canonical title-based slug ("…-{id}"), a bare id, or an agency
+     * reference. Non-canonical URLs 301-redirect to the title slug so each
+     * property has a single, indexable address.
      */
-    public function show(string $idOrRef): Response
+    public function show(string $idOrRef): Response|RedirectResponse
     {
-        $listing = $this->corex->listing($idOrRef);
+        $listing = $this->corex->listing(ListingMapper::idFromSlug($idOrRef));
 
         if ($listing === []) {
             throw new NotFoundHttpException('Listing not found.');
         }
 
+        $property = ListingMapper::detail($listing);
+
+        if ($idOrRef !== $property['slug']) {
+            return redirect()->route('property.show', $property['slug'], 301);
+        }
+
         return Inertia::render('property-detail', [
-            'property' => ListingMapper::detail($listing),
+            'property' => $property,
         ]);
     }
 

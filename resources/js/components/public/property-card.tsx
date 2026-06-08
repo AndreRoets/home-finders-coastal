@@ -11,7 +11,7 @@ const statusBadge: Record<Listing['status'], string> = {
 };
 
 export default function PropertyCard({ listing }: { listing: Listing }) {
-    const href = route('property.show', listing.ref ?? listing.id);
+    const href = route('property.show', listing.slug ?? listing.ref ?? listing.id);
 
     return (
         // Not an <a>: the card holds two independent links (property + agent),

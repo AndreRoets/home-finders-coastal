@@ -309,7 +309,7 @@ export default function Home({
                 ) : (
                 <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
                     {listings.slice(0, 6).map((listing) => {
-                        const href = route('property.show', listing.ref ?? listing.id);
+                        const href = route('property.show', listing.slug ?? listing.ref ?? listing.id);
 
                         return (
                             // Not an <a>: holds both a property link and an agent link.

@@ -253,7 +253,7 @@ function SelectControl({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 className={cn(
-                    'focus:border-marine w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm transition-colors outline-none',
+                    'focus:border-navy w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm transition-colors outline-none',
                     light ? 'border-slate-300 bg-white text-neutral-800' : 'bg-ink/40 border-white/15 text-white',
                 )}
             >
@@ -383,8 +383,8 @@ function PriceRange({
     // Handles sit above the track but don't intercept the pointer themselves —
     // presses bubble to the track so it can grab whichever handle is nearest.
     const thumbClass = cn(
-        'border-marine pointer-events-none absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white shadow outline-none',
-        'focus-visible:ring-marine focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-offset-2',
+        'border-navy pointer-events-none absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white shadow outline-none',
+        'focus-visible:ring-navy focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-offset-2',
         light ? 'focus-visible:ring-offset-white' : 'focus-visible:ring-offset-transparent',
     );
 
@@ -399,7 +399,7 @@ function PriceRange({
         >
             <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
             <div
-                className="bg-marine absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+                className="bg-navy absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
                 style={{ left: `${pct(minValue)}%`, width: `${pct(maxValue) - pct(minValue)}%` }}
             />
             <button

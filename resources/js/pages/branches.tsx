@@ -22,7 +22,10 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
                 ) : (
                     <div className="grid gap-8 lg:grid-cols-3">
                         {branches.map((branch) => (
-                            <article key={branch.id} className="group flex flex-col overflow-hidden rounded-sm border border-slate-200 bg-white transition-shadow hover:shadow-lg">
+                            <article
+                                key={branch.id}
+                                className="group flex flex-col overflow-hidden rounded-sm border border-slate-200 bg-white transition-shadow hover:shadow-lg"
+                            >
                                 <Link href={route('branches.show', branch.id)} className="relative block aspect-[8/5] overflow-hidden bg-slate-100">
                                     <img
                                         src={branch.logo || DEFAULT_BRANCH_IMAGE}
@@ -35,8 +38,8 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
                                         }}
                                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                                    <span className="absolute bottom-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                    <div className="from-ink/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
+                                    <span className="bg-ink/50 absolute bottom-4 left-4 rounded-full border border-white/40 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
                                         {branch.agentCount} {branch.agentCount === 1 ? 'agent' : 'agents'} · {branch.listingCount}{' '}
                                         {branch.listingCount === 1 ? 'property' : 'properties'}
                                     </span>
@@ -44,22 +47,24 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
 
                                 <div className="flex flex-1 flex-col p-6">
                                     <Link href={route('branches.show', branch.id)}>
-                                        <h2 className="text-2xl font-light text-navy transition-colors group-hover:text-marine">{branch.tradingName}</h2>
+                                        <h2 className="text-navy group-hover:text-marine text-2xl font-light transition-colors">
+                                            {branch.tradingName}
+                                        </h2>
                                     </Link>
-                                    {branch.tagline && <p className="mt-1.5 text-sm text-marine">{branch.tagline}</p>}
+                                    {branch.tagline && <p className="text-marine mt-1.5 text-sm">{branch.tagline}</p>}
 
                                     <dl className="mt-6 space-y-2.5 text-sm text-neutral-600">
                                         {branch.address && (
                                             <div className="flex items-start gap-2.5">
-                                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-marine" />
+                                                <MapPin className="text-navy mt-0.5 h-4 w-4 shrink-0" />
                                                 <dd>{branch.address}</dd>
                                             </div>
                                         )}
                                         {branch.phone && (
                                             <div className="flex items-center gap-2.5">
-                                                <Phone className="h-4 w-4 shrink-0 text-marine" />
+                                                <Phone className="text-navy h-4 w-4 shrink-0" />
                                                 <dd>
-                                                    <a href={`tel:${branch.phoneHref}`} className="transition-colors hover:text-marine">
+                                                    <a href={`tel:${branch.phoneHref}`} className="hover:text-marine transition-colors">
                                                         {branch.phone}
                                                     </a>
                                                     {branch.phoneLabel && <span className="text-neutral-400"> · {branch.phoneLabel}</span>}
@@ -68,9 +73,9 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
                                         )}
                                         {branch.email && (
                                             <div className="flex items-center gap-2.5">
-                                                <Mail className="h-4 w-4 shrink-0 text-marine" />
+                                                <Mail className="text-navy h-4 w-4 shrink-0" />
                                                 <dd>
-                                                    <a href={`mailto:${branch.email}`} className="transition-colors hover:text-marine">
+                                                    <a href={`mailto:${branch.email}`} className="hover:text-marine transition-colors">
                                                         {branch.email}
                                                     </a>
                                                 </dd>
@@ -80,10 +85,10 @@ export default function Branches({ branches = [] }: { branches?: Branch[] }) {
 
                                     <Link
                                         href={route('branches.show', branch.id)}
-                                        className="group/btn mt-6 inline-flex items-center gap-2 self-start border-b border-navy/30 pb-1 text-sm font-medium tracking-wide text-navy transition-colors hover:border-marine hover:text-marine"
+                                        className="group/btn border-navy/30 text-navy hover:border-marine hover:text-marine mt-auto inline-flex items-center gap-2 self-start border-b pt-6 pb-1 text-sm font-medium tracking-wide transition-colors"
                                     >
                                         Visit this branch
-                                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5" />
+                                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                                     </Link>
                                 </div>
                             </article>

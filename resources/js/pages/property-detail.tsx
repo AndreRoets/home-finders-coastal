@@ -3,6 +3,7 @@ import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PropertyGallery from '@/components/public/property-gallery';
 import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Trees } from 'lucide-react';
 
@@ -69,7 +70,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
                 <Link
                     href={route('for-sale')}
-                    className="inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-600 transition-colors hover:text-marine"
+                    className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-600 transition-colors"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to listings
@@ -82,11 +83,16 @@ export default function PropertyDetail({ property }: { property: Property }) {
                         title={property.title}
                         badges={
                             <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                                <span className="rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                <span
+                                    className={cn(
+                                        'rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur',
+                                        property.status === 'sold' ? 'bg-brand-red border-brand-red' : 'bg-ink/50 border-white/40',
+                                    )}
+                                >
                                     {statusBadge[property.status]}
                                 </span>
                                 {showExclusive && (
-                                    <span className="rounded-full border border-marine/60 bg-marine/80 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                    <span className="border-navy/60 bg-navy/80 rounded-full border px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
                                         Exclusive
                                     </span>
                                 )}
@@ -98,8 +104,8 @@ export default function PropertyDetail({ property }: { property: Property }) {
                 <div className="mt-8 grid gap-10 lg:grid-cols-[2fr_1fr]">
                     {/* Main column */}
                     <div>
-                        <p className="text-2xl text-marine">{property.price}</p>
-                        <h1 className="mt-2 text-3xl font-light tracking-tight text-navy sm:text-4xl">{property.title}</h1>
+                        <p className="text-brand-red text-2xl font-semibold">{property.price}</p>
+                        <h1 className="text-navy mt-2 text-3xl font-light tracking-tight sm:text-4xl">{property.title}</h1>
                         <p className="mt-3 flex items-center gap-1.5 text-neutral-600">
                             <MapPin className="h-4 w-4 text-neutral-400" />
                             {property.address ? `${property.address}, ${property.location}` : property.location}
@@ -112,8 +118,8 @@ export default function PropertyDetail({ property }: { property: Property }) {
                         <div className="mt-8 grid grid-cols-2 gap-4 rounded-sm border border-slate-200 bg-slate-50 p-6 sm:grid-cols-3 lg:grid-cols-5">
                             {specs.map((spec) => (
                                 <div key={spec.label} className="flex flex-col items-center gap-1.5 text-center">
-                                    <spec.icon className="h-5 w-5 text-marine" />
-                                    <span className="text-sm font-medium text-navy">{spec.value}</span>
+                                    <spec.icon className="text-marine h-5 w-5" />
+                                    <span className="text-navy text-sm font-medium">{spec.value}</span>
                                     <span className="text-xs tracking-wide text-neutral-500 uppercase">{spec.label}</span>
                                 </div>
                             ))}
@@ -121,7 +127,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
                         {property.description && (
                             <section className="mt-10">
-                                <h2 className="text-2xl font-light text-navy">Description</h2>
+                                <h2 className="text-navy text-2xl font-light">Description</h2>
                                 {property.headline && <p className="mt-3 font-medium text-neutral-700">{property.headline}</p>}
                                 <p className="mt-3 leading-relaxed whitespace-pre-line text-neutral-600">{property.description}</p>
                             </section>
@@ -129,11 +135,11 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
                         {property.features.length > 0 && (
                             <section className="mt-10">
-                                <h2 className="text-2xl font-light text-navy">Features</h2>
+                                <h2 className="text-navy text-2xl font-light">Features</h2>
                                 <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                                     {property.features.map((feature) => (
                                         <li key={feature} className="flex items-center gap-2 text-sm text-neutral-600">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-marine" />
+                                            <span className="bg-marine h-1.5 w-1.5 rounded-full" />
                                             {feature}
                                         </li>
                                     ))}
@@ -143,17 +149,17 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
                         {(costs.length > 0 || property.petFriendly) && (
                             <section className="mt-10">
-                                <h2 className="text-2xl font-light text-navy">Monthly costs</h2>
+                                <h2 className="text-navy text-2xl font-light">Monthly costs</h2>
                                 <dl className="mt-4 divide-y divide-slate-200 rounded-sm border border-slate-200 bg-slate-50">
                                     {costs.map((cost) => (
                                         <div key={cost.label} className="flex justify-between px-5 py-3.5 text-sm">
                                             <dt className="text-neutral-600">{cost.label}</dt>
-                                            <dd className="font-medium text-navy">{formatRand(cost.value)}</dd>
+                                            <dd className="text-navy font-medium">{formatRand(cost.value)}</dd>
                                         </div>
                                     ))}
                                 </dl>
                                 {property.petFriendly && (
-                                    <p className="mt-4 inline-flex items-center gap-2 text-sm text-marine">
+                                    <p className="text-marine mt-4 inline-flex items-center gap-2 text-sm">
                                         <PawPrint className="h-4 w-4" />
                                         Pet friendly
                                     </p>
@@ -175,10 +181,12 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                             <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
                                                 <AgentAvatar src={agent.photo} alt={agent.name} className="h-16 w-16" />
                                                 <div>
-                                                    <p className="text-xs tracking-[0.2em] text-marine uppercase">
+                                                    <p className="text-marine text-xs tracking-[0.2em] uppercase">
                                                         {agents.length > 1 ? 'Co-listed by' : 'Listed by'}
                                                     </p>
-                                                    <p className="text-lg font-light text-navy transition-colors group-hover:text-marine">{agent.name}</p>
+                                                    <p className="text-navy group-hover:text-marine text-lg font-light transition-colors">
+                                                        {agent.name}
+                                                    </p>
                                                     {agent.designation && <p className="text-sm text-neutral-500">{agent.designation}</p>}
                                                 </div>
                                             </Link>
@@ -186,7 +194,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                                 {agent.phone && (
                                                     <a
                                                         href={`tel:${agent.phone.replace(/\s/g, '')}`}
-                                                        className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
+                                                        className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
                                                     >
                                                         <Phone className="h-4 w-4 text-neutral-400" />
                                                         {agent.phone}
@@ -195,7 +203,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                                 {agent.email && (
                                                     <a
                                                         href={`mailto:${agent.email}`}
-                                                        className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
+                                                        className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
                                                     >
                                                         <Mail className="h-4 w-4 text-neutral-400" />
                                                         <span className="truncate">{agent.email}</span>
@@ -210,7 +218,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                             )}
                             <Link
                                 href={route('contact')}
-                                className="mt-6 flex w-full items-center justify-center rounded-full bg-brand-red px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-red-bright"
+                                className="bg-brand-red hover:bg-brand-red-bright mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
                             >
                                 Enquire about this property
                             </Link>

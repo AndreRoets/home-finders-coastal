@@ -34,7 +34,7 @@ export default function SiteHeader() {
                                 href={route(item.routeName)}
                                 className={cn(
                                     'text-navy relative px-3 py-2 text-[1.05rem] font-medium tracking-wide transition-colors',
-                                    'after:bg-marine after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:origin-left after:transition-transform after:duration-300 after:ease-out',
+                                    'after:bg-navy after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:origin-left after:transition-transform after:duration-300 after:ease-out',
                                     isActive(item.routeName) ? 'after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-100',
                                 )}
                             >
@@ -59,9 +59,7 @@ export default function SiteHeader() {
                                             href={route(child.routeName)}
                                             className={cn(
                                                 'block rounded-md px-3 py-2 transition-colors',
-                                                isActive(child.routeName)
-                                                    ? 'text-marine bg-slate-100'
-                                                    : 'text-navy hover:text-marine hover:bg-slate-100',
+                                                isActive(child.routeName) ? 'text-navy bg-slate-100' : 'text-navy hover:text-navy hover:bg-slate-100',
                                             )}
                                         >
                                             <span className="block text-sm font-medium tracking-wide">{child.title}</span>
@@ -87,7 +85,7 @@ export default function SiteHeader() {
                     <button
                         type="button"
                         onClick={() => setMobileOpen((open) => !open)}
-                        className="text-navy hover:text-marine inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-slate-100 lg:hidden"
+                        className="text-navy hover:text-navy inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-slate-100 lg:hidden"
                         aria-label="Toggle navigation menu"
                         aria-expanded={mobileOpen}
                     >
@@ -106,7 +104,7 @@ export default function SiteHeader() {
                                     onClick={() => setMobileOpen(false)}
                                     className={cn(
                                         'block rounded-md px-3 py-2.5 text-sm font-medium tracking-wide transition-colors',
-                                        isActive(item.routeName) ? 'text-marine' : 'text-navy hover:text-marine hover:bg-slate-100',
+                                        isActive(item.routeName) ? 'text-navy' : 'text-navy hover:text-navy hover:bg-slate-100',
                                     )}
                                 >
                                     {item.title}
@@ -118,7 +116,7 @@ export default function SiteHeader() {
                                         onClick={() => setMobileOpen(false)}
                                         className={cn(
                                             'block rounded-md py-2 pr-3 pl-7 text-sm tracking-wide transition-colors',
-                                            isActive(child.routeName) ? 'text-marine' : 'text-navy/80 hover:text-marine hover:bg-slate-100',
+                                            isActive(child.routeName) ? 'text-navy' : 'text-navy/80 hover:text-navy hover:bg-slate-100',
                                         )}
                                     >
                                         {child.title}

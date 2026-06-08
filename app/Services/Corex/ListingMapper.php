@@ -145,9 +145,12 @@ class ListingMapper
                 (array) Arr::get($listing, 'features', []),
                 'is_string',
             )),
-            'images' => array_values(array_filter(
-                (array) Arr::get($listing, 'images', []),
-                static fn ($i): bool => is_string($i) && $i !== '',
+            'images' => array_values(array_map(
+                self::normalizeImageUrl(...),
+                array_filter(
+                    (array) Arr::get($listing, 'images', []),
+                    static fn ($i): bool => is_string($i) && $i !== '',
+                ),
             )),
             'costs' => [
                 'ratesTaxes' => Arr::get($listing, 'costs.rates_taxes'),
@@ -257,8 +260,18 @@ class ListingMapper
         $image = Arr::get($listing, 'images.0');
 
         return is_string($image) && $image !== ''
-            ? $image
+            ? self::normalizeImageUrl($image)
             : 'https://placehold.co/1200x900?text=No+Image';
+    }
+
+    /**
+     * Defend against a malformed CoreX media URL that carries a doubled
+     * `/storage/storage/` path segment, which 403s. Collapse it back to a
+     * single `/storage/` so the image resolves.
+     */
+    protected static function normalizeImageUrl(string $url): string
+    {
+        return str_replace('/storage/storage/', '/storage/', $url);
     }
 
     /**

@@ -94,4 +94,27 @@ class CorexListingMapperTest extends TestCase
         $this->assertSame('for-sale', $mapped['status']);
         $this->assertStringContainsString('placehold', $mapped['image']);
     }
+
+    public function test_it_collapses_doubled_storage_segment_in_image_urls(): void
+    {
+        $listing = [
+            'id' => 531,
+            'images' => [
+                'https://staging.corexos.co.za/storage/storage/properties/531/a.jpg',
+                'https://staging.corexos.co.za/storage/properties/531/b.jpg',
+            ],
+        ];
+
+        $card = ListingMapper::map($listing);
+        $this->assertSame(
+            'https://staging.corexos.co.za/storage/properties/531/a.jpg',
+            $card['image'],
+        );
+
+        $detail = ListingMapper::detail($listing);
+        $this->assertSame([
+            'https://staging.corexos.co.za/storage/properties/531/a.jpg',
+            'https://staging.corexos.co.za/storage/properties/531/b.jpg',
+        ], $detail['images']);
+    }
 }

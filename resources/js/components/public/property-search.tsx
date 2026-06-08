@@ -304,6 +304,22 @@ function PriceRange({
 
     const pct = (value: number) => ((value - min) / (max - min)) * 100;
 
+    // Dragging snaps to a fine, "nice" increment (~1/1000 of the range, rounded to
+    // a 1/2/5 figure) so the handle glides smoothly regardless of how wide the
+    // price range is. This granularity is purely about feel — only `min`/`max`,
+    // the start and end of the track, come from the actual property prices.
+    const dragStep = (() => {
+        const span = max - min;
+        if (span <= 0) {
+            return 1;
+        }
+        const target = span / 1000;
+        const magnitude = 10 ** Math.floor(Math.log10(target));
+        const normalised = target / magnitude;
+        const factor = normalised < 1.5 ? 1 : normalised < 3 ? 2 : normalised < 7 ? 5 : 10;
+        return factor * magnitude;
+    })();
+
     const valueFromClientX = (clientX: number): number => {
         const track = trackRef.current;
         if (!track) {
@@ -312,7 +328,7 @@ function PriceRange({
         const rect = track.getBoundingClientRect();
         const ratio = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
         const raw = min + Math.min(1, Math.max(0, ratio)) * (max - min);
-        const snapped = Math.round(raw / step) * step;
+        const snapped = Math.round(raw / dragStep) * dragStep;
         return Math.min(max, Math.max(min, snapped));
     };
 

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Mail, Phone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import AgentAvatar from './agent-avatar';
 
 export interface Agent {
     id: number | string;
@@ -177,11 +178,11 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                             aria-label={option.name}
                                             aria-pressed={index === active}
                                             className={cn(
-                                                'h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 transition',
+                                                'h-12 w-12 shrink-0 rounded-full ring-2 transition',
                                                 index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
                                             )}
                                         >
-                                            <img src={option.photo} alt="" className="h-full w-full object-cover object-top" />
+                                            <AgentAvatar src={option.photo} alt="" className="h-full w-full" />
                                         </button>
                                     );
                                 })}

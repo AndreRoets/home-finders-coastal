@@ -1,5 +1,6 @@
 import { agentUrl } from '@/lib/routes';
 import { Link } from '@inertiajs/react';
+import AgentAvatar from './agent-avatar';
 import { type Listing, type ListingAgent } from './listings';
 
 /**
@@ -23,7 +24,7 @@ export default function ListingAgents({ listing }: { listing: Listing }) {
                     href={agentUrl(agent.id)}
                     className="flex items-center gap-3 text-sm text-neutral-600 transition-colors hover:text-marine"
                 >
-                    <img src={agent.photo} alt={agent.name} className="h-8 w-8 rounded-full object-cover object-top" />
+                    <AgentAvatar src={agent.photo} alt={agent.name} className="h-8 w-8" />
                     <span>
                         <span className="block leading-tight">{agent.name}</span>
                         {agent.designation && <span className="block text-xs leading-tight text-neutral-400">{agent.designation}</span>}

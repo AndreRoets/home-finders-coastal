@@ -1,3 +1,4 @@
+import AgentAvatar from '@/components/public/agent-avatar';
 import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PropertyGallery from '@/components/public/property-gallery';
 import PublicLayout from '@/layouts/public-layout';
@@ -172,7 +173,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                             className="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-slate-200 [&:not(:first-child)]:pt-6"
                                         >
                                             <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
-                                                <img src={agent.photo} alt={agent.name} className="h-16 w-16 rounded-full object-cover object-top" />
+                                                <AgentAvatar src={agent.photo} alt={agent.name} className="h-16 w-16" />
                                                 <div>
                                                     <p className="text-xs tracking-[0.2em] text-marine uppercase">
                                                         {agents.length > 1 ? 'Co-listed by' : 'Listed by'}

@@ -21,5 +21,8 @@ export interface Listing {
     exclusive?: boolean;
     image: string;
     url?: string | null;
+    /** Primary agent, kept for backwards compatibility — prefer `agents`. */
     agent?: ListingAgent | null;
+    /** Every agent attributed to the listing (a property may be co-listed). */
+    agents?: ListingAgent[];
 }

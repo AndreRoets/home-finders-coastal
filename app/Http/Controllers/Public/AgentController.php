@@ -94,10 +94,10 @@ class AgentController extends Controller
     protected function agentFromListings(array $listings, int|string $id): array
     {
         foreach ($listings as $listing) {
-            $agent = Arr::get($listing, 'agent');
-
-            if (is_array($agent) && (string) Arr::get($agent, 'id') === (string) $id) {
-                return $agent;
+            foreach (ListingMapper::extractAgents($listing) as $agent) {
+                if ((string) Arr::get($agent, 'id') === (string) $id) {
+                    return $agent;
+                }
             }
         }
 
@@ -114,8 +114,7 @@ class AgentController extends Controller
     protected function agentsFromListings(array $query = []): array
     {
         return Collection::make($this->corex->listings($query))
-            ->map(fn (array $listing): mixed => Arr::get($listing, 'agent'))
-            ->filter(fn (mixed $agent): bool => is_array($agent) && Arr::has($agent, 'id'))
+            ->flatMap(fn (array $listing): array => ListingMapper::extractAgents($listing))
             ->unique(fn (array $agent): mixed => $agent['id'])
             ->values()
             ->all();

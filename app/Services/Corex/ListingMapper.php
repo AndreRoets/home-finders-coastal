@@ -44,10 +44,13 @@ class ListingMapper
      *     image: string,
      *     url: string|null,
      *     agent: array{id: int|string, name: string, designation: string|null, photo: string}|null,
+     *     agents: array<int, array{id: int|string, name: string, designation: string|null, photo: string}>,
      * }
      */
     public static function map(array $listing, ?string $forceStatus = null): array
     {
+        $agents = self::cardAgents($listing);
+
         return [
             'id' => Arr::get($listing, 'id', ''),
             'ref' => Arr::get($listing, 'reference'),
@@ -62,7 +65,10 @@ class ListingMapper
             'exclusive' => self::isSole($listing),
             'image' => self::image($listing),
             'url' => Arr::get($listing, 'url') ?? Arr::get($listing, 'permalink'),
-            'agent' => self::cardAgent($listing),
+            // `agent` (the primary) is kept for backwards compatibility; `agents`
+            // carries every attributed agent so a co-listed property shows both.
+            'agent' => $agents[0] ?? null,
+            'agents' => $agents,
         ];
     }
 
@@ -95,28 +101,76 @@ class ListingMapper
     }
 
     /**
-     * The compact agent shown on a listing card (name + photo, linked to the
-     * agent detail page). Null when the listing has no attributed agent.
+     * Resolve the agents attributed to a listing, primary first, deduped by id.
+     *
+     * CoreX historically embedded a single `agent` object; a listing may now be
+     * co-listed by several. We treat `agent` as the primary and merge in any of
+     * the known multi-agent array fields (the live field name is unconfirmed, so
+     * we accept the plausible variants), dropping entries without an id and
+     * collapsing an agent that appears both as primary and in the array while
+     * preserving order.
      *
      * @param  array<string, mixed>  $listing
-     * @return array{id: int|string, name: string, designation: string|null, photo: string}|null
+     * @return array<int, array<string, mixed>>
      */
-    protected static function cardAgent(array $listing): ?array
+    public static function extractAgents(array $listing): array
     {
-        $agent = Arr::get($listing, 'agent');
+        $candidates = [];
 
-        if (! is_array($agent) || ! Arr::has($agent, 'id')) {
-            return null;
+        $primary = Arr::get($listing, 'agent');
+
+        if (is_array($primary)) {
+            $candidates[] = $primary;
         }
 
-        $mapped = AgentMapper::map($agent);
+        foreach (['agents', 'co_agents', 'additional_agents', 'secondary_agents'] as $field) {
+            foreach ((array) Arr::get($listing, $field, []) as $agent) {
+                if (is_array($agent)) {
+                    $candidates[] = $agent;
+                }
+            }
+        }
 
-        return [
-            'id' => $mapped['id'],
-            'name' => $mapped['name'],
-            'designation' => $mapped['designation'],
-            'photo' => $mapped['photo'],
-        ];
+        $resolved = [];
+        $seen = [];
+
+        foreach ($candidates as $agent) {
+            if (! Arr::has($agent, 'id')) {
+                continue;
+            }
+
+            $id = (string) Arr::get($agent, 'id');
+
+            if (isset($seen[$id])) {
+                continue;
+            }
+
+            $seen[$id] = true;
+            $resolved[] = $agent;
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * The compact agents (name + photo, linked to the agent detail page) shown
+     * on a listing card. Empty when the listing has no attributed agent.
+     *
+     * @param  array<string, mixed>  $listing
+     * @return array<int, array{id: int|string, name: string, designation: string|null, photo: string}>
+     */
+    protected static function cardAgents(array $listing): array
+    {
+        return array_map(static function (array $agent): array {
+            $mapped = AgentMapper::map($agent);
+
+            return [
+                'id' => $mapped['id'],
+                'name' => $mapped['name'],
+                'designation' => $mapped['designation'],
+                'photo' => $mapped['photo'],
+            ];
+        }, self::extractAgents($listing));
     }
 
     /**
@@ -127,7 +181,10 @@ class ListingMapper
      */
     public static function detail(array $listing): array
     {
-        $agent = Arr::get($listing, 'agent');
+        $agents = array_map(
+            static fn (array $agent): array => AgentMapper::map($agent),
+            self::extractAgents($listing),
+        );
 
         return array_merge(self::map($listing), [
             'headline' => Arr::get($listing, 'headline'),
@@ -157,7 +214,10 @@ class ListingMapper
                 'levy' => Arr::get($listing, 'costs.levy'),
                 'specialLevy' => Arr::get($listing, 'costs.special_levy'),
             ],
-            'agent' => is_array($agent) ? AgentMapper::map($agent) : null,
+            // Full agents (with phone/email) for the detail sidebar; `agent`
+            // stays as the primary for backwards compatibility.
+            'agent' => $agents[0] ?? null,
+            'agents' => $agents,
         ]);
     }
 

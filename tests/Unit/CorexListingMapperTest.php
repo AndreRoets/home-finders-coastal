@@ -95,6 +95,52 @@ class CorexListingMapperTest extends TestCase
         $this->assertStringContainsString('placehold', $mapped['image']);
     }
 
+    public function test_it_maps_multiple_agents_on_a_listing(): void
+    {
+        $listing = [
+            'id' => 202,
+            'agent' => ['id' => 7, 'name' => 'Lerato Mokoena', 'designation' => 'Principal', 'photo_url' => 'https://corex.test/7.jpg'],
+            // CoreX embeds co-listed agents in `agents`, repeating the primary.
+            'agents' => [
+                ['id' => 7, 'name' => 'Lerato Mokoena', 'photo_url' => 'https://corex.test/7.jpg'],
+                ['id' => 9, 'name' => 'Sipho Dlamini', 'photo_url' => 'https://corex.test/9.jpg'],
+            ],
+        ];
+
+        $card = ListingMapper::map($listing);
+
+        // Deduped, primary first; `agent` stays the primary for back-compat.
+        $this->assertCount(2, $card['agents']);
+        $this->assertSame(7, $card['agents'][0]['id']);
+        $this->assertSame(9, $card['agents'][1]['id']);
+        $this->assertSame($card['agents'][0], $card['agent']);
+
+        // Detail carries the full agent shape (phone/email).
+        $detail = ListingMapper::detail($listing);
+        $this->assertCount(2, $detail['agents']);
+        $this->assertSame('Sipho Dlamini', $detail['agents'][1]['name']);
+        $this->assertArrayHasKey('email', $detail['agents'][1]);
+    }
+
+    public function test_a_single_agent_listing_yields_one_agent(): void
+    {
+        $mapped = ListingMapper::map([
+            'id' => 303,
+            'agent' => ['id' => 4, 'name' => 'Thandi Nkosi', 'photo_url' => 'https://corex.test/4.jpg'],
+        ]);
+
+        $this->assertCount(1, $mapped['agents']);
+        $this->assertSame(4, $mapped['agent']['id']);
+    }
+
+    public function test_a_listing_with_no_agent_yields_an_empty_agents_list(): void
+    {
+        $mapped = ListingMapper::map(['id' => 404]);
+
+        $this->assertSame([], $mapped['agents']);
+        $this->assertNull($mapped['agent']);
+    }
+
     public function test_it_collapses_doubled_storage_segment_in_image_urls(): void
     {
         $listing = [

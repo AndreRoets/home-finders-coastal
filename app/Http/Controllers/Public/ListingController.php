@@ -10,7 +10,6 @@ use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
 use App\Services\Corex\TestimonialMapper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -79,8 +78,7 @@ class ListingController extends Controller
         }
 
         return Collection::make($this->corex->listings())
-            ->map(fn (array $listing): mixed => Arr::get($listing, 'agent'))
-            ->filter(fn (mixed $agent): bool => is_array($agent) && Arr::has($agent, 'id'))
+            ->flatMap(fn (array $listing): array => ListingMapper::extractAgents($listing))
             ->unique(fn (array $agent): mixed => $agent['id'])
             ->values()
             ->all();

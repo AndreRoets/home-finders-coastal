@@ -1,4 +1,5 @@
 import HomeAgents, { type Agent } from '@/components/public/home-agents';
+import ListingAgents from '@/components/public/listing-agents';
 import { type Listing } from '@/components/public/listings';
 import PropertySearch, { type SearchFacets } from '@/components/public/property-search';
 import { type Testimonial } from '@/components/public/testimonials';
@@ -347,20 +348,7 @@ export default function Home({
                                         <Maximize className="h-4 w-4" /> {listing.area}
                                     </span>
                                 </div>
-                                {listing.agent && (
-                                    <Link
-                                        href={agentUrl(listing.agent.id)}
-                                        className="mt-4 flex items-center gap-3 border-t border-slate-200 pt-4 text-sm text-neutral-600 transition-colors hover:text-marine"
-                                    >
-                                        <img src={listing.agent.photo} alt={listing.agent.name} className="h-8 w-8 rounded-full object-cover" />
-                                        <span>
-                                            <span className="block leading-tight">{listing.agent.name}</span>
-                                            {listing.agent.designation && (
-                                                <span className="block text-xs leading-tight text-neutral-400">{listing.agent.designation}</span>
-                                            )}
-                                        </span>
-                                    </Link>
-                                )}
+                                <ListingAgents listing={listing} />
                             </div>
                         );
                     })}

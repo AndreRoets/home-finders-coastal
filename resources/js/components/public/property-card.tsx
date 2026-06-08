@@ -1,6 +1,6 @@
-import { agentUrl } from '@/lib/routes';
 import { Link } from '@inertiajs/react';
 import { Bath, BedDouble, MapPin, Maximize } from 'lucide-react';
+import ListingAgents from './listing-agents';
 import { type Listing } from './listings';
 
 const statusBadge: Record<Listing['status'], string> = {
@@ -64,20 +64,7 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                     {listing.area}
                 </span>
             </div>
-            {listing.agent && (
-                <Link
-                    href={agentUrl(listing.agent.id)}
-                    className="mt-4 flex items-center gap-3 border-t border-slate-200 pt-4 text-sm text-neutral-600 transition-colors hover:text-marine"
-                >
-                    <img src={listing.agent.photo} alt={listing.agent.name} className="h-8 w-8 rounded-full object-cover" />
-                    <span>
-                        <span className="block leading-tight">{listing.agent.name}</span>
-                        {listing.agent.designation && (
-                            <span className="block text-xs leading-tight text-neutral-400">{listing.agent.designation}</span>
-                        )}
-                    </span>
-                </Link>
-            )}
+            <ListingAgents listing={listing} />
         </div>
     );
 }

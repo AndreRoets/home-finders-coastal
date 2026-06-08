@@ -1,10 +1,9 @@
 import { type Listing, type ListingStatus } from '@/components/public/listings';
+import PropertyGallery from '@/components/public/property-gallery';
 import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Trees } from 'lucide-react';
-import { useState } from 'react';
 
 interface PropertyAgent {
     id: number | string;
@@ -28,7 +27,10 @@ interface Property extends Listing {
     features: string[];
     images: string[];
     costs: { ratesTaxes: number | null; levy: number | null; specialLevy: number | null };
+    /** Primary agent, kept for backwards compatibility — prefer `agents`. */
     agent: PropertyAgent | null;
+    /** Every agent attributed to the listing (a property may be co-listed). */
+    agents: PropertyAgent[];
 }
 
 const statusBadge: Record<ListingStatus, string> = {
@@ -44,8 +46,7 @@ function formatRand(amount: number): string {
 
 export default function PropertyDetail({ property }: { property: Property }) {
     const images = property.images.length > 0 ? property.images : [property.image];
-    const [active, setActive] = useState(0);
-    const activeImage = images[active] ?? images[0];
+    const agents = property.agents?.length ? property.agents : property.agent ? [property.agent] : [];
     const showExclusive = property.exclusive && property.status !== 'exclusive' && property.status !== 'sold';
 
     const specs = [
@@ -73,40 +74,24 @@ export default function PropertyDetail({ property }: { property: Property }) {
                     Back to listings
                 </Link>
 
-                {/* Gallery — large active image with a thumbnail strip of every photo */}
+                {/* Gallery — cover + thumbnails, opening a full-screen lightbox */}
                 <div className="mt-6">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 md:aspect-[16/9]">
-                        <img src={activeImage} alt={property.title} className="h-full w-full object-cover" />
-                        <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                            <span className="rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                                {statusBadge[property.status]}
-                            </span>
-                            {showExclusive && (
-                                <span className="rounded-full border border-marine/60 bg-marine/80 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                                    Exclusive
+                    <PropertyGallery
+                        images={images}
+                        title={property.title}
+                        badges={
+                            <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                                <span className="rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                    {statusBadge[property.status]}
                                 </span>
-                            )}
-                        </div>
-                    </div>
-                    {images.length > 1 && (
-                        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-6">
-                            {images.map((src, i) => (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => setActive(i)}
-                                    aria-label={`View image ${i + 1} of ${images.length}`}
-                                    aria-current={i === active}
-                                    className={cn(
-                                        'relative aspect-[4/3] overflow-hidden rounded-sm bg-slate-100 ring-2 transition',
-                                        i === active ? 'ring-marine' : 'ring-transparent hover:ring-slate-300',
-                                    )}
-                                >
-                                    <img src={src} alt={`${property.title} ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                                {showExclusive && (
+                                    <span className="rounded-full border border-marine/60 bg-marine/80 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                        Exclusive
+                                    </span>
+                                )}
+                            </div>
+                        }
+                    />
                 </div>
 
                 <div className="mt-8 grid gap-10 lg:grid-cols-[2fr_1fr]">
@@ -179,39 +164,46 @@ export default function PropertyDetail({ property }: { property: Property }) {
                     {/* Agent sidebar */}
                     <aside>
                         <div className="sticky top-24 rounded-sm border border-slate-200 bg-slate-50 p-6">
-                            {property.agent ? (
-                                <>
-                                    <Link href={agentUrl(property.agent.id)} className="group flex items-center gap-4">
-                                        <img src={property.agent.photo} alt={property.agent.name} className="h-16 w-16 rounded-full object-cover" />
-                                        <div>
-                                            <p className="text-xs tracking-[0.2em] text-marine uppercase">Listed by</p>
-                                            <p className="text-lg font-light text-navy transition-colors group-hover:text-marine">{property.agent.name}</p>
-                                            {property.agent.designation && (
-                                                <p className="text-sm text-neutral-500">{property.agent.designation}</p>
-                                            )}
+                            {agents.length > 0 ? (
+                                <div className="space-y-6">
+                                    {agents.map((agent) => (
+                                        <div
+                                            key={agent.id}
+                                            className="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-slate-200 [&:not(:first-child)]:pt-6"
+                                        >
+                                            <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
+                                                <img src={agent.photo} alt={agent.name} className="h-16 w-16 rounded-full object-cover" />
+                                                <div>
+                                                    <p className="text-xs tracking-[0.2em] text-marine uppercase">
+                                                        {agents.length > 1 ? 'Co-listed by' : 'Listed by'}
+                                                    </p>
+                                                    <p className="text-lg font-light text-navy transition-colors group-hover:text-marine">{agent.name}</p>
+                                                    {agent.designation && <p className="text-sm text-neutral-500">{agent.designation}</p>}
+                                                </div>
+                                            </Link>
+                                            <div className="mt-4 space-y-2.5 text-sm">
+                                                {agent.phone && (
+                                                    <a
+                                                        href={`tel:${agent.phone.replace(/\s/g, '')}`}
+                                                        className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
+                                                    >
+                                                        <Phone className="h-4 w-4 text-neutral-400" />
+                                                        {agent.phone}
+                                                    </a>
+                                                )}
+                                                {agent.email && (
+                                                    <a
+                                                        href={`mailto:${agent.email}`}
+                                                        className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
+                                                    >
+                                                        <Mail className="h-4 w-4 text-neutral-400" />
+                                                        <span className="truncate">{agent.email}</span>
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
-                                    </Link>
-                                    <div className="mt-6 space-y-2.5 text-sm">
-                                        {property.agent.phone && (
-                                            <a
-                                                href={`tel:${property.agent.phone.replace(/\s/g, '')}`}
-                                                className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
-                                            >
-                                                <Phone className="h-4 w-4 text-neutral-400" />
-                                                {property.agent.phone}
-                                            </a>
-                                        )}
-                                        {property.agent.email && (
-                                            <a
-                                                href={`mailto:${property.agent.email}`}
-                                                className="flex items-center gap-2 text-neutral-600 transition-colors hover:text-marine"
-                                            >
-                                                <Mail className="h-4 w-4 text-neutral-400" />
-                                                <span className="truncate">{property.agent.email}</span>
-                                            </a>
-                                        )}
-                                    </div>
-                                </>
+                                    ))}
+                                </div>
                             ) : (
                                 <p className="text-sm text-neutral-600">Contact our office for more information on this property.</p>
                             )}

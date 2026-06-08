@@ -297,7 +297,10 @@ function PriceRange({
     onMaxChange: (value: number) => void;
 }) {
     const trackRef = useRef<HTMLDivElement>(null);
-    const [dragging, setDragging] = useState<'min' | 'max' | null>(null);
+    // Which handle is being dragged. A ref (not state) so the pointermove handler
+    // always reads the current value synchronously — state would lag a render
+    // behind the first move and drop the drag.
+    const draggingRef = useRef<'min' | 'max' | null>(null);
 
     const pct = (value: number) => ((value - min) / (max - min)) * 100;
 
@@ -321,21 +324,28 @@ function PriceRange({
         }
     };
 
-    const handlePointerDown = (thumb: 'min' | 'max') => (event: PointerEvent<HTMLButtonElement>) => {
+    // Pointer interaction lives on the whole track: a press grabs the nearest
+    // handle (so clicking the bar jumps it there, like a native slider) and the
+    // track captures the pointer so the drag survives the cursor leaving the bar.
+    const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        setDragging(thumb);
-        apply(thumb, valueFromClientX(event.clientX));
+        const value = valueFromClientX(event.clientX);
+        const thumb: 'min' | 'max' = Math.abs(value - minValue) <= Math.abs(value - maxValue) ? 'min' : 'max';
+        draggingRef.current = thumb;
+        trackRef.current?.setPointerCapture(event.pointerId);
+        apply(thumb, value);
     };
 
-    const handlePointerMove = (thumb: 'min' | 'max') => (event: PointerEvent<HTMLButtonElement>) => {
-        if (dragging !== thumb) {
+    const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+        if (!draggingRef.current) {
             return;
         }
-        apply(thumb, valueFromClientX(event.clientX));
+        apply(draggingRef.current, valueFromClientX(event.clientX));
     };
 
-    const stopDragging = () => setDragging(null);
+    const stopDragging = () => {
+        draggingRef.current = null;
+    };
 
     const handleKeyDown = (thumb: 'min' | 'max', value: number) => (event: KeyboardEvent<HTMLButtonElement>) => {
         let next = value;
@@ -354,14 +364,23 @@ function PriceRange({
         apply(thumb, Math.min(max, Math.max(min, next)));
     };
 
+    // Handles sit above the track but don't intercept the pointer themselves —
+    // presses bubble to the track so it can grab whichever handle is nearest.
     const thumbClass = cn(
-        'border-marine absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-none rounded-full border-2 bg-white shadow outline-none',
-        'focus-visible:ring-marine focus-visible:ring-2 focus-visible:ring-offset-2',
+        'border-marine pointer-events-none absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white shadow outline-none',
+        'focus-visible:ring-marine focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-offset-2',
         light ? 'focus-visible:ring-offset-white' : 'focus-visible:ring-offset-transparent',
     );
 
     return (
-        <div ref={trackRef} className="relative mt-3 h-6">
+        <div
+            ref={trackRef}
+            className="relative mt-3 h-6 cursor-pointer touch-none"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={stopDragging}
+            onPointerCancel={stopDragging}
+        >
             <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
             <div
                 className="bg-marine absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
@@ -376,10 +395,6 @@ function PriceRange({
                 aria-valuenow={minValue}
                 className={thumbClass}
                 style={{ left: `${pct(minValue)}%` }}
-                onPointerDown={handlePointerDown('min')}
-                onPointerMove={handlePointerMove('min')}
-                onPointerUp={stopDragging}
-                onPointerCancel={stopDragging}
                 onKeyDown={handleKeyDown('min', minValue)}
             />
             <button
@@ -391,10 +406,6 @@ function PriceRange({
                 aria-valuenow={maxValue}
                 className={thumbClass}
                 style={{ left: `${pct(maxValue)}%` }}
-                onPointerDown={handlePointerDown('max')}
-                onPointerMove={handlePointerMove('max')}
-                onPointerUp={stopDragging}
-                onPointerCancel={stopDragging}
                 onKeyDown={handleKeyDown('max', maxValue)}
             />
         </div>

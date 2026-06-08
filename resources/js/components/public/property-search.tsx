@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, type PointerEvent, useRef, useState } from 'react';
 
 export interface SearchFacets {
     suburbs: string[];
@@ -43,7 +43,13 @@ const EMPTY_FACETS: SearchFacets = {
     price: { sale: { min: 0, max: 0 }, rent: { min: 0, max: 0 } },
 };
 
-export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMode = 'sale', values, variant = 'hero', branchId = null }: PropertySearchProps) {
+export default function PropertySearch({
+    filters = EMPTY_FACETS,
+    mode: initialMode = 'sale',
+    values,
+    variant = 'hero',
+    branchId = null,
+}: PropertySearchProps) {
     const [mode, setMode] = useState<Mode>(initialMode);
     const [suburb, setSuburb] = useState(values?.suburb ?? '');
     const [type, setType] = useState(values?.type ?? '');
@@ -89,8 +95,6 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
         router.get(route(mode === 'sale' ? 'for-sale' : 'to-rent'), params, { preserveScroll: false });
     };
 
-    const pct = (value: number) => (hasPrice ? ((value - range.min) / (range.max - range.min)) * 100 : 0);
-
     // The hero variant floats over the dark photographic hero (white text); the
     // page variant sits on the white page background (dark text).
     const light = variant === 'page';
@@ -108,7 +112,7 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                         onClick={() => switchMode(m)}
                         className={cn(
                             'rounded-full px-5 py-1.5 text-sm font-medium tracking-wide transition-colors',
-                            mode === m ? 'bg-navy text-white' : light ? 'text-neutral-600 hover:text-navy' : 'text-neutral-200 hover:text-white',
+                            mode === m ? 'bg-navy text-white' : light ? 'hover:text-navy text-neutral-600' : 'text-neutral-200 hover:text-white',
                         )}
                     >
                         {m === 'sale' ? 'Buy' : 'Rent'}
@@ -166,41 +170,38 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
             {/* Price range */}
             {hasPrice && (
                 <div className="mt-6">
-                    <div className={cn('flex items-center justify-between text-xs tracking-[0.15em] uppercase', light ? 'text-neutral-700' : 'text-white')}>
+                    <div
+                        className={cn(
+                            'flex items-center justify-between text-xs tracking-[0.15em] uppercase',
+                            light ? 'text-neutral-700' : 'text-white',
+                        )}
+                    >
                         <span>Price range</span>
-                        <span className={cn('normal-case tracking-normal', light ? 'text-neutral-500' : 'text-neutral-200')}>
+                        <span className={cn('tracking-normal normal-case', light ? 'text-neutral-500' : 'text-neutral-200')}>
                             {formatPrice(minPrice)} — {formatPrice(maxPrice)}
                         </span>
                     </div>
-                    <div className="relative mt-3 h-6">
-                        <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
-                        <div
-                            className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-marine"
-                            style={{ left: `${pct(minPrice)}%`, width: `${pct(maxPrice) - pct(minPrice)}%` }}
-                        />
-                        <RangeThumb
-                            label="Minimum price"
-                            min={range.min}
-                            max={range.max}
-                            step={step}
-                            value={minPrice}
-                            onChange={(v) => setMinPrice(Math.min(v, maxPrice - step))}
-                        />
-                        <RangeThumb
-                            label="Maximum price"
-                            min={range.min}
-                            max={range.max}
-                            step={step}
-                            value={maxPrice}
-                            onChange={(v) => setMaxPrice(Math.max(v, minPrice + step))}
-                        />
-                    </div>
+                    <PriceRange
+                        light={light}
+                        min={range.min}
+                        max={range.max}
+                        step={step}
+                        minValue={minPrice}
+                        maxValue={maxPrice}
+                        onMinChange={(v) => setMinPrice(Math.min(v, maxPrice - step))}
+                        onMaxChange={(v) => setMaxPrice(Math.max(v, minPrice + step))}
+                    />
                 </div>
             )}
 
             {/* Keyword + submit */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className={cn('flex flex-1 items-center gap-3 rounded-full border px-4', light ? 'border-slate-300 bg-white' : 'border-white/15 bg-ink/30')}>
+                <div
+                    className={cn(
+                        'flex flex-1 items-center gap-3 rounded-full border px-4',
+                        light ? 'border-slate-300 bg-white' : 'bg-ink/30 border-white/15',
+                    )}
+                >
                     <Search className={cn('h-5 w-5 shrink-0', light ? 'text-neutral-500' : 'text-white')} />
                     <input
                         type="text"
@@ -216,7 +217,7 @@ export default function PropertySearch({ filters = EMPTY_FACETS, mode: initialMo
                 </div>
                 <button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-navy px-8 py-3 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-navy/90"
+                    className="bg-navy hover:bg-navy/90 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
                 >
                     <Search className="h-4 w-4" />
                     Search
@@ -252,50 +253,150 @@ function SelectControl({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 className={cn(
-                    'w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-marine',
-                    light ? 'border-slate-300 bg-white text-neutral-800' : 'border-white/15 bg-ink/40 text-white',
+                    'focus:border-marine w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm transition-colors outline-none',
+                    light ? 'border-slate-300 bg-white text-neutral-800' : 'bg-ink/40 border-white/15 text-white',
                 )}
             >
                 {children}
             </select>
             <ChevronDown
-                className={cn('pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2', light ? 'text-neutral-500' : 'text-neutral-400')}
+                className={cn(
+                    'pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2',
+                    light ? 'text-neutral-500' : 'text-neutral-400',
+                )}
             />
         </div>
     );
 }
 
-function RangeThumb({
-    label,
+/**
+ * A dual-handle price range slider driven by pointer events rather than two
+ * overlapping native `<input type="range">` elements. Native overlapping ranges
+ * are unreliable to drag (the invisible top input swallows the lower thumb), so
+ * we render our own thumbs and translate pointer/keyboard input into snapped
+ * values. Each thumb is a `role="slider"` button so keyboard and screen-reader
+ * users keep full control.
+ */
+function PriceRange({
+    light,
     min,
     max,
     step,
-    value,
-    onChange,
+    minValue,
+    maxValue,
+    onMinChange,
+    onMaxChange,
 }: {
-    label: string;
+    light: boolean;
     min: number;
     max: number;
     step: number;
-    value: number;
-    onChange: (value: number) => void;
+    minValue: number;
+    maxValue: number;
+    onMinChange: (value: number) => void;
+    onMaxChange: (value: number) => void;
 }) {
+    const trackRef = useRef<HTMLDivElement>(null);
+    const [dragging, setDragging] = useState<'min' | 'max' | null>(null);
+
+    const pct = (value: number) => ((value - min) / (max - min)) * 100;
+
+    const valueFromClientX = (clientX: number): number => {
+        const track = trackRef.current;
+        if (!track) {
+            return min;
+        }
+        const rect = track.getBoundingClientRect();
+        const ratio = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
+        const raw = min + Math.min(1, Math.max(0, ratio)) * (max - min);
+        const snapped = Math.round(raw / step) * step;
+        return Math.min(max, Math.max(min, snapped));
+    };
+
+    const apply = (thumb: 'min' | 'max', value: number) => {
+        if (thumb === 'min') {
+            onMinChange(value);
+        } else {
+            onMaxChange(value);
+        }
+    };
+
+    const handlePointerDown = (thumb: 'min' | 'max') => (event: PointerEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setDragging(thumb);
+        apply(thumb, valueFromClientX(event.clientX));
+    };
+
+    const handlePointerMove = (thumb: 'min' | 'max') => (event: PointerEvent<HTMLButtonElement>) => {
+        if (dragging !== thumb) {
+            return;
+        }
+        apply(thumb, valueFromClientX(event.clientX));
+    };
+
+    const stopDragging = () => setDragging(null);
+
+    const handleKeyDown = (thumb: 'min' | 'max', value: number) => (event: KeyboardEvent<HTMLButtonElement>) => {
+        let next = value;
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+            next = value - step;
+        } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+            next = value + step;
+        } else if (event.key === 'Home') {
+            next = min;
+        } else if (event.key === 'End') {
+            next = max;
+        } else {
+            return;
+        }
+        event.preventDefault();
+        apply(thumb, Math.min(max, Math.max(min, next)));
+    };
+
+    const thumbClass = cn(
+        'border-marine absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-none rounded-full border-2 bg-white shadow outline-none',
+        'focus-visible:ring-marine focus-visible:ring-2 focus-visible:ring-offset-2',
+        light ? 'focus-visible:ring-offset-white' : 'focus-visible:ring-offset-transparent',
+    );
+
     return (
-        <input
-            type="range"
-            aria-label={label}
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={(event) => onChange(Number(event.target.value))}
-            // Full-height track + touch-action:none so the thumb is easy to grab and
-            // dragging it doesn't scroll the page on touch devices.
-            className={cn(
-                'pointer-events-none absolute top-1/2 h-6 w-full -translate-y-1/2 appearance-none bg-transparent [touch-action:none]',
-                '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-marine [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:[touch-action:none]',
-                '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-marine [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:[touch-action:none]',
-            )}
-        />
+        <div ref={trackRef} className="relative mt-3 h-6">
+            <div className={cn('absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full', light ? 'bg-slate-200' : 'bg-white/20')} />
+            <div
+                className="bg-marine absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+                style={{ left: `${pct(minValue)}%`, width: `${pct(maxValue) - pct(minValue)}%` }}
+            />
+            <button
+                type="button"
+                role="slider"
+                aria-label="Minimum price"
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={minValue}
+                className={thumbClass}
+                style={{ left: `${pct(minValue)}%` }}
+                onPointerDown={handlePointerDown('min')}
+                onPointerMove={handlePointerMove('min')}
+                onPointerUp={stopDragging}
+                onPointerCancel={stopDragging}
+                onKeyDown={handleKeyDown('min', minValue)}
+            />
+            <button
+                type="button"
+                role="slider"
+                aria-label="Maximum price"
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={maxValue}
+                className={thumbClass}
+                style={{ left: `${pct(maxValue)}%` }}
+                onPointerDown={handlePointerDown('max')}
+                onPointerMove={handlePointerMove('max')}
+                onPointerUp={stopDragging}
+                onPointerCancel={stopDragging}
+                onKeyDown={handleKeyDown('max', maxValue)}
+            />
+        </div>
     );
 }

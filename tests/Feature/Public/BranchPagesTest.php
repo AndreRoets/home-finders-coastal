@@ -63,6 +63,33 @@ class BranchPagesTest extends TestCase
             );
     }
 
+    public function test_branches_render_in_the_api_order_not_alphabetically(): void
+    {
+        // CoreX sorts branches server-side per the agency's branch_order_mode.
+        // The website must render the array as received and never re-sort it —
+        // here the feed is deliberately not alphabetical.
+        Http::fake([
+            '*/agency*' => Http::response(['data' => $this->fakeAgency()]),
+            '*/branches*' => Http::response([
+                'data' => [
+                    ['id' => 1, 'trading_name' => 'Zinkwazi', 'agent_count' => 0, 'listing_count' => 0, 'agents' => []],
+                    ['id' => 2, 'trading_name' => 'Margate', 'agent_count' => 0, 'listing_count' => 0, 'agents' => []],
+                    ['id' => 3, 'trading_name' => 'Amanzimtoti', 'agent_count' => 0, 'listing_count' => 0, 'agents' => []],
+                ],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $this->get(route('branches'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('branches', 3)
+                ->where('branches.0.tradingName', 'Zinkwazi')
+                ->where('branches.1.tradingName', 'Margate')
+                ->where('branches.2.tradingName', 'Amanzimtoti')
+            );
+    }
+
     public function test_blank_branch_fields_fall_back_to_agency_defaults(): void
     {
         Http::fake([

@@ -29,6 +29,7 @@ export const siteNavItems: SiteNavItem[] = [
     { title: 'Sold', routeName: 'sold' },
     { title: 'Agents', routeName: 'agents' },
     { title: 'Branches', routeName: 'branches', gatedBy: 'branches' },
+    { title: 'Bond Calculator', routeName: 'bond-calculator' },
     { title: 'Contact', routeName: 'contact' },
 ];
 

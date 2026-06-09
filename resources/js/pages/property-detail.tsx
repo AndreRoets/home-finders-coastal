@@ -1,4 +1,5 @@
 import AgentAvatar from '@/components/public/agent-avatar';
+import BondCalculator from '@/components/public/bond-calculator';
 import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PropertyGallery from '@/components/public/property-gallery';
 import PublicLayout from '@/layouts/public-layout';
@@ -390,6 +391,9 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                 Enquire about this property
                             </Link>
                         </div>
+
+                        {/* Bond repayment estimate, pre-filled with this property's price. */}
+                        <BondCalculator initialAmount={property.price} compact className="mt-6" />
                     </aside>
                 </div>
             </div>

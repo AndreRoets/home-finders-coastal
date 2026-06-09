@@ -14,6 +14,7 @@ use App\Models\Page;
 use App\Models\PageRedirect;
 use App\Support\PageRoutes;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -88,6 +89,9 @@ foreach (PageRoutes::actions() as $key => $action) {
 // feature toggle — the controller 404s when it is off.
 Route::get('branches', [BranchController::class, 'index'])->name('branches');
 Route::get('branches/{id}', [BranchController::class, 'show'])->name('branches.show');
+
+// Bond repayment calculator — a static, client-side tool (no CoreX/backend).
+Route::get('bond-calculator', fn () => Inertia::render('bond-calculator'))->name('bond-calculator');
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');

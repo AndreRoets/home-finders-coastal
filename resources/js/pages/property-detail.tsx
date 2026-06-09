@@ -336,64 +336,66 @@ export default function PropertyDetail({ property }: { property: Property }) {
                         )}
                     </div>
 
-                    {/* Agent sidebar */}
+                    {/* Agent sidebar — the card and calculator stick together as one unit */}
                     <aside>
-                        <div className="sticky top-24 rounded-sm border border-slate-200 bg-slate-50 p-6">
-                            {agents.length > 0 ? (
-                                <div className="space-y-6">
-                                    {agents.map((agent) => (
-                                        <div
-                                            key={agent.id}
-                                            className="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-slate-200 [&:not(:first-child)]:pt-6"
-                                        >
-                                            <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
-                                                <AgentAvatar src={agent.photo} alt={agent.name} className="h-16 w-16" />
-                                                <div>
-                                                    <p className="text-marine text-xs tracking-[0.2em] uppercase">
-                                                        {agents.length > 1 ? 'Co-listed by' : 'Listed by'}
-                                                    </p>
-                                                    <p className="text-navy group-hover:text-marine text-lg font-light transition-colors">
-                                                        {agent.name}
-                                                    </p>
-                                                    {agent.designation && <p className="text-sm text-neutral-500">{agent.designation}</p>}
+                        <div className="sticky top-24 space-y-6">
+                            <div className="rounded-sm border border-slate-200 bg-slate-50 p-6">
+                                {agents.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {agents.map((agent) => (
+                                            <div
+                                                key={agent.id}
+                                                className="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-slate-200 [&:not(:first-child)]:pt-6"
+                                            >
+                                                <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
+                                                    <AgentAvatar src={agent.photo} alt={agent.name} className="h-16 w-16" />
+                                                    <div>
+                                                        <p className="text-marine text-xs tracking-[0.2em] uppercase">
+                                                            {agents.length > 1 ? 'Co-listed by' : 'Listed by'}
+                                                        </p>
+                                                        <p className="text-navy group-hover:text-marine text-lg font-light transition-colors">
+                                                            {agent.name}
+                                                        </p>
+                                                        {agent.designation && <p className="text-sm text-neutral-500">{agent.designation}</p>}
+                                                    </div>
+                                                </Link>
+                                                <div className="mt-4 space-y-2.5 text-sm">
+                                                    {agent.phone && (
+                                                        <a
+                                                            href={`tel:${agent.phone.replace(/\s/g, '')}`}
+                                                            className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
+                                                        >
+                                                            <Phone className="h-4 w-4 text-neutral-400" />
+                                                            {agent.phone}
+                                                        </a>
+                                                    )}
+                                                    {agent.email && (
+                                                        <a
+                                                            href={`mailto:${agent.email}`}
+                                                            className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
+                                                        >
+                                                            <Mail className="h-4 w-4 text-neutral-400" />
+                                                            <span className="truncate">{agent.email}</span>
+                                                        </a>
+                                                    )}
                                                 </div>
-                                            </Link>
-                                            <div className="mt-4 space-y-2.5 text-sm">
-                                                {agent.phone && (
-                                                    <a
-                                                        href={`tel:${agent.phone.replace(/\s/g, '')}`}
-                                                        className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
-                                                    >
-                                                        <Phone className="h-4 w-4 text-neutral-400" />
-                                                        {agent.phone}
-                                                    </a>
-                                                )}
-                                                {agent.email && (
-                                                    <a
-                                                        href={`mailto:${agent.email}`}
-                                                        className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
-                                                    >
-                                                        <Mail className="h-4 w-4 text-neutral-400" />
-                                                        <span className="truncate">{agent.email}</span>
-                                                    </a>
-                                                )}
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-neutral-600">Contact our office for more information on this property.</p>
-                            )}
-                            <Link
-                                href={route('contact')}
-                                className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
-                            >
-                                Enquire about this property
-                            </Link>
-                        </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-neutral-600">Contact our office for more information on this property.</p>
+                                )}
+                                <Link
+                                    href={route('contact')}
+                                    className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
+                                >
+                                    Enquire about this property
+                                </Link>
+                            </div>
 
-                        {/* Bond repayment estimate, pre-filled with this property's price. */}
-                        <BondCalculator initialAmount={property.price} compact className="mt-6" />
+                            {/* Bond repayment estimate, pre-filled with this property's price. */}
+                            <BondCalculator initialAmount={property.price} compact />
+                        </div>
                     </aside>
                 </div>
             </div>

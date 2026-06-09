@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Bath, BedDouble, Car, Film, Mail, MapPin, Maximize, PawPrint, Phone, Play, Trees } from 'lucide-react';
+import { ArrowLeft, Bath, BedDouble, Car, Film, Mail, MapPin, Maximize, PawPrint, Phone, Play, SquareParking, Trees } from 'lucide-react';
 
 interface PropertyAgent {
     id: number | string;
@@ -92,11 +92,20 @@ export default function PropertyDetail({ property }: { property: Property }) {
     const agents = property.agents?.length ? property.agents : property.agent ? [property.agent] : [];
     const showExclusive = property.exclusive && property.status !== 'exclusive' && property.status !== 'sold';
 
+    const spaces = property.spaces ?? [];
+
+    // Parking is carried as a space, not a top-level field. Sum any "Parking"
+    // spaces (a null count means the space exists but is unquantified → 1).
+    const parkingCount = spaces.filter((space) => space.type.toLowerCase() === 'parking').reduce((total, space) => total + (space.count ?? 1), 0);
+
+    // Only surface specs that have a meaningful value: skip zero counts and an
+    // empty floor area ("—"), so e.g. a property with no garages drops it.
     const specs = [
-        { icon: BedDouble, label: 'Beds', value: property.beds },
-        { icon: Bath, label: 'Baths', value: property.baths },
-        { icon: Car, label: 'Garages', value: property.garages },
-        { icon: Maximize, label: 'Floor', value: property.area },
+        ...(property.beds > 0 ? [{ icon: BedDouble, label: 'Beds', value: property.beds as string | number }] : []),
+        ...(property.baths > 0 ? [{ icon: Bath, label: 'Baths', value: property.baths }] : []),
+        ...(property.garages > 0 ? [{ icon: Car, label: 'Garages', value: property.garages }] : []),
+        ...(parkingCount > 0 ? [{ icon: SquareParking, label: 'Parking', value: parkingCount }] : []),
+        ...(property.area && property.area !== '—' ? [{ icon: Maximize, label: 'Floor', value: property.area }] : []),
         ...(property.erfSize ? [{ icon: Trees, label: 'Erf', value: property.erfSize }] : []),
     ];
 
@@ -106,7 +115,6 @@ export default function PropertyDetail({ property }: { property: Property }) {
         { label: 'Special levy', value: property.costs.specialLevy },
     ].filter((c) => c.value != null) as { label: string; value: number }[];
 
-    const spaces = property.spaces ?? [];
     // Prefer the labelled, grouped features; fall back to the flat list.
     const featureGroups = property.featuresGrouped ?? [];
     const flatFeatures = property.features ?? [];
@@ -162,16 +170,18 @@ export default function PropertyDetail({ property }: { property: Property }) {
                             <p className="mt-1 text-sm text-neutral-500">{[property.propertyType, property.category].filter(Boolean).join(' · ')}</p>
                         )}
 
-                        {/* Specs */}
-                        <div className="mt-8 grid grid-cols-2 gap-4 rounded-sm border border-slate-200 bg-slate-50 p-6 sm:grid-cols-3 lg:grid-cols-5">
-                            {specs.map((spec) => (
-                                <div key={spec.label} className="flex flex-col items-center gap-1.5 text-center">
-                                    <spec.icon className="text-marine h-5 w-5" />
-                                    <span className="text-navy text-sm font-medium">{spec.value}</span>
-                                    <span className="text-xs tracking-wide text-neutral-500 uppercase">{spec.label}</span>
-                                </div>
-                            ))}
-                        </div>
+                        {/* Specs — centred, only the values that are present */}
+                        {specs.length > 0 && (
+                            <div className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6 rounded-sm border border-slate-200 bg-slate-50 p-6">
+                                {specs.map((spec) => (
+                                    <div key={spec.label} className="flex w-16 flex-col items-center gap-1.5 text-center">
+                                        <spec.icon className="text-marine h-5 w-5" />
+                                        <span className="text-navy text-sm font-medium">{spec.value}</span>
+                                        <span className="text-xs tracking-wide text-neutral-500 uppercase">{spec.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         {spaces.length > 0 && (
                             <section className="mt-10">

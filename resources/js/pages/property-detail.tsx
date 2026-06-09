@@ -385,11 +385,10 @@ export default function PropertyDetail({ property }: { property: Property }) {
                             )}
                             <Link
                                 href={route('contact')}
-                                className="bg-brand-red hover:bg-brand-red-bright mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
+                                className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
                             >
                                 Enquire about this property
                             </Link>
-                            {property.ref && <p className="mt-4 text-center text-xs tracking-wide text-neutral-500">Ref: {property.ref}</p>}
                         </div>
                     </aside>
                 </div>

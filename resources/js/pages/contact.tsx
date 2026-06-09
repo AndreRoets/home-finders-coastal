@@ -40,11 +40,11 @@ export default function Contact() {
                 <div className="space-y-6 lg:col-span-1">
                     {contact?.address && (
                         <div className="flex gap-4">
-                            <div className="border-marine/40 text-marine flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
+                            <div className="border-navy/40 text-navy flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
                                 <MapPin className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-marine text-xs tracking-[0.2em] uppercase">Office</p>
+                                <p className="text-navy text-xs tracking-[0.2em] uppercase">Office</p>
                                 <p className="mt-1 text-sm text-neutral-600">{contact.address}</p>
                             </div>
                         </div>
@@ -52,11 +52,11 @@ export default function Contact() {
 
                     {contact?.phone && (
                         <div className="flex gap-4">
-                            <div className="border-marine/40 text-marine flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
+                            <div className="border-navy/40 text-navy flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
                                 <Phone className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-marine text-xs tracking-[0.2em] uppercase">Phone</p>
+                                <p className="text-navy text-xs tracking-[0.2em] uppercase">Phone</p>
                                 <a
                                     href={`tel:${contact.phoneHref}`}
                                     className="hover:text-marine mt-1 block text-sm text-neutral-600 transition-colors"
@@ -69,11 +69,11 @@ export default function Contact() {
 
                     {email && (
                         <div className="flex gap-4">
-                            <div className="border-marine/40 text-marine flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
+                            <div className="border-navy/40 text-navy flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
                                 <Mail className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-marine text-xs tracking-[0.2em] uppercase">Email</p>
+                                <p className="text-navy text-xs tracking-[0.2em] uppercase">Email</p>
                                 <a href={`mailto:${email}`} className="hover:text-marine mt-1 block text-sm text-neutral-600 transition-colors">
                                     {email}
                                 </a>
@@ -83,11 +83,11 @@ export default function Contact() {
 
                     {openHours.length > 0 && (
                         <div className="flex gap-4">
-                            <div className="border-marine/40 text-marine flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
+                            <div className="border-navy/40 text-navy flex h-11 w-11 shrink-0 items-center justify-center rounded-full border">
                                 <Clock className="h-5 w-5" />
                             </div>
                             <div>
-                                <p className="text-marine text-xs tracking-[0.2em] uppercase">Hours</p>
+                                <p className="text-navy text-xs tracking-[0.2em] uppercase">Hours</p>
                                 <ul className="mt-1 space-y-0.5 text-sm text-neutral-600">
                                     {openHours.map((row) => (
                                         <li key={row.days}>
@@ -200,7 +200,7 @@ export default function Contact() {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="bg-brand-red hover:bg-brand-red-bright mt-7 inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-semibold tracking-wide text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                            className="bg-navy hover:bg-navy/90 mt-7 inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-semibold tracking-wide text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {processing ? 'Sending…' : 'Send Message'}
                         </button>

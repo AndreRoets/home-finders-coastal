@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Bath, BedDouble, Car, Film, Mail, MapPin, Maximize, PawPrint, Phone, Play, SquareParking, Trees } from 'lucide-react';
+import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Play, SquareParking, Trees } from 'lucide-react';
 
 interface PropertyAgent {
     id: number | string;
@@ -92,7 +92,9 @@ export default function PropertyDetail({ property }: { property: Property }) {
     const agents = property.agents?.length ? property.agents : property.agent ? [property.agent] : [];
     const showExclusive = property.exclusive && property.status !== 'exclusive' && property.status !== 'sold';
 
-    const spaces = property.spaces ?? [];
+    // Drop spaces the property doesn't actually have (an explicit count of 0).
+    // A null count is kept — it's an unquantified space that still exists.
+    const spaces = (property.spaces ?? []).filter((space) => space.count !== 0);
 
     // Parking is carried as a space, not a top-level field. Sum any "Parking"
     // spaces (a null count means the space exists but is unquantified → 1).
@@ -298,25 +300,14 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                     )}
 
                                     {video.virtualTourUrl && (
-                                        <div>
-                                            <div className="aspect-video w-full overflow-hidden rounded-sm border border-slate-200 bg-black">
-                                                <iframe
-                                                    src={video.virtualTourUrl}
-                                                    title={`${property.title} — virtual tour`}
-                                                    className="h-full w-full"
-                                                    allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen; autoplay; encrypted-media"
-                                                    allowFullScreen
-                                                />
-                                            </div>
-                                            <a
-                                                href={video.virtualTourUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="hover:text-marine mt-2 inline-flex items-center gap-2 text-xs font-medium text-neutral-500 transition-colors"
-                                            >
-                                                <Film className="h-3.5 w-3.5" />
-                                                Open virtual tour in a new tab
-                                            </a>
+                                        <div className="aspect-video w-full overflow-hidden rounded-sm border border-slate-200 bg-black">
+                                            <iframe
+                                                src={video.virtualTourUrl}
+                                                title={`${property.title} — virtual tour`}
+                                                className="h-full w-full"
+                                                allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen; autoplay; encrypted-media"
+                                                allowFullScreen
+                                            />
                                         </div>
                                     )}
                                 </div>

@@ -242,6 +242,14 @@ class ListingMapper
                 (array) Arr::get($listing, 'features', []),
                 'is_string',
             )),
+            // Features bucketed by category for labelled display; prefer this
+            // over the flat `features` list, falling back to it when empty.
+            'featuresGrouped' => self::featuresGrouped($listing),
+            // Every space on the property (Bedroom, Pool, Garage, …) with its
+            // count, features and optional per-room units.
+            'spaces' => self::spaces($listing),
+            // YouTube / Matterport / virtual-tour media; null when none set.
+            'video' => self::video($listing),
             'images' => array_values(array_map(
                 self::normalizeImageUrl(...),
                 array_filter(
@@ -259,6 +267,145 @@ class ListingMapper
             'agent' => $agents[0] ?? null,
             'agents' => $agents,
         ]);
+    }
+
+    /**
+     * Map CoreX's `features_grouped` into ordered, labelled buckets for display.
+     *
+     * Each group is `{ group, label, items[] }`. We keep the feed's order and
+     * drop any group with no string items (CoreX already omits empty groups,
+     * but we guard defensively). Returns [] when the feed sends no grouped
+     * features, in which case the frontend falls back to the flat `features`.
+     *
+     * @param  array<string, mixed>  $listing
+     * @return array<int, array{group: string, label: string, items: array<int, string>}>
+     */
+    protected static function featuresGrouped(array $listing): array
+    {
+        $groups = Arr::get($listing, 'features_grouped');
+
+        if (! is_array($groups)) {
+            return [];
+        }
+
+        $resolved = [];
+
+        foreach ($groups as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+
+            $items = array_values(array_filter(
+                (array) Arr::get($group, 'items', []),
+                static fn ($i): bool => is_string($i) && $i !== '',
+            ));
+
+            if ($items === []) {
+                continue;
+            }
+
+            $key = (string) Arr::get($group, 'group', '');
+
+            $resolved[] = [
+                'group' => $key,
+                'label' => (string) (self::nullableString(Arr::get($group, 'label')) ?? Str::title($key)),
+                'items' => $items,
+            ];
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Map CoreX's `spaces` into a normalised list for the amenities section.
+     *
+     * Each space is `{ type, count, features[], description, units[]? }`.
+     * `count` may be an integer, a half (2.5) or null; `units` (per-room
+     * detail) is optional. Returns [] when the feed sends no spaces.
+     *
+     * @param  array<string, mixed>  $listing
+     * @return array<int, array{type: string, count: int|float|null, features: array<int, string>, description: string|null, units: array<int, array{label: string, features: array<int, string>}>}>
+     */
+    protected static function spaces(array $listing): array
+    {
+        $spaces = Arr::get($listing, 'spaces');
+
+        if (! is_array($spaces)) {
+            return [];
+        }
+
+        return array_values(array_map(static function (array $space): array {
+            $units = Arr::get($space, 'units');
+
+            return [
+                'type' => (string) Arr::get($space, 'type', ''),
+                'count' => self::spaceCount(Arr::get($space, 'count')),
+                'features' => array_values(array_filter(
+                    (array) Arr::get($space, 'features', []),
+                    static fn ($f): bool => is_string($f) && $f !== '',
+                )),
+                'description' => self::nullableString(Arr::get($space, 'description')),
+                'units' => is_array($units)
+                    ? array_values(array_map(static fn (array $unit): array => [
+                        'label' => (string) Arr::get($unit, 'label', ''),
+                        'features' => array_values(array_filter(
+                            (array) Arr::get($unit, 'features', []),
+                            static fn ($f): bool => is_string($f) && $f !== '',
+                        )),
+                    ], array_filter($units, 'is_array')))
+                    : [],
+            ];
+        }, array_filter($spaces, 'is_array')));
+    }
+
+    /**
+     * Normalise a space count: keep whole numbers as ints, halves as floats,
+     * and anything non-numeric (including null) as null.
+     */
+    protected static function spaceCount(mixed $count): int|float|null
+    {
+        if (! is_numeric($count)) {
+            return null;
+        }
+
+        $value = (float) $count;
+
+        return floor($value) === $value ? (int) $value : $value;
+    }
+
+    /**
+     * Map CoreX's `video` object into the frontend shape. Any field may be
+     * null; when every field is null (or the object is absent) we return null
+     * so the frontend renders nothing.
+     *
+     * @param  array<string, mixed>  $listing
+     * @return array{youtubeId: string|null, youtubeUrl: string|null, matterportId: string|null, virtualTourUrl: string|null}|null
+     */
+    protected static function video(array $listing): ?array
+    {
+        $video = Arr::get($listing, 'video');
+
+        if (! is_array($video)) {
+            return null;
+        }
+
+        $mapped = [
+            'youtubeId' => self::nullableString(Arr::get($video, 'youtube_id')),
+            'youtubeUrl' => self::nullableString(Arr::get($video, 'youtube_url')),
+            'matterportId' => self::nullableString(Arr::get($video, 'matterport_id')),
+            'virtualTourUrl' => self::nullableString(Arr::get($video, 'virtual_tour_url')),
+        ];
+
+        return array_filter($mapped, static fn ($v): bool => $v !== null) === [] ? null : $mapped;
+    }
+
+    /**
+     * Return a trimmed-to-null string: the value when it is a non-empty
+     * string, otherwise null.
+     */
+    protected static function nullableString(mixed $value): ?string
+    {
+        return is_string($value) && $value !== '' ? $value : null;
     }
 
     /**

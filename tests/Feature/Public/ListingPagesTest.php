@@ -195,4 +195,50 @@ class ListingPagesTest extends TestCase
 
         $this->get(route('property.show', 'missing'))->assertNotFound();
     }
+
+    public function test_property_detail_renders_spaces_grouped_features_and_video(): void
+    {
+        // A listing with the full enriched payload: a pool, parking, grouped
+        // security/connectivity features, a YouTube video and a virtual tour.
+        Http::fake([
+            '*/listings/12' => Http::response(['data' => [
+                'id' => 12,
+                'title' => 'Clifftop Villa',
+                'listing_type' => 'sale',
+                'status' => 'for_sale',
+                'price_display' => 'R 9,500,000',
+                'features' => ['Intercom', 'CCTV', 'Fibre', 'Pool'],
+                'features_grouped' => [
+                    ['group' => 'security', 'label' => 'Security', 'items' => ['Intercom', 'CCTV']],
+                    ['group' => 'connectivity', 'label' => 'Connectivity', 'items' => ['Fibre']],
+                    ['group' => 'other', 'label' => 'Other', 'items' => ['Pool']],
+                ],
+                'spaces' => [
+                    ['type' => 'Pool', 'count' => 1, 'features' => ['Heated'], 'description' => 'Sparkling'],
+                    ['type' => 'Parking', 'count' => 2, 'features' => []],
+                ],
+                'video' => [
+                    'youtube_id' => 'abc123',
+                    'youtube_url' => 'https://www.youtube.com/watch?v=abc123',
+                    'matterport_id' => null,
+                    'virtual_tour_url' => 'https://tour.example/1',
+                ],
+            ]]),
+        ]);
+
+        $this->get(route('property.show', 'clifftop-villa-12'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('property-detail')
+                ->where('property.featuresGrouped.0.label', 'Security')
+                ->where('property.featuresGrouped.0.items', ['Intercom', 'CCTV'])
+                ->where('property.spaces.0.type', 'Pool')
+                ->where('property.spaces.0.count', 1)
+                ->where('property.spaces.0.features', ['Heated'])
+                ->where('property.spaces.1.type', 'Parking')
+                ->where('property.video.youtubeId', 'abc123')
+                ->where('property.video.virtualTourUrl', 'https://tour.example/1')
+                ->where('property.video.matterportId', null)
+            );
+    }
 }

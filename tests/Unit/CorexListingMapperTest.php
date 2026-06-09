@@ -188,6 +188,126 @@ class CorexListingMapperTest extends TestCase
         $this->assertSame('abc-uuid', ListingMapper::idFromSlug('abc-uuid'));
     }
 
+    public function test_detail_maps_grouped_features_in_order_and_keeps_the_flat_list(): void
+    {
+        $detail = ListingMapper::detail([
+            'id' => 600,
+            'features' => ['Intercom', 'CCTV', 'Fibre', 'Pool'],
+            'features_grouped' => [
+                ['group' => 'security', 'label' => 'Security', 'items' => ['Intercom', 'CCTV']],
+                ['group' => 'connectivity', 'label' => 'Connectivity', 'items' => ['Fibre']],
+                ['group' => 'other', 'label' => 'Other', 'items' => ['Pool']],
+            ],
+        ]);
+
+        $this->assertSame(['Intercom', 'CCTV', 'Fibre', 'Pool'], $detail['features']);
+        $this->assertCount(3, $detail['featuresGrouped']);
+        $this->assertSame('Security', $detail['featuresGrouped'][0]['label']);
+        $this->assertSame(['Intercom', 'CCTV'], $detail['featuresGrouped'][0]['items']);
+        $this->assertSame('connectivity', $detail['featuresGrouped'][1]['group']);
+    }
+
+    public function test_detail_derives_a_group_label_and_drops_empty_groups(): void
+    {
+        $detail = ListingMapper::detail([
+            'id' => 601,
+            'features_grouped' => [
+                ['group' => 'security', 'items' => ['Alarm']], // no label → derived
+                ['group' => 'empty', 'label' => 'Empty', 'items' => []], // dropped
+            ],
+        ]);
+
+        $this->assertCount(1, $detail['featuresGrouped']);
+        $this->assertSame('Security', $detail['featuresGrouped'][0]['label']);
+    }
+
+    public function test_detail_falls_back_to_empty_grouped_features_when_absent(): void
+    {
+        $detail = ListingMapper::detail(['id' => 602, 'features' => ['Pool']]);
+
+        $this->assertSame([], $detail['featuresGrouped']);
+        $this->assertSame(['Pool'], $detail['features']);
+    }
+
+    public function test_detail_maps_spaces_with_counts_features_and_units(): void
+    {
+        $detail = ListingMapper::detail([
+            'id' => 610,
+            'spaces' => [
+                [
+                    'type' => 'Pool',
+                    'count' => 1,
+                    'features' => ['Heated'],
+                    'description' => 'Sparkling',
+                ],
+                [
+                    'type' => 'Bathroom',
+                    'count' => 2.5,
+                    'features' => [],
+                    'units' => [
+                        ['label' => 'Bedroom 1', 'features' => ['En-suite']],
+                    ],
+                ],
+                [
+                    'type' => 'Study',
+                    'count' => null,
+                ],
+            ],
+        ]);
+
+        $spaces = $detail['spaces'];
+        $this->assertCount(3, $spaces);
+
+        $this->assertSame('Pool', $spaces[0]['type']);
+        $this->assertSame(1, $spaces[0]['count']); // whole number stays an int
+        $this->assertSame(['Heated'], $spaces[0]['features']);
+        $this->assertSame('Sparkling', $spaces[0]['description']);
+        $this->assertSame([], $spaces[0]['units']);
+
+        $this->assertSame(2.5, $spaces[1]['count']); // half preserved as float
+        $this->assertNull($spaces[1]['description']);
+        $this->assertCount(1, $spaces[1]['units']);
+        $this->assertSame('Bedroom 1', $spaces[1]['units'][0]['label']);
+        $this->assertSame(['En-suite'], $spaces[1]['units'][0]['features']);
+
+        $this->assertNull($spaces[2]['count']);
+        $this->assertSame([], $spaces[2]['units']);
+    }
+
+    public function test_detail_yields_empty_spaces_when_absent(): void
+    {
+        $this->assertSame([], ListingMapper::detail(['id' => 611])['spaces']);
+    }
+
+    public function test_detail_maps_a_video_object(): void
+    {
+        $detail = ListingMapper::detail([
+            'id' => 620,
+            'video' => [
+                'youtube_id' => 'abc123',
+                'youtube_url' => 'https://www.youtube.com/watch?v=abc123',
+                'matterport_id' => null,
+                'virtual_tour_url' => 'https://tour.example/1',
+            ],
+        ]);
+
+        $this->assertSame('abc123', $detail['video']['youtubeId']);
+        $this->assertSame('https://www.youtube.com/watch?v=abc123', $detail['video']['youtubeUrl']);
+        $this->assertNull($detail['video']['matterportId']);
+        $this->assertSame('https://tour.example/1', $detail['video']['virtualTourUrl']);
+    }
+
+    public function test_detail_video_is_null_when_all_fields_are_null_or_absent(): void
+    {
+        $allNull = ListingMapper::detail([
+            'id' => 621,
+            'video' => ['youtube_id' => null, 'youtube_url' => null, 'matterport_id' => null, 'virtual_tour_url' => null],
+        ]);
+        $this->assertNull($allNull['video']);
+
+        $this->assertNull(ListingMapper::detail(['id' => 622])['video']);
+    }
+
     public function test_it_collapses_doubled_storage_segment_in_image_urls(): void
     {
         $listing = [

@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Trees } from 'lucide-react';
+import { ArrowLeft, Bath, BedDouble, Car, Film, Mail, MapPin, Maximize, PawPrint, Phone, Play, Trees } from 'lucide-react';
 
 interface PropertyAgent {
     id: number | string;
@@ -14,6 +14,36 @@ interface PropertyAgent {
     phone: string;
     email: string;
     photo: string;
+}
+
+/** A per-room detail within a space (e.g. "Bedroom 1" with its own features). */
+interface SpaceUnit {
+    label: string;
+    features: string[];
+}
+
+/** A space on the property — Bedroom, Pool, Garage, Parking, Study, etc. */
+interface Space {
+    type: string;
+    /** Integer, a half (2.5), or null when CoreX has no count. */
+    count: number | null;
+    features: string[];
+    description: string | null;
+    units: SpaceUnit[];
+}
+
+/** Features bucketed by category, in display order. */
+interface FeatureGroup {
+    group: string;
+    label: string;
+    items: string[];
+}
+
+interface PropertyVideo {
+    youtubeId: string | null;
+    youtubeUrl: string | null;
+    matterportId: string | null;
+    virtualTourUrl: string | null;
 }
 
 interface Property extends Listing {
@@ -27,12 +57,23 @@ interface Property extends Listing {
     petFriendly: boolean;
     address: string | null;
     features: string[];
+    /** Features grouped by category — prefer over `features` when non-empty. */
+    featuresGrouped: FeatureGroup[];
+    /** Every space on the property, with counts and optional per-room units. */
+    spaces: Space[];
+    /** YouTube / Matterport / virtual-tour media; null when none is set. */
+    video: PropertyVideo | null;
     images: string[];
     costs: { ratesTaxes: number | null; levy: number | null; specialLevy: number | null };
     /** Primary agent, kept for backwards compatibility — prefer `agents`. */
     agent: PropertyAgent | null;
     /** Every agent attributed to the listing (a property may be co-listed). */
     agents: PropertyAgent[];
+}
+
+/** "Pool × 1", "Parking × 2", or just "Study" when there is no count. */
+function spaceHeading(space: Space): string {
+    return space.count != null ? `${space.type} × ${space.count}` : space.type;
 }
 
 const statusBadge: Record<ListingStatus, string> = {
@@ -64,6 +105,13 @@ export default function PropertyDetail({ property }: { property: Property }) {
         { label: 'Levy', value: property.costs.levy },
         { label: 'Special levy', value: property.costs.specialLevy },
     ].filter((c) => c.value != null) as { label: string; value: number }[];
+
+    const spaces = property.spaces ?? [];
+    // Prefer the labelled, grouped features; fall back to the flat list.
+    const featureGroups = property.featuresGrouped ?? [];
+    const flatFeatures = property.features ?? [];
+    const video = property.video;
+    const hasVideo = !!(video && (video.youtubeId || video.youtubeUrl || video.matterportId || video.virtualTourUrl));
 
     return (
         <PublicLayout title={property.title} tone="light">
@@ -125,6 +173,37 @@ export default function PropertyDetail({ property }: { property: Property }) {
                             ))}
                         </div>
 
+                        {spaces.length > 0 && (
+                            <section className="mt-10">
+                                <h2 className="text-navy text-2xl font-light">Spaces &amp; amenities</h2>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                    {spaces.map((space, i) => (
+                                        <div key={`${space.type}-${i}`} className="rounded-sm border border-slate-200 bg-slate-50 p-4">
+                                            <div className="flex items-baseline justify-between gap-3">
+                                                <span className="text-navy text-sm font-medium">{spaceHeading(space)}</span>
+                                                {space.features.length > 0 && (
+                                                    <span className="text-right text-xs text-neutral-500">{space.features.join(' · ')}</span>
+                                                )}
+                                            </div>
+                                            {space.description && <p className="mt-2 text-sm text-neutral-600">{space.description}</p>}
+                                            {space.units.length > 0 && (
+                                                <ul className="mt-3 space-y-1.5 border-t border-slate-200 pt-3">
+                                                    {space.units.map((unit, u) => (
+                                                        <li key={`${unit.label}-${u}`} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                                                            <span className="text-neutral-700">{unit.label}</span>
+                                                            {unit.features.length > 0 && (
+                                                                <span className="text-xs text-neutral-500">{unit.features.join(' · ')}</span>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         {property.description && (
                             <section className="mt-10">
                                 <h2 className="text-navy text-2xl font-light">Description</h2>
@@ -133,17 +212,93 @@ export default function PropertyDetail({ property }: { property: Property }) {
                             </section>
                         )}
 
-                        {property.features.length > 0 && (
+                        {featureGroups.length > 0 ? (
                             <section className="mt-10">
                                 <h2 className="text-navy text-2xl font-light">Features</h2>
-                                <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                                    {property.features.map((feature) => (
-                                        <li key={feature} className="flex items-center gap-2 text-sm text-neutral-600">
-                                            <span className="bg-marine h-1.5 w-1.5 rounded-full" />
-                                            {feature}
-                                        </li>
+                                <div className="mt-4 space-y-6">
+                                    {featureGroups.map((group) => (
+                                        <div key={group.group || group.label}>
+                                            <h3 className="text-marine text-xs font-semibold tracking-[0.2em] uppercase">{group.label}</h3>
+                                            <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                                                {group.items.map((item) => (
+                                                    <li key={item} className="flex items-center gap-2 text-sm text-neutral-600">
+                                                        <span className="bg-marine h-1.5 w-1.5 rounded-full" />
+                                                        {item}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
+                            </section>
+                        ) : (
+                            flatFeatures.length > 0 && (
+                                <section className="mt-10">
+                                    <h2 className="text-navy text-2xl font-light">Features</h2>
+                                    <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                                        {flatFeatures.map((feature) => (
+                                            <li key={feature} className="flex items-center gap-2 text-sm text-neutral-600">
+                                                <span className="bg-marine h-1.5 w-1.5 rounded-full" />
+                                                {feature}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+                            )
+                        )}
+
+                        {hasVideo && video && (
+                            <section className="mt-10">
+                                <h2 className="text-navy text-2xl font-light">Video &amp; virtual tour</h2>
+                                <div className="mt-4 space-y-4">
+                                    {video.youtubeId ? (
+                                        <div className="aspect-video w-full overflow-hidden rounded-sm border border-slate-200 bg-black">
+                                            <iframe
+                                                src={`https://www.youtube.com/embed/${video.youtubeId}`}
+                                                title={`${property.title} — video tour`}
+                                                className="h-full w-full"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                    ) : (
+                                        video.youtubeUrl && (
+                                            <a
+                                                href={video.youtubeUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium text-neutral-700 transition-colors"
+                                            >
+                                                <Play className="h-4 w-4" />
+                                                Watch the video tour
+                                            </a>
+                                        )
+                                    )}
+
+                                    {video.matterportId && (
+                                        <div className="aspect-video w-full overflow-hidden rounded-sm border border-slate-200 bg-black">
+                                            <iframe
+                                                src={`https://my.matterport.com/show/?m=${video.matterportId}`}
+                                                title={`${property.title} — 3D tour`}
+                                                className="h-full w-full"
+                                                allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                    )}
+
+                                    {video.virtualTourUrl && (
+                                        <a
+                                            href={video.virtualTourUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium text-neutral-700 transition-colors"
+                                        >
+                                            <Film className="h-4 w-4" />
+                                            Other virtual tour / video
+                                        </a>
+                                    )}
+                                </div>
                             </section>
                         )}
 

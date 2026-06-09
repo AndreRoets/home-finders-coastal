@@ -298,15 +298,26 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                     )}
 
                                     {video.virtualTourUrl && (
-                                        <a
-                                            href={video.virtualTourUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium text-neutral-700 transition-colors"
-                                        >
-                                            <Film className="h-4 w-4" />
-                                            Other virtual tour / video
-                                        </a>
+                                        <div>
+                                            <div className="aspect-video w-full overflow-hidden rounded-sm border border-slate-200 bg-black">
+                                                <iframe
+                                                    src={video.virtualTourUrl}
+                                                    title={`${property.title} — virtual tour`}
+                                                    className="h-full w-full"
+                                                    allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen; autoplay; encrypted-media"
+                                                    allowFullScreen
+                                                />
+                                            </div>
+                                            <a
+                                                href={video.virtualTourUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-marine mt-2 inline-flex items-center gap-2 text-xs font-medium text-neutral-500 transition-colors"
+                                            >
+                                                <Film className="h-3.5 w-3.5" />
+                                                Open virtual tour in a new tab
+                                            </a>
+                                        </div>
                                     )}
                                 </div>
                             </section>

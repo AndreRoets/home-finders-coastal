@@ -21,9 +21,6 @@ export interface Agent {
 export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[]; tone?: 'dark' | 'light' }) {
     const [active, setActive] = useState(0);
     const holdUntil = useRef(0);
-    const stripRef = useRef<HTMLDivElement>(null);
-    const secondCopyRef = useRef<HTMLButtonElement>(null);
-    const paused = useRef(false);
     const light = tone === 'light';
 
     useEffect(() => {
@@ -37,29 +34,6 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
             setActive((index) => (index + 1) % agents.length);
         }, 5000);
         return () => clearInterval(id);
-    }, [agents.length]);
-
-    // Continuously drift the thumbnail strip sideways, looping seamlessly. The
-    // list is rendered twice; once scrolled past the first copy we subtract its
-    // width so the motion never visibly resets.
-    useEffect(() => {
-        const strip = stripRef.current;
-        if (!strip || agents.length === 0) {
-            return;
-        }
-        let raf = 0;
-        const step = () => {
-            if (!paused.current) {
-                const half = secondCopyRef.current?.offsetLeft ?? strip.scrollWidth / 2;
-                strip.scrollLeft += 0.4;
-                if (half > 0 && strip.scrollLeft >= half) {
-                    strip.scrollLeft -= half;
-                }
-            }
-            raf = requestAnimationFrame(step);
-        };
-        raf = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(raf);
     }, [agents.length]);
 
     if (agents.length === 0) {
@@ -161,31 +135,30 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                             >
                                 <ChevronLeft className="h-4 w-4" />
                             </button>
-                            <div
-                                ref={stripRef}
-                                onMouseEnter={() => (paused.current = true)}
-                                onMouseLeave={() => (paused.current = false)}
-                                className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-2 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                            >
-                                {[...agents, ...agents].map((option, i) => {
-                                    const index = i % agents.length;
-                                    return (
-                                        <button
-                                            key={i}
-                                            ref={i === agents.length ? secondCopyRef : undefined}
-                                            type="button"
-                                            onClick={() => select(index)}
-                                            aria-label={option.name}
-                                            aria-pressed={index === active}
-                                            className={cn(
-                                                'h-12 w-12 shrink-0 rounded-full ring-2 transition',
-                                                index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
-                                            )}
-                                        >
-                                            <AgentAvatar src={option.photo} alt="" className="h-full w-full" eager />
-                                        </button>
-                                    );
-                                })}
+                            <div className="min-w-0 flex-1 overflow-hidden pb-2 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]">
+                                <div
+                                    className="animate-agent-marquee flex w-max gap-3 will-change-transform"
+                                    style={{ animationDuration: `${agents.length * 3}s` }}
+                                >
+                                    {[...agents, ...agents].map((option, i) => {
+                                        const index = i % agents.length;
+                                        return (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => select(index)}
+                                                aria-label={option.name}
+                                                aria-pressed={index === active}
+                                                className={cn(
+                                                    'h-12 w-12 shrink-0 rounded-full ring-2 transition',
+                                                    index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
+                                                )}
+                                            >
+                                                <AgentAvatar src={option.photo} alt="" className="h-full w-full" eager />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                             <button
                                 type="button"

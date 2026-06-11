@@ -6,6 +6,9 @@
 
         <title inertia>{{ ($seoPage->meta_title ?? null) ?: config('app.name', 'Laravel') }}</title>
 
+        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('favicon.png') }}">
+
         @include('partials.seo')
 
         <link rel="preconnect" href="https://fonts.bunny.net">

@@ -182,7 +182,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                                 index === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
                                             )}
                                         >
-                                            <AgentAvatar src={option.photo} alt="" className="h-full w-full" />
+                                            <AgentAvatar src={option.photo} alt="" className="h-full w-full" eager />
                                         </button>
                                     );
                                 })}

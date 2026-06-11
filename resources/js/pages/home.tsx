@@ -225,8 +225,24 @@ export default function Home({
 }) {
     const listings = recent;
     const [scrollY, setScrollY] = useState(0);
+    // The scroll-linked fade/parallax is a desktop flourish. On mobile the hero
+    // content (especially the tall search form) sits partly below the fold, so
+    // fading it out on scroll would hide the search before it can be used.
+    const [isDesktop, setIsDesktop] = useState(false);
 
     useEffect(() => {
+        const query = window.matchMedia('(min-width: 1024px)');
+        const update = () => setIsDesktop(query.matches);
+        update();
+        query.addEventListener('change', update);
+        return () => query.removeEventListener('change', update);
+    }, []);
+
+    useEffect(() => {
+        if (!isDesktop) {
+            setScrollY(0);
+            return;
+        }
         let frame = 0;
         const onScroll = () => {
             cancelAnimationFrame(frame);
@@ -237,7 +253,7 @@ export default function Home({
             window.removeEventListener('scroll', onScroll);
             cancelAnimationFrame(frame);
         };
-    }, []);
+    }, [isDesktop]);
 
     return (
         <PublicLayout title="Home Finders Coastal" tone="light">
@@ -253,14 +269,14 @@ export default function Home({
                 <div className="absolute inset-0 bg-gradient-to-r from-ink/70 to-transparent" />
 
                 <div
-                    className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-6 lg:px-8"
-                    style={{ opacity: Math.max(0, 1 - scrollY / 600), transform: `translateY(${scrollY * 0.15}px)` }}
+                    className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-start px-6 pt-28 pb-20 lg:justify-center lg:px-8 lg:pt-0 lg:pb-0"
+                    style={isDesktop ? { opacity: Math.max(0, 1 - scrollY / 600), transform: `translateY(${scrollY * 0.15}px)` } : undefined}
                 >
                     <h1 className="max-w-4xl text-5xl leading-[1.05] font-light tracking-tight text-white sm:text-6xl lg:text-7xl">
                         Your Journey, Our Expertise
                     </h1>
                     {filters && (
-                        <div className="mt-16 w-full max-w-3xl">
+                        <div className="mt-10 w-full max-w-3xl sm:mt-16">
                             <PropertySearch filters={filters} mode="sale" variant="hero" />
                         </div>
                     )}
@@ -268,7 +284,7 @@ export default function Home({
 
                 {/* Scroll cue */}
                 <div
-                    className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-white/70"
+                    className="pointer-events-none absolute inset-x-0 bottom-8 hidden flex-col items-center gap-2 text-white/70 lg:flex"
                     style={{ opacity: Math.max(0, 1 - scrollY / 250) }}
                 >
                     <span className="text-[11px] tracking-[0.3em] uppercase">Scroll</span>

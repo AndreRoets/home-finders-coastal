@@ -514,11 +514,30 @@ class ListingMapper
     /**
      * Defend against a malformed CoreX media URL that carries a doubled
      * `/storage/storage/` path segment, which 403s. Collapse it back to a
-     * single `/storage/` so the image resolves.
+     * single `/storage/` so the image resolves, then route it through the
+     * white-border trimming proxy when it lives on a CoreX media host.
      */
     protected static function normalizeImageUrl(string $url): string
     {
-        return str_replace('/storage/storage/', '/storage/', $url);
+        $url = str_replace('/storage/storage/', '/storage/', $url);
+
+        return self::trimmedUrl($url);
+    }
+
+    /**
+     * Wrap a CoreX media URL in the trimming proxy so any letterboxed white
+     * border is cropped before display. URLs on other hosts (e.g. placeholder
+     * services) are returned untouched.
+     */
+    protected static function trimmedUrl(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if ($host !== null && in_array($host, config('services.corex.media_hosts', []), true)) {
+            return route('media.trimmed', ['u' => $url]);
+        }
+
+        return $url;
     }
 
     /**

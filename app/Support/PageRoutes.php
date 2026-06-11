@@ -38,7 +38,7 @@ class PageRoutes
         return [
             'admin', 'login', 'logout', 'register', 'dashboard',
             'settings', 'forgot-password', 'reset-password', 'verify-email',
-            'confirm-password', 'property', 'branches', 'bond-calculator', 'privacy-policy', 'sitemap.xml', 'robots.txt', 'up',
+            'confirm-password', 'property', 'branches', 'bond-calculator', 'privacy-policy', 'media', 'sitemap.xml', 'robots.txt', 'up',
         ];
     }
 }

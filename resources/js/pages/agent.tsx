@@ -1,8 +1,8 @@
+import AgentListings from '@/components/public/agent-listings';
 import AgentSocials from '@/components/public/agent-socials';
 import ArticleCard from '@/components/public/article-card';
 import { type Article } from '@/components/public/articles';
 import { type Listing } from '@/components/public/listings';
-import PropertyGrid from '@/components/public/property-grid';
 import { type Testimonial } from '@/components/public/testimonials';
 import PublicLayout from '@/layouts/public-layout';
 import { Link } from '@inertiajs/react';
@@ -114,7 +114,7 @@ export default function AgentDetail({
                 <section className="mt-16">
                     <h2 className="text-navy text-2xl font-light sm:text-3xl">{agent.name.split(' ')[0]}’s listings</h2>
                     <div className="mt-8">
-                        <PropertyGrid listings={listings} emptyMessage={`${agent.name} has no active listings right now.`} />
+                        <AgentListings listings={listings} agentName={agent.name} />
                     </div>
                 </section>
 

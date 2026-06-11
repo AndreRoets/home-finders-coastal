@@ -44,6 +44,13 @@ return [
         // When true, the site is served from the local demo dataset instead of
         // the live CoreX API (handy while the feed is unavailable).
         'demo' => (bool) env('COREX_DEMO', false),
+        // Hosts whose listing images may be served through the white-border
+        // trimming proxy. Anything else is left as a direct URL (and rejected
+        // by the proxy) so this can never become an open image proxy.
+        'media_hosts' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('COREX_MEDIA_HOSTS', 'staging.corexos.co.za,corexos.co.za,www.corexos.co.za')),
+        ))),
     ],
 
 ];

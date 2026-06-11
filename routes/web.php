@@ -9,6 +9,7 @@ use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\BranchController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\ListingController;
+use App\Http\Controllers\Public\MediaController;
 use App\Http\Controllers\SitemapController;
 use App\Models\Page;
 use App\Models\PageRedirect;
@@ -44,6 +45,9 @@ Route::middleware(['auth'])->get('dashboard', fn () => redirect()->route('admin.
 */
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('robots.txt', [SitemapController::class, 'robots'])->name('robots');
+
+// Listing image proxy — trims the white border off letterboxed CoreX photos.
+Route::get('media/trimmed', [MediaController::class, 'trimmed'])->name('media.trimmed');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

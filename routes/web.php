@@ -93,6 +93,10 @@ Route::get('branches/{id}', [BranchController::class, 'show'])->name('branches.s
 // Bond repayment calculator — a static, client-side tool (no CoreX/backend).
 Route::get('bond-calculator', fn () => Inertia::render('bond-calculator'))->name('bond-calculator');
 
+// Static legal pages — client-rendered, no CoreX/backend.
+Route::get('terms', fn () => Inertia::render('terms'))->name('terms');
+Route::get('privacy-policy', fn () => Inertia::render('privacy-policy'))->name('privacy-policy');
+
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');
 

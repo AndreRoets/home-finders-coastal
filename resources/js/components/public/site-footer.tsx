@@ -1,7 +1,6 @@
 import { type Agency, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Facebook, Instagram, Linkedin, type LucideIcon, Mail, MapPin, Phone, Youtube } from 'lucide-react';
-import { visibleNavItems } from './site-nav';
 
 /** Social networks we render, in display order, paired with their icon. */
 const socialIcons: { key: keyof NonNullable<Agency['socials']>; label: string; Icon: LucideIcon }[] = [
@@ -44,13 +43,16 @@ export default function SiteFooter() {
                 <div>
                     <h3 className="text-marine/80 text-xs font-medium tracking-[0.25em] uppercase">Explore</h3>
                     <ul className="mt-5 space-y-2.5 text-sm">
-                        {visibleNavItems(agency).map((item) => (
-                            <li key={item.routeName}>
-                                <Link href={route(item.routeName)} className="hover:text-marine text-neutral-400 transition-colors">
-                                    {item.title}
-                                </Link>
-                            </li>
-                        ))}
+                        <li>
+                            <Link href={route('terms')} className="hover:text-marine text-neutral-400 transition-colors">
+                                Terms
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href={route('privacy-policy')} className="hover:text-marine text-neutral-400 transition-colors">
+                                Privacy Policy
+                            </Link>
+                        </li>
                     </ul>
                 </div>
 
@@ -88,7 +90,8 @@ export default function SiteFooter() {
 
             <div className="border-t border-white/10">
                 <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs tracking-wide text-neutral-500 sm:px-6 lg:px-8">
-                    &copy; {new Date().getFullYear()} {agency?.name ?? 'Home Finders Coastal'}. All rights reserved.
+                    <p>Registered with the PPRA</p>
+                    <p className="mt-1">&copy; {new Date().getFullYear()} CorexOS. All rights reserved.</p>
                 </div>
             </div>
         </footer>

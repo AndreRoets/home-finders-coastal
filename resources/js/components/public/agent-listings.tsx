@@ -25,12 +25,13 @@ export default function AgentListings({ listings, agentName }: { listings: Listi
 
     const active = listings.filter((listing) => !isSold(listing));
     const sold = listings.filter(isSold);
-    const exclusive = listings.filter((listing) => listing.exclusive);
+    // A sold property is only ever "sold" — it drops out of the exclusives.
+    const exclusive = listings.filter((listing) => listing.exclusive && !isSold(listing));
 
     const allTabs: Array<{ key: FilterKey; label: string; listings: Listing[] }> = [
         { key: 'all', label: 'All', listings: activeFirst(listings) },
         { key: 'active', label: 'Active', listings: active },
-        { key: 'exclusive', label: 'Exclusives', listings: activeFirst(exclusive) },
+        { key: 'exclusive', label: 'Exclusives', listings: exclusive },
         { key: 'sold', label: 'Sold', listings: sold },
     ];
 

@@ -2,6 +2,7 @@ import AgentAvatar from '@/components/public/agent-avatar';
 import BondCalculator from '@/components/public/bond-calculator';
 import { type Listing, type ListingStatus } from '@/components/public/listings';
 import PropertyGallery from '@/components/public/property-gallery';
+import ShareButton from '@/components/public/share-button';
 import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
@@ -127,13 +128,16 @@ export default function PropertyDetail({ property }: { property: Property }) {
     return (
         <PublicLayout title={property.title} tone="light">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                <Link
-                    href={route('for-sale')}
-                    className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-600 transition-colors"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to listings
-                </Link>
+                <div className="flex items-center justify-between gap-4">
+                    <Link
+                        href={route('for-sale')}
+                        className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-600 transition-colors"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to listings
+                    </Link>
+                    <ShareButton title={property.title} />
+                </div>
 
                 {/* Gallery — cover + thumbnails, opening a full-screen lightbox */}
                 <div className="mt-6">

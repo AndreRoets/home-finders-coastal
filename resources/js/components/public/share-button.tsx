@@ -41,7 +41,7 @@ const TARGETS: ShareTarget[] = [
  * supports it (typically mobile), otherwise falls back to a popover with the
  * usual platforms plus a copy-link action.
  */
-export default function ShareButton({ title, className }: { title: string; className?: string }) {
+export default function ShareButton({ title, className, fullWidth = false }: { title: string; className?: string; fullWidth?: boolean }) {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -106,7 +106,10 @@ export default function ShareButton({ title, className }: { title: string; class
                 onClick={handleClick}
                 aria-haspopup="menu"
                 aria-expanded={open}
-                className="hover:border-marine/50 hover:text-marine inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors"
+                className={cn(
+                    'hover:border-marine/50 hover:text-marine inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-neutral-600 transition-colors',
+                    fullWidth && 'w-full px-6 py-3 font-semibold tracking-wide',
+                )}
             >
                 <Share2 className="h-4 w-4" />
                 Share

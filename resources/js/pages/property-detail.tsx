@@ -395,6 +395,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                 >
                                     Enquire about this property
                                 </Link>
+                                <ShareButton title={property.title} className="mt-3 flex justify-center" fullWidth />
                             </div>
 
                             {/* Bond repayment estimate, pre-filled with this property's price. */}

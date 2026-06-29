@@ -296,7 +296,7 @@ class ListingController extends Controller
      * @param  array<int, array<string, mixed>>  $listings
      * @return LengthAwarePaginator<int, array<string, mixed>>
      */
-    protected function paginate(array $listings, Request $request, ?string $forceStatus = null, int $perPage = 20): LengthAwarePaginator
+    protected function paginate(array $listings, Request $request, ?string $forceStatus = null, int $perPage = 21): LengthAwarePaginator
     {
         $page = LengthAwarePaginator::resolveCurrentPage();
         $slice = array_slice($listings, ($page - 1) * $perPage, $perPage);

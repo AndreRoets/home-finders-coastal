@@ -114,7 +114,7 @@ class ListingSearchTest extends TestCase
             );
     }
 
-    public function test_for_sale_paginates_at_twenty_per_page(): void
+    public function test_for_sale_paginates_at_twenty_one_per_page(): void
     {
         $listings = [];
 
@@ -137,7 +137,7 @@ class ListingSearchTest extends TestCase
         $this->get(route('for-sale'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings.data', 20)
+                ->has('listings.data', 21)
                 ->where('listings.total', 25)
                 ->where('listings.current_page', 1)
                 ->where('listings.last_page', 2)
@@ -146,7 +146,7 @@ class ListingSearchTest extends TestCase
         $this->get(route('for-sale', ['page' => 2]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings.data', 5)
+                ->has('listings.data', 4)
                 ->where('listings.current_page', 2)
             );
     }

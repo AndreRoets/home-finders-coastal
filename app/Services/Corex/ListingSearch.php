@@ -21,6 +21,7 @@ class ListingSearch
      * @return array{
      *     suburbs: list<string>,
      *     propertyTypes: list<string>,
+     *     suggestions: list<string>,
      *     maxBeds: int,
      *     maxBaths: int,
      *     price: array{sale: array{min: int, max: int}, rent: array{min: int, max: int}}
@@ -30,6 +31,7 @@ class ListingSearch
     {
         $suburbs = [];
         $types = [];
+        $suggestions = [];
         $maxBeds = 0;
         $maxBaths = 0;
         $saleMin = $saleMax = $rentMin = $rentMax = null;
@@ -45,6 +47,17 @@ class ListingSearch
 
             if ($type !== '') {
                 $types[$type] = true;
+            }
+
+            // Place names a keyword search can autocomplete against. Keyed by a
+            // lower-cased form so "Sea Point" / "sea point" collapse to one
+            // entry, while the first-seen original casing is what we surface.
+            foreach (['suburb', 'town', 'city'] as $field) {
+                $place = trim((string) Arr::get($listing, $field, ''));
+
+                if ($place !== '' && ! isset($suggestions[mb_strtolower($place)])) {
+                    $suggestions[mb_strtolower($place)] = $place;
+                }
             }
 
             $maxBeds = max($maxBeds, (int) Arr::get($listing, 'beds', 0));
@@ -67,10 +80,12 @@ class ListingSearch
 
         ksort($suburbs, SORT_NATURAL | SORT_FLAG_CASE);
         ksort($types, SORT_NATURAL | SORT_FLAG_CASE);
+        ksort($suggestions, SORT_NATURAL | SORT_FLAG_CASE);
 
         return [
             'suburbs' => array_keys($suburbs),
             'propertyTypes' => array_keys($types),
+            'suggestions' => array_values($suggestions),
             'maxBeds' => $maxBeds,
             'maxBaths' => $maxBaths,
             'price' => [

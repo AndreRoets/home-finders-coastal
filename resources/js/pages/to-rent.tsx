@@ -2,18 +2,19 @@ import BranchFilter from '@/components/public/branch-filter';
 import { type BranchOption } from '@/components/public/branches';
 import { type Listing } from '@/components/public/listings';
 import PageHero from '@/components/public/page-hero';
+import Pagination, { type Paginated } from '@/components/public/pagination';
 import PropertyGrid from '@/components/public/property-grid';
 import PropertySearch, { type SearchFacets, type SearchValues } from '@/components/public/property-search';
 import PublicLayout from '@/layouts/public-layout';
 
 export default function ToRent({
-    listings = [],
+    listings,
     filters,
     search,
     branches = [],
     activeBranch = null,
 }: {
-    listings?: Listing[];
+    listings: Paginated<Listing>;
     filters?: SearchFacets;
     search?: SearchValues;
     branches?: BranchOption[];
@@ -33,8 +34,9 @@ export default function ToRent({
                         <PropertySearch filters={filters} mode="rent" values={search} variant="page" branchId={activeBranch} />
                     </div>
                 )}
-                <p className="mb-8 text-xs tracking-[0.2em] text-marine/80 uppercase">{listings.length} properties available</p>
-                <PropertyGrid listings={listings} emptyMessage="No rentals match your search." />
+                <p className="mb-8 text-xs tracking-[0.2em] text-marine/80 uppercase">{listings.total} properties available</p>
+                <PropertyGrid listings={listings.data} emptyMessage="No rentals match your search." />
+                <Pagination page={listings} />
             </section>
         </PublicLayout>
     );

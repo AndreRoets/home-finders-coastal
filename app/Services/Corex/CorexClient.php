@@ -224,8 +224,24 @@ class CorexClient
 
                 array_push($rows, ...$data);
 
-                $lastPage = (int) ($response['meta']['last_page'] ?? $page);
-            } while (++$page <= $lastPage);
+                // CoreX exposes the page count under meta.last_page, but fail
+                // safe if it ever moves or is omitted: without a known last page
+                // we keep paging until a short (final) page arrives, so the full
+                // collection is fetched instead of silently stopping at page 1.
+                $lastPage = $response['meta']['last_page'] ?? $response['last_page'] ?? null;
+
+                if ($lastPage !== null) {
+                    if (++$page > (int) $lastPage) {
+                        break;
+                    }
+                } else {
+                    if (count($data) < $perPage) {
+                        break;
+                    }
+
+                    $page++;
+                }
+            } while (true);
 
             return $rows;
         };

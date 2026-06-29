@@ -40,6 +40,41 @@ class CorexListingMapperTest extends TestCase
         $this->assertSame('https://corex.test/1.jpg', $mapped['image']);
     }
 
+    public function test_floor_area_never_falls_back_to_erf_size(): void
+    {
+        // size_m2 null (no floor area captured), erf_size_m2 present: the Floor
+        // figure must be blank ("—"), and only the Erf must carry the land size.
+        // detail() is used because erfSize lives on the detail shape, not map().
+        $mapped = ListingMapper::detail([
+            'size_m2' => null,
+            'erf_size_m2' => 1152,
+        ]);
+        $this->assertSame('—', $mapped['area']);
+        $this->assertSame('1 152 m²', $mapped['erfSize']);
+    }
+
+    public function test_floor_and_erf_are_independent_when_both_present(): void
+    {
+        $mapped = ListingMapper::detail([
+            'size_m2' => 180,
+            'erf_size_m2' => 1152,
+        ]);
+
+        $this->assertSame('180 m²', $mapped['area']);
+        $this->assertSame('1 152 m²', $mapped['erfSize']);
+    }
+
+    public function test_zero_or_missing_sizes_render_no_floor_or_erf(): void
+    {
+        $mapped = ListingMapper::detail([
+            'size_m2' => 0,
+            'erf_size_m2' => 0,
+        ]);
+
+        $this->assertSame('—', $mapped['area']);
+        $this->assertNull($mapped['erfSize']);
+    }
+
     public function test_it_maps_a_rental_using_the_rental_object(): void
     {
         $mapped = ListingMapper::map([

@@ -34,8 +34,8 @@ class ListingPagesTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('for-sale')
-                ->has('listings', 2) // sale + exclusive (both active sales)
-                ->where('listings.0.status', 'for-sale')
+                ->has('listings.data', 2) // sale + exclusive (both active sales)
+                ->where('listings.data.0.status', 'for-sale')
             );
     }
 
@@ -46,21 +46,53 @@ class ListingPagesTest extends TestCase
         $this->get(route('to-rent'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.status', 'to-rent')
-                ->where('listings.0.price', 'R 9 000 / month')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.status', 'to-rent')
+                ->where('listings.data.0.price', 'R 9 000 / month')
             );
     }
 
     public function test_sold_page_shows_only_sold(): void
     {
         $this->fakeListings();
+        Http::fake(['*/agents*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]])]);
 
         $this->get(route('sold'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.status', 'sold')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.status', 'sold')
+            );
+    }
+
+    public function test_sold_page_hides_listings_whose_agent_is_turned_off(): void
+    {
+        // CoreX's /agents endpoint only returns website-visible agents: agent 7
+        // is live, agent 29 has been turned off (absent from /agents) but is still
+        // embedded on their sold listing.
+        Http::fake([
+            '*/agents*' => Http::response([
+                'data' => [['id' => 7, 'name' => 'Thandi Mbeki']],
+                'meta' => ['last_page' => 1],
+            ]),
+            '*/listings*' => Http::response([
+                'data' => [
+                    ['id' => 1, 'title' => 'Visible Sold', 'listing_type' => 'sale', 'status' => 'sold',
+                        'agent' => ['id' => 7, 'name' => 'Thandi Mbeki']],
+                    ['id' => 2, 'title' => 'Hidden Agent Sold', 'listing_type' => 'sale', 'status' => 'sold',
+                        'agent' => ['id' => 29, 'name' => 'Maggie Venter']],
+                    ['id' => 3, 'title' => 'No Agent Sold', 'listing_type' => 'sale', 'status' => 'sold'],
+                ],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $this->get(route('sold'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 2) // agent 7's listing + the agent-less one; agent 29's is hidden
+                ->where('listings.data.0.title', 'Visible Sold')
+                ->where('listings.data.1.title', 'No Agent Sold')
             );
     }
 
@@ -71,9 +103,9 @@ class ListingPagesTest extends TestCase
         $this->get(route('hfc-exclusive'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.title', 'Exclusive Estate')
-                ->where('listings.0.status', 'exclusive')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'Exclusive Estate')
+                ->where('listings.data.0.status', 'exclusive')
             );
     }
 
@@ -85,7 +117,7 @@ class ListingPagesTest extends TestCase
 
         $this->get(route('for-sale'))
             ->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('listings', 0));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('listings.data', 0));
     }
 
     public function test_agents_page_renders_mapped_agents(): void

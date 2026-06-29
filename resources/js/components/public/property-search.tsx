@@ -1,11 +1,13 @@
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
-import { ChevronDown, Search } from 'lucide-react';
-import { type FormEvent, type KeyboardEvent, type PointerEvent, useRef, useState } from 'react';
+import { ChevronDown, MapPin, Search } from 'lucide-react';
+import { type FormEvent, type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface SearchFacets {
     suburbs: string[];
     propertyTypes: string[];
+    /** Live place names (suburb/town/city) the keyword box can autocomplete against. */
+    suggestions: string[];
     maxBeds: number;
     maxBaths: number;
     price: {
@@ -38,6 +40,7 @@ interface PropertySearchProps {
 const EMPTY_FACETS: SearchFacets = {
     suburbs: [],
     propertyTypes: [],
+    suggestions: [],
     maxBeds: 0,
     maxBaths: 0,
     price: { sale: { min: 0, max: 0 }, rent: { min: 0, max: 0 } },
@@ -196,25 +199,7 @@ export default function PropertySearch({
 
             {/* Keyword + submit */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div
-                    className={cn(
-                        'flex flex-1 items-center gap-3 rounded-full border px-4',
-                        light ? 'border-slate-300 bg-white' : 'bg-ink/30 border-white/15',
-                    )}
-                >
-                    <Search className={cn('h-5 w-5 shrink-0', light ? 'text-neutral-500' : 'text-white')} />
-                    <input
-                        type="text"
-                        value={q}
-                        onChange={(event) => setQ(event.target.value)}
-                        placeholder="Keyword — suburb, area or feature…"
-                        aria-label="Search keyword"
-                        className={cn(
-                            'w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-neutral-400',
-                            light ? 'text-neutral-800' : 'text-white',
-                        )}
-                    />
-                </div>
+                <KeywordAutocomplete value={q} onChange={setQ} suggestions={filters.suggestions} light={light} />
                 <button
                     type="submit"
                     className="bg-navy hover:bg-navy/90 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
@@ -224,6 +209,152 @@ export default function PropertySearch({
                 </button>
             </div>
         </form>
+    );
+}
+
+/**
+ * The free-text keyword box with a live-data typeahead. As the user types we
+ * surface matching place names drawn from the current listings (passed in as
+ * `suggestions`), so we only ever suggest somewhere that has properties — never
+ * a hard-coded list. A match is any suggestion whose start, or the start of any
+ * word within it, matches what's typed ("She" → "Shelly Beach", "Sea" → "Sea
+ * View"). Selecting one fills the keyword; the surrounding form does the search.
+ */
+function KeywordAutocomplete({
+    value,
+    onChange,
+    suggestions,
+    light,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    suggestions: string[];
+    light: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const [active, setActive] = useState(-1);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const matches = useMemo(() => {
+        const query = value.trim().toLowerCase();
+
+        if (query === '') {
+            return [];
+        }
+
+        return suggestions
+            .filter((suggestion) => suggestion.toLowerCase().split(/\s+/).some((word) => word.startsWith(query)))
+            .slice(0, 8);
+    }, [value, suggestions]);
+
+    // Close the dropdown when focus/click moves outside the combobox.
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('touchstart', handlePointerDown);
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('touchstart', handlePointerDown);
+        };
+    }, [open]);
+
+    const showList = open && matches.length > 0;
+
+    const select = (suggestion: string) => {
+        onChange(suggestion);
+        setOpen(false);
+        setActive(-1);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (!showList) {
+            return;
+        }
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setActive((index) => (index + 1) % matches.length);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setActive((index) => (index <= 0 ? matches.length - 1 : index - 1));
+        } else if (event.key === 'Enter' && active >= 0) {
+            // Let a highlighted suggestion win over submitting the form.
+            event.preventDefault();
+            select(matches[active]);
+        } else if (event.key === 'Escape') {
+            setOpen(false);
+            setActive(-1);
+        }
+    };
+
+    return (
+        <div ref={containerRef} className="relative flex-1">
+            <div
+                className={cn(
+                    'flex items-center gap-3 rounded-full border px-4',
+                    light ? 'border-slate-300 bg-white' : 'bg-ink/30 border-white/15',
+                )}
+            >
+                <Search className={cn('h-5 w-5 shrink-0', light ? 'text-neutral-500' : 'text-white')} />
+                <input
+                    type="text"
+                    value={value}
+                    onChange={(event) => {
+                        onChange(event.target.value);
+                        setOpen(true);
+                        setActive(-1);
+                    }}
+                    onFocus={() => setOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Keyword — suburb, area or feature…"
+                    aria-label="Search keyword"
+                    role="combobox"
+                    aria-expanded={showList}
+                    aria-autocomplete="list"
+                    aria-controls="keyword-suggestions"
+                    autoComplete="off"
+                    className={cn(
+                        'w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-neutral-400',
+                        light ? 'text-neutral-800' : 'text-white',
+                    )}
+                />
+            </div>
+            {showList && (
+                <ul
+                    id="keyword-suggestions"
+                    role="listbox"
+                    className="absolute top-full right-0 left-0 z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-left shadow-lg"
+                >
+                    {matches.map((suggestion, index) => (
+                        <li key={suggestion} role="option" aria-selected={index === active}>
+                            <button
+                                type="button"
+                                // Use the press, not the click — clicking would first blur
+                                // the input and could collapse the list before we read it.
+                                onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    select(suggestion);
+                                }}
+                                onMouseEnter={() => setActive(index)}
+                                className={cn(
+                                    'flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-800 transition-colors',
+                                    index === active ? 'bg-slate-100' : 'hover:bg-slate-50',
+                                )}
+                            >
+                                <MapPin className="h-4 w-4 shrink-0 text-neutral-400" />
+                                {suggestion}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }
 

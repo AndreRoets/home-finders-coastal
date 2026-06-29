@@ -34,6 +34,7 @@ class ListingSearchTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('filters.suburbs', ['Camps Bay', 'Sea Point']) // sold + rental suburbs excluded, sorted
+                ->where('filters.suggestions', ['Camps Bay', 'Sea Point']) // autocomplete only offers live places
                 ->where('filters.propertyTypes', ['Apartment', 'Villa'])
                 ->where('filters.maxBeds', 4)
                 ->where('filters.maxBaths', 3)
@@ -49,8 +50,8 @@ class ListingSearchTest extends TestCase
         $this->get(route('for-sale', ['suburb' => 'Sea Point']))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.title', 'City Apartment')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'City Apartment')
             );
     }
 
@@ -61,8 +62,8 @@ class ListingSearchTest extends TestCase
         $this->get(route('for-sale', ['beds' => 3, 'min_price' => 5_000_000]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.title', 'Clifftop Villa')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'Clifftop Villa')
             );
     }
 
@@ -73,8 +74,8 @@ class ListingSearchTest extends TestCase
         $this->get(route('for-sale', ['q' => 'apartment']))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
-                ->where('listings.0.title', 'City Apartment')
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'City Apartment')
             );
     }
 
@@ -85,9 +86,68 @@ class ListingSearchTest extends TestCase
         $this->get(route('to-rent'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('listings', 1)
+                ->has('listings.data', 1)
                 ->where('filters.price.rent.min', 15000)
                 ->where('filters.price.rent.max', 15000)
+            );
+    }
+
+    public function test_keyword_suggestions_pull_places_from_live_listings_only(): void
+    {
+        Http::fake([
+            '*/listings*' => Http::response([
+                'data' => [
+                    ['id' => 1, 'title' => 'A', 'listing_type' => 'sale', 'status' => 'for_sale', 'suburb' => 'Shelly Beach', 'town' => 'Margate', 'city' => 'Margate', 'property_type' => 'House', 'price' => 1_000_000],
+                    // Same town as above (and a differently-cased duplicate) collapse to one entry.
+                    ['id' => 2, 'title' => 'B', 'listing_type' => 'sale', 'status' => 'for_sale', 'suburb' => 'shelly beach', 'town' => 'Margate', 'city' => 'Port Edward', 'property_type' => 'House', 'price' => 2_000_000],
+                ],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        $this->get(route('for-sale'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                // Deduped (case-insensitive), naturally sorted, and never anything
+                // that isn't on a live listing.
+                ->where('filters.suggestions', ['Margate', 'Port Edward', 'Shelly Beach'])
+            );
+    }
+
+    public function test_for_sale_paginates_at_twenty_per_page(): void
+    {
+        $listings = [];
+
+        for ($i = 1; $i <= 25; $i++) {
+            $listings[] = [
+                'id' => $i,
+                'title' => 'Sale '.$i,
+                'listing_type' => 'sale',
+                'status' => 'for_sale',
+                'suburb' => 'Margate',
+                'property_type' => 'House',
+                'price' => 1_000_000,
+            ];
+        }
+
+        Http::fake([
+            '*/listings*' => Http::response(['data' => $listings, 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('for-sale'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 20)
+                ->where('listings.total', 25)
+                ->where('listings.current_page', 1)
+                ->where('listings.last_page', 2)
+            );
+
+        $this->get(route('for-sale', ['page' => 2]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 5)
+                ->where('listings.current_page', 2)
             );
     }
 

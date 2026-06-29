@@ -2,16 +2,17 @@ import BranchFilter from '@/components/public/branch-filter';
 import { type BranchOption } from '@/components/public/branches';
 import { type Listing } from '@/components/public/listings';
 import PageHero from '@/components/public/page-hero';
+import Pagination, { type Paginated } from '@/components/public/pagination';
 import PropertyGrid from '@/components/public/property-grid';
 import PublicLayout from '@/layouts/public-layout';
 import { Link } from '@inertiajs/react';
 
 export default function HfcExclusive({
-    listings = [],
+    listings,
     branches = [],
     activeBranch = null,
 }: {
-    listings?: Listing[];
+    listings: Paginated<Listing>;
     branches?: BranchOption[];
     activeBranch?: number | string | null;
 }) {
@@ -27,7 +28,8 @@ export default function HfcExclusive({
                 <BranchFilter branches={branches} active={activeBranch} className="mb-8" />
                 <h2 className="text-navy text-3xl font-light">Exclusive Listings</h2>
                 <div className="mt-10">
-                    <PropertyGrid listings={listings} emptyMessage="No exclusive listings are available right now." />
+                    <PropertyGrid listings={listings.data} emptyMessage="No exclusive listings are available right now." />
+                    <Pagination page={listings} />
                 </div>
 
                 <div className="mt-16 rounded-sm border border-slate-200 bg-slate-50 px-8 py-12 text-center">

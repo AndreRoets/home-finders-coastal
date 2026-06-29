@@ -48,6 +48,22 @@ class CorexClientTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_it_follows_pagination_when_last_page_meta_is_absent(): void
+    {
+        // CoreX returns a full first page but no meta.last_page; the client must
+        // keep paging until a short (final) page rather than stopping at page 1
+        // — otherwise only the first 50 of the live collection would ever load.
+        $fullPage = array_map(static fn (int $i): array => ['id' => $i], range(1, 50));
+
+        Http::fake([
+            'corex.test/*page=1*' => Http::response(['data' => $fullPage]),
+            'corex.test/*page=2*' => Http::response(['data' => [['id' => 51]]]),
+        ]);
+
+        $this->assertCount(51, $this->makeClient()->listings());
+        Http::assertSentCount(2);
+    }
+
     public function test_it_fails_soft_on_an_error_response(): void
     {
         Http::fake([

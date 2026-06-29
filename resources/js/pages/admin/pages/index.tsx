@@ -2,10 +2,12 @@ import FlashMessages from '@/components/admin/flash-messages';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { ExternalLink, Pencil } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ExternalLink, Pencil, Search } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/admin' },
@@ -23,7 +25,33 @@ interface PageRow {
     view_url: string;
 }
 
-export default function PagesIndex({ pages }: { pages: PageRow[] }) {
+interface PropertyRow {
+    id: string;
+    title: string;
+    customised: boolean;
+    edit_url: string;
+}
+
+interface Paginated<T> {
+    data: T[];
+}
+
+export default function PagesIndex({
+    pages,
+    properties,
+    property_search,
+}: {
+    pages: PageRow[];
+    properties: Paginated<PropertyRow>;
+    property_search: string;
+}) {
+    const [search, setSearch] = useState(property_search ?? '');
+
+    const submitSearch: FormEventHandler = (e) => {
+        e.preventDefault();
+        router.get('/admin/pages', { property_search: search }, { preserveState: true, preserveScroll: true, replace: true });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pages & SEO" />
@@ -66,6 +94,52 @@ export default function PagesIndex({ pages }: { pages: PageRow[] }) {
                             </div>
                         </div>
                     ))}
+                </Card>
+
+                <div>
+                    <h2 className="text-lg font-semibold tracking-tight">Properties</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Live, syndicated listings. Override the auto-generated SEO for any individual property.
+                    </p>
+                </div>
+
+                <form onSubmit={submitSearch} className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search properties by title…"
+                            className="pl-8"
+                        />
+                    </div>
+                    <Button type="submit" variant="secondary">
+                        Search
+                    </Button>
+                </form>
+
+                <Card className="divide-y p-0">
+                    {properties.data.length === 0 ? (
+                        <p className="p-4 text-sm text-muted-foreground">No properties found.</p>
+                    ) : (
+                        properties.data.map((property) => (
+                            <div key={property.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex min-w-0 items-center gap-2">
+                                    <span className="truncate font-medium">{property.title}</span>
+                                    {property.customised && <Badge variant="secondary">Customised</Badge>}
+                                </div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <Link href={property.edit_url}>
+                                        <Button size="sm">
+                                            <Pencil className="h-4 w-4" />
+                                            Edit SEO
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </Card>
             </div>
         </AppLayout>

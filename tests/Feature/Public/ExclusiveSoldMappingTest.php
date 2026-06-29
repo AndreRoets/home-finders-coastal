@@ -42,8 +42,8 @@ class ExclusiveSoldMappingTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('hfc-exclusive')
                 // ids 1-4 are sole and available; 5 is open, 6 is sold → excluded.
-                ->has('listings', 4)
-                ->where('listings.0.status', 'exclusive')
+                ->has('listings.data', 4)
+                ->where('listings.data.0.status', 'exclusive')
             );
     }
 
@@ -54,7 +54,7 @@ class ExclusiveSoldMappingTest extends TestCase
         $this->get(route('for-sale'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('listings', fn ($listings) => collect($listings)->firstWhere('title', 'Sole lowercase')['exclusive'] === true
+                ->where('listings.data', fn ($listings) => collect($listings)->firstWhere('title', 'Sole lowercase')['exclusive'] === true
                     && collect($listings)->firstWhere('title', 'Open mandate')['exclusive'] === false)
             );
     }
@@ -67,9 +67,9 @@ class ExclusiveSoldMappingTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('sold')
-                ->has('listings', 1)
-                ->where('listings.0.title', 'Sold home')
-                ->where('listings.0.status', 'sold') // drives the "Sold" badge on the card
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'Sold home')
+                ->where('listings.data.0.status', 'sold') // drives the "Sold" badge on the card
             );
     }
 
@@ -82,7 +82,7 @@ class ExclusiveSoldMappingTest extends TestCase
         $this->get(route('for-sale'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('listings', fn ($listings) => collect($listings)->doesntContain('title', 'Sold home'))
+                ->where('listings.data', fn ($listings) => collect($listings)->doesntContain('title', 'Sold home'))
             );
     }
 }

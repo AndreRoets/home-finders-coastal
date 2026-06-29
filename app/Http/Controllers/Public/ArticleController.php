@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Services\Corex\AgentMapper;
 use App\Services\Corex\ArticleMapper;
 use App\Services\Corex\CorexClient;
+use App\Support\DynamicSeo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
@@ -39,8 +41,12 @@ class ArticleController extends Controller
             $article = $match;
         }
 
+        $mappedArticle = ArticleMapper::map($article);
+
+        View::share('seoPage', DynamicSeo::forArticle($mappedArticle, route('articles.show', $mappedArticle['slug'] ?: $slug)));
+
         return Inertia::render('article', [
-            'article' => ArticleMapper::map($article),
+            'article' => $mappedArticle,
             'agent' => $this->resolveAgent(Arr::get($article, 'agent_id')),
         ])->toResponse($request);
     }

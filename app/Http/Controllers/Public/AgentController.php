@@ -9,9 +9,11 @@ use App\Services\Corex\ArticleMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\TestimonialMapper;
+use App\Support\DynamicSeo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -73,8 +75,12 @@ class AgentController extends Controller
                 ->setStatusCode(HttpResponse::HTTP_NOT_FOUND);
         }
 
+        $mappedAgent = AgentMapper::map($agent);
+
+        View::share('seoPage', DynamicSeo::forAgent($mappedAgent, route('agents.show', $id)));
+
         return Inertia::render('agent', [
-            'agent' => AgentMapper::map($agent),
+            'agent' => $mappedAgent,
             'listings' => ListingMapper::collection($listings),
             'testimonials' => TestimonialMapper::collection(
                 $this->corex->testimonials(['agent_id' => $id]),

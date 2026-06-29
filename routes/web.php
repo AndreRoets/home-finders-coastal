@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\PropertySeoController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\AgentController;
@@ -28,6 +29,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('pages', [AdminPageController::class, 'index'])->name('pages.index');
     Route::get('pages/{page}/edit', [AdminPageController::class, 'edit'])->name('pages.edit');
     Route::put('pages/{page}', [AdminPageController::class, 'update'])->name('pages.update');
+
+    Route::get('properties/{id}/edit', [PropertySeoController::class, 'edit'])->name('properties.edit');
+    Route::put('properties/{id}', [PropertySeoController::class, 'update'])->name('properties.update');
 
     Route::get('marketing', [SiteSettingController::class, 'edit'])->name('marketing.edit');
     Route::put('marketing', [SiteSettingController::class, 'update'])->name('marketing.update');

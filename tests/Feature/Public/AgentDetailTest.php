@@ -106,10 +106,10 @@ class AgentDetailTest extends TestCase
         $this->get(route('for-sale'))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('listings.0.agent.id', 7)
-                ->where('listings.0.agent.name', 'Thandi Mbeki')
-                ->where('listings.0.agent.designation', 'Principal')
-                ->where('listings.0.agent.photo', 'https://corex.test/a.jpg')
+                ->where('listings.data.0.agent.id', 7)
+                ->where('listings.data.0.agent.name', 'Thandi Mbeki')
+                ->where('listings.data.0.agent.designation', 'Principal')
+                ->where('listings.data.0.agent.photo', 'https://corex.test/a.jpg')
             );
     }
 }

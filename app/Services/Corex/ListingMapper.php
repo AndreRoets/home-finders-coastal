@@ -233,7 +233,7 @@ class ListingMapper
             'category' => Arr::get($listing, 'category'),
             'listingType' => Arr::get($listing, 'listing_type'),
             'garages' => (int) Arr::get($listing, 'garages', 0),
-            'erfSize' => is_numeric(Arr::get($listing, 'erf_size_m2'))
+            'erfSize' => is_numeric(Arr::get($listing, 'erf_size_m2')) && (float) Arr::get($listing, 'erf_size_m2') > 0
                 ? number_format((float) $listing['erf_size_m2'], 0, '.', ' ').' m²'
                 : null,
             'petFriendly' => (bool) Arr::get($listing, 'pet_friendly', false),
@@ -494,9 +494,9 @@ class ListingMapper
      */
     protected static function area(array $listing): string
     {
-        $size = Arr::get($listing, 'size_m2') ?? Arr::get($listing, 'erf_size_m2');
+        $size = Arr::get($listing, 'size_m2');
 
-        return is_numeric($size) ? number_format((float) $size, 0, '.', ' ').' m²' : '—';
+        return is_numeric($size) && (float) $size > 0 ? number_format((float) $size, 0, '.', ' ').' m²' : '—';
     }
 
     /**

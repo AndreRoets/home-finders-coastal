@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Page;
 use App\Models\SiteSetting;
+use App\Services\Corex\CorexClient;
+use App\Services\Corex\ListingMapper;
 use App\Support\PageRoutes;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 
 class SitemapController extends Controller
 {
@@ -40,9 +43,38 @@ class SitemapController extends Controller
             $xml .= "  </url>\n";
         }
 
+        // Dynamic, CoreX-backed pages (properties and agents). A CoreX outage
+        // must not break the sitemap, so the fetch fails soft to no extra URLs.
+        try {
+            $corex = app(CorexClient::class);
+
+            foreach ($corex->listings() as $listing) {
+                $xml .= $this->url(route('property.show', ListingMapper::slug($listing)));
+            }
+
+            foreach ($corex->agents() as $agent) {
+                $id = Arr::get($agent, 'id');
+
+                if ($id !== null && $id !== '') {
+                    $xml .= $this->url(route('agents.show', $id));
+                }
+            }
+        } catch (\Throwable) {
+            // Leave the managed pages as the sitemap; the dynamic URLs are
+            // simply omitted until CoreX is reachable again.
+        }
+
         $xml .= '</urlset>';
 
         return response($xml, 200, ['Content-Type' => 'application/xml']);
+    }
+
+    /**
+     * A bare `<url>` entry for a dynamic page (one with no managed metadata).
+     */
+    protected function url(string $loc): string
+    {
+        return "  <url>\n    <loc>".e($loc)."</loc>\n  </url>\n";
     }
 
     /**

@@ -9,9 +9,13 @@ use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
 use App\Services\Corex\TestimonialMapper;
+use App\Support\DynamicSeo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -43,6 +47,9 @@ class ListingController extends Controller
         if ($idOrRef !== $property['slug']) {
             return redirect()->route('property.show', $property['slug'], 301);
         }
+
+        $canonical = route('property.show', $property['slug']);
+        View::share('seoPage', DynamicSeo::forListing($property, $canonical));
 
         return Inertia::render('property-detail', [
             'property' => $property,
@@ -140,7 +147,7 @@ class ListingController extends Controller
         $sales = $this->filter(fn (array $l): bool => $this->isActiveSale($l));
 
         return Inertia::render('for-sale', [
-            'listings' => ListingMapper::collection(ListingSearch::apply($sales, $request->all())),
+            'listings' => $this->paginate(ListingSearch::apply($sales, $request->all()), $request),
             'filters' => ListingSearch::facets($sales),
             'search' => $this->searchValues($request),
             ...$this->branchProps(),
@@ -155,7 +162,7 @@ class ListingController extends Controller
         $rentals = $this->filter(fn (array $l): bool => $this->isActiveRental($l));
 
         return Inertia::render('to-rent', [
-            'listings' => ListingMapper::collection(ListingSearch::apply($rentals, $request->all())),
+            'listings' => $this->paginate(ListingSearch::apply($rentals, $request->all()), $request),
             'filters' => ListingSearch::facets($rentals),
             'search' => $this->searchValues($request),
             ...$this->branchProps(),
@@ -198,11 +205,12 @@ class ListingController extends Controller
     /**
      * HFC exclusive (sole-mandate) listings.
      */
-    public function exclusive(): Response
+    public function exclusive(Request $request): Response
     {
         return Inertia::render('hfc-exclusive', [
-            'listings' => ListingMapper::collection(
+            'listings' => $this->paginate(
                 $this->filter(fn (array $l): bool => $this->isExclusive($l)),
+                $request,
                 'exclusive',
             ),
             ...$this->branchProps(),
@@ -212,14 +220,94 @@ class ListingController extends Controller
     /**
      * Recently sold properties.
      */
-    public function sold(): Response
+    public function sold(Request $request): Response
     {
+        $visibleAgentIds = $this->visibleAgentIds();
+
         return Inertia::render('sold', [
-            'listings' => ListingMapper::collection(
-                $this->filter(fn (array $l): bool => str_contains($this->status($l), 'sold')),
+            'listings' => $this->paginate(
+                $this->filter(fn (array $l): bool => str_contains($this->status($l), 'sold')
+                    && $this->attributedToVisibleAgent($l, $visibleAgentIds)),
+                $request,
             ),
             ...$this->branchProps(),
         ]);
+    }
+
+    /**
+     * IDs of the agents the agency exposes on the website, or null when CoreX's
+     * standalone /agents endpoint is empty — in which case we have no visibility
+     * signal and must not hide anything.
+     *
+     * An agent that is turned off on the web is dropped from /agents but stays
+     * embedded on their (often sold) listings, so this set is what distinguishes
+     * a still-live agent from one that has been hidden.
+     *
+     * @return array<int, string>|null
+     */
+    protected function visibleAgentIds(): ?array
+    {
+        $agents = $this->corex->agents($this->branches->query());
+
+        if ($agents === []) {
+            return null;
+        }
+
+        return array_values(array_filter(array_map(
+            static fn (array $agent): string => (string) Arr::get($agent, 'id', ''),
+            $agents,
+        )));
+    }
+
+    /**
+     * Whether a listing should still surface given the website-visible agents.
+     *
+     * Listings with no attributed agent always pass. A listing attributed to one
+     * or more agents passes only when at least one of them is still visible on
+     * the website, so a property whose only agent has been turned off drops out.
+     *
+     * @param  array<string, mixed>  $listing
+     * @param  array<int, string>|null  $visibleAgentIds
+     */
+    protected function attributedToVisibleAgent(array $listing, ?array $visibleAgentIds): bool
+    {
+        if ($visibleAgentIds === null) {
+            return true;
+        }
+
+        $agentIds = array_map(
+            static fn (array $agent): string => (string) Arr::get($agent, 'id', ''),
+            ListingMapper::extractAgents($listing),
+        );
+
+        if ($agentIds === []) {
+            return true;
+        }
+
+        return array_intersect($agentIds, $visibleAgentIds) !== [];
+    }
+
+    /**
+     * Wrap a filtered bucket of raw listings in a 20-per-page paginator, mapping
+     * only the current page to the frontend card shape. The current query string
+     * (search filters, branch) is preserved on the generated page URLs so paging
+     * never drops the active filter.
+     *
+     * @param  array<int, array<string, mixed>>  $listings
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    protected function paginate(array $listings, Request $request, ?string $forceStatus = null, int $perPage = 20): LengthAwarePaginator
+    {
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $slice = array_slice($listings, ($page - 1) * $perPage, $perPage);
+
+        return new LengthAwarePaginator(
+            ListingMapper::collection($slice, $forceStatus),
+            count($listings),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
     }
 
     /**

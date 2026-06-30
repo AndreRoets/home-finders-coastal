@@ -55,7 +55,7 @@ export default function ArticleDetail({ article = null, agent = null }: { articl
         <PublicLayout title={article.title} tone="light">
             <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
                 <Link
-                    href={agent ? agentUrl(agent.id) : route('agents')}
+                    href={agent ? agentUrl(agent) : route('agents')}
                     className="hover:text-marine inline-flex items-center gap-2 text-sm font-medium tracking-wide text-neutral-600 transition-colors"
                 >
                     <ArrowLeft className="h-4 w-4" />
@@ -124,19 +124,19 @@ export default function ArticleDetail({ article = null, agent = null }: { articl
                 {/* Author card */}
                 {agent && (
                     <aside className="mt-12 rounded-sm border border-slate-200 bg-slate-50 p-6 sm:flex sm:items-center sm:gap-6">
-                        <Link href={agentUrl(agent.id)} className="block shrink-0">
+                        <Link href={agentUrl(agent)} className="block shrink-0">
                             <img src={agent.photo} alt={agent.name} className="h-20 w-20 rounded-full object-cover" />
                         </Link>
                         <div className="mt-4 sm:mt-0">
                             <p className="text-marine text-xs tracking-[0.2em] uppercase">Written by</p>
-                            <Link href={agentUrl(agent.id)}>
+                            <Link href={agentUrl(agent)}>
                                 <p className="text-navy hover:text-marine text-xl font-light transition-colors">{agent.name}</p>
                             </Link>
                             {agent.designation && <p className="text-sm text-neutral-500">{agent.designation}</p>}
                             {agent.about && <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-neutral-600">{agent.about}</p>}
                             <div className="mt-4 flex flex-wrap items-center gap-4">
                                 <Link
-                                    href={agentUrl(agent.id)}
+                                    href={agentUrl(agent)}
                                     className="group text-marine hover:text-marine/80 inline-flex items-center gap-2 text-sm tracking-wide transition-colors"
                                 >
                                     View My Profile

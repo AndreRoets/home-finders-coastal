@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { type Listing } from './listings';
 import PropertyGrid from './property-grid';
 
 type FilterKey = 'all' | 'active' | 'exclusive' | 'sold';
+
+const PER_PAGE = 21;
 
 const isSold = (listing: Listing): boolean => listing.status === 'sold';
 
@@ -22,6 +25,12 @@ function activeFirst(listings: Listing[]): Listing[] {
  */
 export default function AgentListings({ listings, agentName }: { listings: Listing[]; agentName: string }) {
     const [filter, setFilter] = useState<FilterKey>('all');
+    const [page, setPage] = useState(1);
+
+    // Switching tabs starts the new tab from its first page.
+    useEffect(() => {
+        setPage(1);
+    }, [filter]);
 
     const active = listings.filter((listing) => !isSold(listing));
     const sold = listings.filter(isSold);
@@ -38,6 +47,11 @@ export default function AgentListings({ listings, agentName }: { listings: Listi
     const tabs = allTabs.filter((tab) => tab.key === 'all' || tab.listings.length > 0);
 
     const current = tabs.find((tab) => tab.key === filter) ?? tabs[0];
+
+    const lastPage = Math.max(1, Math.ceil(current.listings.length / PER_PAGE));
+    // Guard against a stale page when the active tab holds fewer pages.
+    const safePage = Math.min(page, lastPage);
+    const pageListings = current.listings.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
     return (
         <div>
@@ -60,8 +74,53 @@ export default function AgentListings({ listings, agentName }: { listings: Listi
             )}
 
             <div className="mt-8">
-                <PropertyGrid listings={current.listings} emptyMessage={`${agentName} has no listings to show here right now.`} />
+                <PropertyGrid listings={pageListings} emptyMessage={`${agentName} has no listings to show here right now.`} />
             </div>
+
+            {lastPage > 1 && (
+                <nav className="mt-12 flex items-center justify-between border-t border-slate-200 pt-6" aria-label="Pagination">
+                    <PageButton onClick={() => setPage(safePage - 1)} disabled={safePage <= 1} rel="prev">
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                    </PageButton>
+
+                    <span className="text-sm text-neutral-600">
+                        Page <span className="text-navy font-medium">{safePage}</span> of {lastPage}
+                    </span>
+
+                    <PageButton onClick={() => setPage(safePage + 1)} disabled={safePage >= lastPage} rel="next">
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                    </PageButton>
+                </nav>
+            )}
         </div>
+    );
+}
+
+function PageButton({
+    onClick,
+    disabled,
+    rel,
+    children,
+}: {
+    onClick: () => void;
+    disabled: boolean;
+    rel: 'prev' | 'next';
+    children: React.ReactNode;
+}) {
+    const className =
+        'inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-navy transition-colors hover:border-marine hover:text-marine';
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            rel={rel}
+            className={`${className} disabled:hover:text-navy disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-300`}
+        >
+            {children}
+        </button>
     );
 }

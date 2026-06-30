@@ -21,7 +21,7 @@ export default function ListingAgents({ listing }: { listing: Listing }) {
             {agents.map((agent) => (
                 <Link
                     key={agent.id}
-                    href={agentUrl(agent.id)}
+                    href={agentUrl(agent)}
                     className="flex items-center gap-3 text-sm text-neutral-600 transition-colors hover:text-marine"
                 >
                     <AgentAvatar src={agent.photo} alt={agent.name} className="h-8 w-8" />

@@ -167,7 +167,7 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                         </blockquote>
                         <p className="mt-7 text-white">{item.author}</p>
                         {item.agent && (
-                            <Link href={agentUrl(item.agent.id)} className="mt-0.5 inline-block text-sm tracking-wide text-marine/80 transition-colors hover:text-marine">
+                            <Link href={agentUrl(item.agent)} className="mt-0.5 inline-block text-sm tracking-wide text-marine/80 transition-colors hover:text-marine">
                                 — {item.agent.name}
                             </Link>
                         )}

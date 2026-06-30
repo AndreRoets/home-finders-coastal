@@ -91,6 +91,47 @@ class AgentDetailTest extends TestCase
             );
     }
 
+    public function test_it_resolves_a_name_slug_to_the_agent(): void
+    {
+        Http::fake([
+            // The slug is matched against the agents collection, which yields
+            // the CoreX id the rest of the page is fetched by.
+            '*/agents?*' => Http::response(['data' => [
+                ['id' => 7, 'name' => 'Thandi Mbeki'],
+            ], 'meta' => ['last_page' => 1]]),
+            '*/agents/7' => Http::response(['data' => [
+                'id' => 7, 'name' => 'Thandi Mbeki', 'cell' => '+27 82 000 0000',
+            ]]),
+            '*/listings*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+            '*/testimonials*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+            '*/articles*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('agents.show', 'thandi-mbeki'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('agent')
+                ->where('agent.name', 'Thandi Mbeki')
+            );
+    }
+
+    public function test_it_404s_when_a_name_slug_matches_no_agent(): void
+    {
+        Http::fake([
+            '*/agents?*' => Http::response(['data' => [
+                ['id' => 7, 'name' => 'Thandi Mbeki'],
+            ], 'meta' => ['last_page' => 1]]),
+            '*/listings*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('agents.show', 'someone-else'))
+            ->assertNotFound()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('agent')
+                ->where('agent', null)
+            );
+    }
+
     public function test_listing_cards_expose_the_linked_agent(): void
     {
         Http::fake([

@@ -59,8 +59,14 @@ class AgentController extends Controller
      * listings. Only when neither yields an agent do we render a graceful
      * "not found" page with a 404 status.
      */
-    public function show(Request $request, int|string $id): HttpResponse
+    public function show(Request $request, int|string $agent): HttpResponse
     {
+        $id = $this->resolveAgentId($agent);
+
+        if ($id === null) {
+            return $this->notFound($request);
+        }
+
         $listings = $this->corex->listings(['agent_id' => $id]);
 
         $agent = $this->corex->agent($id);
@@ -70,14 +76,12 @@ class AgentController extends Controller
         }
 
         if ($agent === []) {
-            return Inertia::render('agent', ['agent' => null])
-                ->toResponse($request)
-                ->setStatusCode(HttpResponse::HTTP_NOT_FOUND);
+            return $this->notFound($request);
         }
 
         $mappedAgent = AgentMapper::map($agent);
 
-        View::share('seoPage', DynamicSeo::forAgent($mappedAgent, route('agents.show', $id)));
+        View::share('seoPage', DynamicSeo::forAgent($mappedAgent, route('agents.show', AgentMapper::slug($agent))));
 
         return Inertia::render('agent', [
             'agent' => $mappedAgent,
@@ -89,6 +93,49 @@ class AgentController extends Controller
                 $this->corex->articles(['agent_id' => $id]),
             ),
         ])->toResponse($request);
+    }
+
+    /**
+     * Resolve the CoreX agent id from a /agents/{agent} path segment.
+     *
+     * A bare numeric segment is treated as the id itself, so older
+     * "/agents/{id}" links keep working. Otherwise it's a name slug (e.g.
+     * "elize-reichel"), matched against the agency's agents — falling back to
+     * the agents embedded on listings when the standalone endpoint is empty,
+     * exactly as the index does. Returns null when nothing matches.
+     */
+    protected function resolveAgentId(int|string $agent): int|string|null
+    {
+        if (ctype_digit((string) $agent)) {
+            return $agent;
+        }
+
+        $slug = (string) $agent;
+        $branchQuery = $this->branches->query();
+
+        $agents = $this->corex->agents($branchQuery);
+
+        if ($agents === []) {
+            $agents = $this->agentsFromListings($branchQuery);
+        }
+
+        foreach ($agents as $candidate) {
+            if (AgentMapper::slug($candidate) === $slug) {
+                return Arr::get($candidate, 'id');
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Render the graceful "agent not found" page with a 404 status.
+     */
+    protected function notFound(Request $request): HttpResponse
+    {
+        return Inertia::render('agent', ['agent' => null])
+            ->toResponse($request)
+            ->setStatusCode(HttpResponse::HTTP_NOT_FOUND);
     }
 
     /**

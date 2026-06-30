@@ -82,7 +82,7 @@ class DynamicSeoTest extends TestCase
         $response->assertHeader('Content-Type', 'application/xml');
         $response->assertSee(route('property.show', 'ocean-cottage-11'), false);
         $response->assertSee(route('property.show', 'lagoon-loft-12'), false);
-        $response->assertSee(route('agents.show', 23), false);
+        $response->assertSee(route('agents.show', 'elize-reichel'), false);
     }
 
     public function test_sitemap_degrades_gracefully_when_corex_is_unavailable(): void

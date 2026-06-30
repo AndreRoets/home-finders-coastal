@@ -18,7 +18,7 @@ export interface Agent {
 export default function AgentCard({ agent }: { agent: Agent }) {
     return (
         <article className="group flex h-full flex-col">
-            <Link href={agentUrl(agent.id)} className="block aspect-square overflow-hidden rounded-2xl bg-slate-100">
+            <Link href={agentUrl(agent)} className="block aspect-square overflow-hidden rounded-2xl bg-slate-100">
                 <img
                     src={agent.photo}
                     alt={agent.name}
@@ -27,7 +27,7 @@ export default function AgentCard({ agent }: { agent: Agent }) {
                 />
             </Link>
             <div className="mt-5 flex flex-1 flex-col">
-                <Link href={agentUrl(agent.id)}>
+                <Link href={agentUrl(agent)}>
                     <h3 className="text-lg font-light text-navy transition-colors group-hover:text-marine">{agent.name}</h3>
                 </Link>
                 {agent.designation && <p className="mt-1 text-sm text-neutral-500">{agent.designation}</p>}

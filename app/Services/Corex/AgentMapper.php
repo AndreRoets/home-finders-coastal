@@ -3,6 +3,7 @@
 namespace App\Services\Corex;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 /**
  * Transforms a raw CoreX agent resource into the shape the React Agents page
@@ -52,6 +53,23 @@ class AgentMapper
             'about' => self::about($agent),
             'socials' => self::socials($agent),
         ];
+    }
+
+    /**
+     * Build the name-based URL slug for an agent, e.g. "elize-reichel". Used as
+     * the agent.show path segment in place of the raw CoreX id. Falls back to
+     * the bare id when the agent has no usable name.
+     *
+     * The matching id is resolved back from the slug by the controller, so the
+     * id stays out of the URL while old "/agents/{id}" links keep working.
+     *
+     * @param  array<string, mixed>  $agent
+     */
+    public static function slug(array $agent): string
+    {
+        $slug = Str::slug((string) (Arr::get($agent, 'name') ?: ''));
+
+        return $slug !== '' ? $slug : (string) Arr::get($agent, 'id', '');
     }
 
     /**

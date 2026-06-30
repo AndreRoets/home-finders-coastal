@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Page;
 use App\Models\SiteSetting;
+use App\Services\Corex\AgentMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Support\PageRoutes;
@@ -56,7 +57,7 @@ class SitemapController extends Controller
                 $id = Arr::get($agent, 'id');
 
                 if ($id !== null && $id !== '') {
-                    $xml .= $this->url(route('agents.show', $id));
+                    $xml .= $this->url(route('agents.show', AgentMapper::slug($agent)));
                 }
             }
         } catch (\Throwable) {

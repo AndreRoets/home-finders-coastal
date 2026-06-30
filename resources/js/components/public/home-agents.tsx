@@ -71,7 +71,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
 
                 <div className="mt-10 grid gap-8 md:grid-cols-[1fr_1.1fr] md:items-center">
                     <Link
-                        href={agentUrl(agent.id)}
+                        href={agentUrl(agent)}
                         className={cn('group aspect-square overflow-hidden rounded-2xl', light ? 'bg-slate-200' : 'bg-ink-soft')}
                     >
                         <img
@@ -83,7 +83,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                     </Link>
                     <div className="min-w-0">
                         <div key={agent.id} className="animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
-                            <Link href={agentUrl(agent.id)}>
+                            <Link href={agentUrl(agent)}>
                                 <h3 className={cn('text-3xl font-light transition-colors hover:text-marine sm:text-4xl', light ? 'text-navy' : 'text-white')}>
                                     {agent.name}
                                 </h3>
@@ -116,7 +116,7 @@ export default function HomeAgents({ agents, tone = 'dark' }: { agents: Agent[];
                                 )}
                             </div>
                             <Link
-                                href={agentUrl(agent.id)}
+                                href={agentUrl(agent)}
                                 className="group mt-5 inline-flex items-center gap-2 text-sm tracking-wide text-marine transition-colors hover:text-marine/80"
                             >
                                 View profile

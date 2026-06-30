@@ -5,10 +5,28 @@
  */
 
 /**
- * URL of an agent's detail page.
+ * Build a name-based URL slug, mirroring Laravel's Str::slug for ASCII names
+ * (e.g. "Elize Reichel" → "elize-reichel"). Diacritics are stripped and
+ * punctuation dropped so it matches the slug the backend resolves the agent by.
  */
-export function agentUrl(id: number | string): string {
-    return route('agents.show', id);
+function slugify(value: string): string {
+    return value
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]+/g, '')
+        .trim()
+        .replace(/[\s-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * URL of an agent's detail page. Uses the agent's name as the path segment
+ * (e.g. /agents/elize-reichel), falling back to the id when the name yields no
+ * slug. The backend resolves the slug back to the CoreX id.
+ */
+export function agentUrl(agent: { id: number | string; name: string }): string {
+    return route('agents.show', slugify(agent.name) || String(agent.id));
 }
 
 /**

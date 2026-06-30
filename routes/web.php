@@ -109,7 +109,9 @@ Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('prop
 
 // Agent detail pages are dynamic (CoreX-backed), not CMS-managed. Registered as
 // a sub-path of the agents index so it never collides with a managed page slug.
-Route::get('agents/{id}', [AgentController::class, 'show'])->name('agents.show');
+// {agent} is a name slug (e.g. "elize-reichel"); a bare numeric CoreX id still
+// resolves too, so older "/agents/{id}" links keep working.
+Route::get('agents/{agent}', [AgentController::class, 'show'])->name('agents.show');
 
 // Article pages are dynamic (CoreX-backed), not CMS-managed. The /articles/
 // prefix keeps the slug from colliding with a managed page slug.

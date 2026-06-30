@@ -351,7 +351,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                                 key={agent.id}
                                                 className="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-slate-200 [&:not(:first-child)]:pt-6"
                                             >
-                                                <Link href={agentUrl(agent.id)} className="group flex items-center gap-4">
+                                                <Link href={agentUrl(agent)} className="group flex items-center gap-4">
                                                     <AgentAvatar src={agent.photo} alt={agent.name} className="h-16 w-16" />
                                                     <div>
                                                         <p className="text-marine text-xs tracking-[0.2em] uppercase">

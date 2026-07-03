@@ -94,6 +94,13 @@ export default function PropertyDetail({ property }: { property: Property }) {
     const agents = property.agents?.length ? property.agents : property.agent ? [property.agent] : [];
     const showExclusive = property.exclusive && property.status !== 'exclusive' && property.status !== 'sold';
 
+    // Enquiries open the visitor's email client addressed to the listing's agent(s),
+    // co-listers on cc. With no agent email on file, fall back to the contact page.
+    const enquiryEmails = agents.map((agent) => agent.email).filter(Boolean);
+    const enquiryHref = enquiryEmails.length
+        ? `mailto:${enquiryEmails[0]}?${enquiryEmails.length > 1 ? `cc=${encodeURIComponent(enquiryEmails.slice(1).join(','))}&` : ''}subject=${encodeURIComponent(`Enquiry: ${property.title}`)}`
+        : route('contact');
+
     // Drop spaces the property doesn't actually have (an explicit count of 0).
     // A null count is kept — it's an unquantified space that still exists.
     const spaces = (property.spaces ?? []).filter((space) => space.count !== 0);
@@ -389,12 +396,21 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                 ) : (
                                     <p className="text-sm text-neutral-600">Contact our office for more information on this property.</p>
                                 )}
-                                <Link
-                                    href={route('contact')}
-                                    className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
-                                >
-                                    Enquire about this property
-                                </Link>
+                                {enquiryEmails.length ? (
+                                    <a
+                                        href={enquiryHref}
+                                        className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
+                                    >
+                                        Enquire about this property
+                                    </a>
+                                ) : (
+                                    <Link
+                                        href={enquiryHref}
+                                        className="bg-navy hover:bg-navy/90 mt-6 flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
+                                    >
+                                        Enquire about this property
+                                    </Link>
+                                )}
                                 <ShareButton title={property.title} className="mt-3 flex justify-center" fullWidth />
                             </div>
 

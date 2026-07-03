@@ -100,6 +100,39 @@ class PropertySeoTest extends TestCase
         $response->assertSee('Custom override description for the listing.', false);
     }
 
+    public function test_property_seo_can_be_marked_done(): void
+    {
+        $this->fakeListings();
+
+        $this->actingAs(User::factory()->create())
+            ->put('/admin/properties/55', [
+                'meta_title' => 'Luxury Seaside Villa for Sale',
+                'meta_description' => 'A hand-picked beachfront home.',
+                'canonical_url' => 'https://hfcoastal.co.za/property/seaside-villa-55',
+                'is_done' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('listing_seo', [
+            'listing_id' => '55',
+            'is_done' => true,
+        ]);
+    }
+
+    public function test_done_status_is_surfaced_on_the_pages_index(): void
+    {
+        $this->fakeListings();
+
+        ListingSeo::create(['listing_id' => '55', 'is_done' => true]);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/pages')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('properties.data.0.done', true)
+                ->where('properties.data.1.done', false)
+            );
+    }
+
     public function test_property_seo_editor_requires_authentication(): void
     {
         $this->get('/admin/properties/55/edit')->assertRedirect('/login');

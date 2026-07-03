@@ -19,6 +19,16 @@ class ListingSeo extends Model
     protected $guarded = [];
 
     /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_done' => 'boolean',
+        ];
+    }
+
+    /**
      * Non-empty override values keyed by SEO attribute, ready to merge over the
      * auto-generated defaults.
      *

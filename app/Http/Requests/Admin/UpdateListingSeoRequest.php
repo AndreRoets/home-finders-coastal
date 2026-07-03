@@ -20,6 +20,7 @@ class UpdateListingSeoRequest extends FormRequest
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'canonical_url' => ['nullable', 'url', 'max:255'],
+            'is_done' => ['sometimes', 'boolean'],
         ];
     }
 }

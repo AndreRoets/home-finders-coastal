@@ -52,6 +52,7 @@ class PropertySeoController extends Controller
                 'meta_title' => $override->meta_title ?? '',
                 'meta_description' => $override->meta_description ?? '',
                 'canonical_url' => $override->canonical_url ?? '',
+                'is_done' => (bool) ($override->is_done ?? false),
             ],
         ]);
     }

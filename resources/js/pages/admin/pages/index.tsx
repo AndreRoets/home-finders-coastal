@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ExternalLink, Pencil, Search } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Pencil, Search } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -29,11 +29,19 @@ interface PropertyRow {
     id: string;
     title: string;
     customised: boolean;
+    done: boolean;
     edit_url: string;
 }
 
 interface Paginated<T> {
     data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    prev_page_url: string | null;
+    next_page_url: string | null;
 }
 
 export default function PagesIndex({
@@ -61,7 +69,7 @@ export default function PagesIndex({
 
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">Pages &amp; SEO</h1>
-                    <p className="text-sm text-muted-foreground">Edit each page's URL slug, meta tags, social cards and structured data.</p>
+                    <p className="text-muted-foreground text-sm">Edit each page's URL slug, meta tags, social cards and structured data.</p>
                 </div>
 
                 <Card className="divide-y p-0">
@@ -73,8 +81,8 @@ export default function PagesIndex({
                                     {!page.is_active && <Badge variant="secondary">Hidden</Badge>}
                                     {!page.robots_index && <Badge variant="outline">noindex</Badge>}
                                 </div>
-                                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
-                                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{page.slug}</code>
+                                <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 text-sm">
+                                    <code className="bg-muted rounded px-1.5 py-0.5 text-xs">{page.slug}</code>
                                     {page.meta_title && <span className="truncate">{page.meta_title}</span>}
                                 </div>
                             </div>
@@ -98,14 +106,14 @@ export default function PagesIndex({
 
                 <div>
                     <h2 className="text-lg font-semibold tracking-tight">Properties</h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         Live, syndicated listings. Override the auto-generated SEO for any individual property.
                     </p>
                 </div>
 
                 <form onSubmit={submitSearch} className="flex items-center gap-2">
                     <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                         <Input
                             type="search"
                             value={search}
@@ -121,12 +129,21 @@ export default function PagesIndex({
 
                 <Card className="divide-y p-0">
                     {properties.data.length === 0 ? (
-                        <p className="p-4 text-sm text-muted-foreground">No properties found.</p>
+                        <p className="text-muted-foreground p-4 text-sm">No properties found.</p>
                     ) : (
                         properties.data.map((property) => (
                             <div key={property.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex min-w-0 items-center gap-2">
+                                    {property.done && (
+                                        <span
+                                            title="SEO done"
+                                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-600 text-white"
+                                        >
+                                            <Check className="h-3.5 w-3.5" />
+                                        </span>
+                                    )}
                                     <span className="truncate font-medium">{property.title}</span>
+                                    {property.done && <Badge className="bg-green-600 hover:bg-green-600">Done</Badge>}
                                     {property.customised && <Badge variant="secondary">Customised</Badge>}
                                 </div>
                                 <div className="flex shrink-0 items-center gap-2">
@@ -141,6 +158,37 @@ export default function PagesIndex({
                         ))
                     )}
                 </Card>
+
+                {properties.last_page > 1 && (
+                    <div className="flex items-center justify-between gap-4">
+                        <p className="text-muted-foreground text-sm">
+                            Showing {properties.from ?? 0}–{properties.to ?? 0} of {properties.total}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!properties.prev_page_url}
+                                onClick={() => properties.prev_page_url && router.get(properties.prev_page_url, {}, { preserveScroll: true })}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous
+                            </Button>
+                            <span className="text-muted-foreground text-sm">
+                                Page {properties.current_page} of {properties.last_page}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!properties.next_page_url}
+                                onClick={() => properties.next_page_url && router.get(properties.next_page_url, {}, { preserveScroll: true })}
+                            >
+                                Next
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

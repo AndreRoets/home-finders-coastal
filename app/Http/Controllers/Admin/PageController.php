@@ -49,15 +49,14 @@ class PageController extends Controller
      * optionally filtered by title via the `property_search` query param and
      * flagged when an admin-authored override already exists.
      *
-     * @return LengthAwarePaginator<int, array{id: string, title: string, customised: bool, edit_url: string}>
+     * @return LengthAwarePaginator<int, array{id: string, title: string, customised: bool, done: bool, edit_url: string}>
      */
     protected function properties(Request $request, CorexClient $corex): LengthAwarePaginator
     {
         $search = trim((string) $request->query('property_search', ''));
 
-        $customised = ListingSeo::query()->pluck('listing_id')
-            ->map(static fn (mixed $id): string => (string) $id)
-            ->flip();
+        $overrides = ListingSeo::query()->get(['listing_id', 'is_done'])
+            ->keyBy(static fn (ListingSeo $seo): string => (string) $seo->listing_id);
 
         $items = Collection::make($corex->listings())
             ->map(static fn (array $listing): array => [
@@ -72,7 +71,8 @@ class PageController extends Controller
             ->map(fn (array $listing): array => [
                 'id' => $listing['id'],
                 'title' => $listing['title'],
-                'customised' => $customised->has($listing['id']),
+                'customised' => $overrides->has($listing['id']),
+                'done' => (bool) $overrides->get($listing['id'])?->is_done,
                 'edit_url' => route('admin.properties.edit', $listing['id']),
             ]);
 

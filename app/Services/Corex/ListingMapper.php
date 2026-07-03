@@ -541,6 +541,18 @@ class ListingMapper
     }
 
     /**
+     * The public status badge key ('for-sale', 'to-rent', 'sold') for a listing,
+     * mirroring the card. The "Exclusive" tag is tracked separately via
+     * {@see self::isSole()}.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    public static function statusKey(array $listing): string
+    {
+        return self::status($listing);
+    }
+
+    /**
      * Map CoreX status + listing_type to a frontend badge key.
      *
      * @param  array<string, mixed>  $listing

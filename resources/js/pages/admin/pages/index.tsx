@@ -25,13 +25,40 @@ interface PageRow {
     view_url: string;
 }
 
+type PropertyStatus = 'for-sale' | 'to-rent' | 'sold';
+
 interface PropertyRow {
     id: string;
     title: string;
+    status: PropertyStatus;
+    exclusive: boolean;
     customised: boolean;
     done: boolean;
     edit_url: string;
 }
+
+const statusLabels: Record<PropertyStatus, string> = {
+    'for-sale': 'For Sale',
+    'to-rent': 'To Rent',
+    sold: 'Sold',
+};
+
+const statusStyles: Record<PropertyStatus, string> = {
+    'for-sale': 'bg-emerald-600 hover:bg-emerald-600',
+    'to-rent': 'bg-sky-600 hover:bg-sky-600',
+    sold: 'bg-neutral-500 hover:bg-neutral-500',
+};
+
+// The tags an admin can filter properties by, in display order.
+const propertyFilters: { value: string; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'for-sale', label: 'For Sale' },
+    { value: 'to-rent', label: 'To Rent' },
+    { value: 'sold', label: 'Sold' },
+    { value: 'exclusive', label: 'Exclusive' },
+    { value: 'done', label: 'Done' },
+    { value: 'customised', label: 'Customised' },
+];
 
 interface Paginated<T> {
     data: T[];
@@ -48,16 +75,28 @@ export default function PagesIndex({
     pages,
     properties,
     property_search,
+    property_filter,
 }: {
     pages: PageRow[];
     properties: Paginated<PropertyRow>;
     property_search: string;
+    property_filter: string;
 }) {
     const [search, setSearch] = useState(property_search ?? '');
+    const activeFilter = property_filter || 'all';
+
+    // Reloads the property list; page resets since neither param carries `page`.
+    const reloadProperties = (params: { property_search?: string; property_filter?: string }) => {
+        router.get(
+            '/admin/pages',
+            { property_search: search, property_filter: activeFilter, ...params },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
 
     const submitSearch: FormEventHandler = (e) => {
         e.preventDefault();
-        router.get('/admin/pages', { property_search: search }, { preserveState: true, preserveScroll: true, replace: true });
+        reloadProperties({ property_search: search });
     };
 
     return (
@@ -127,13 +166,27 @@ export default function PagesIndex({
                     </Button>
                 </form>
 
+                <div className="flex flex-wrap items-center gap-2">
+                    {propertyFilters.map((filter) => (
+                        <Button
+                            key={filter.value}
+                            type="button"
+                            size="sm"
+                            variant={activeFilter === filter.value ? 'default' : 'outline'}
+                            onClick={() => reloadProperties({ property_filter: filter.value })}
+                        >
+                            {filter.label}
+                        </Button>
+                    ))}
+                </div>
+
                 <Card className="divide-y p-0">
                     {properties.data.length === 0 ? (
                         <p className="text-muted-foreground p-4 text-sm">No properties found.</p>
                     ) : (
                         properties.data.map((property) => (
                             <div key={property.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex min-w-0 items-center gap-2">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
                                     {property.done && (
                                         <span
                                             title="SEO done"
@@ -143,7 +196,9 @@ export default function PagesIndex({
                                         </span>
                                     )}
                                     <span className="truncate font-medium">{property.title}</span>
-                                    {property.done && <Badge className="bg-green-600 hover:bg-green-600">Done</Badge>}
+                                    <Badge className={`text-white ${statusStyles[property.status]}`}>{statusLabels[property.status]}</Badge>
+                                    {property.exclusive && <Badge className="bg-amber-500 text-white hover:bg-amber-500">Exclusive</Badge>}
+                                    {property.done && <Badge className="bg-green-600 text-white hover:bg-green-600">Done</Badge>}
                                     {property.customised && <Badge variant="secondary">Customised</Badge>}
                                 </div>
                                 <div className="flex shrink-0 items-center gap-2">

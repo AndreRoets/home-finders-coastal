@@ -41,40 +41,52 @@ class PageController extends Controller
                 ]),
             'properties' => $this->properties($request, $corex),
             'property_search' => (string) $request->query('property_search', ''),
+            'property_filter' => (string) $request->query('property_filter', ''),
         ]);
     }
 
     /**
      * The live property listings available for per-listing SEO editing,
-     * optionally filtered by title via the `property_search` query param and
-     * flagged when an admin-authored override already exists.
+     * optionally filtered by title (`property_search`) and/or a status/state tag
+     * (`property_filter`), each flagged with its status, exclusivity, override
+     * and done state so the admin can see and filter by every tag.
      *
-     * @return LengthAwarePaginator<int, array{id: string, title: string, customised: bool, done: bool, edit_url: string}>
+     * @return LengthAwarePaginator<int, array{id: string, title: string, status: string, exclusive: bool, customised: bool, done: bool, edit_url: string}>
      */
     protected function properties(Request $request, CorexClient $corex): LengthAwarePaginator
     {
         $search = trim((string) $request->query('property_search', ''));
+        $filter = (string) $request->query('property_filter', '');
 
         $overrides = ListingSeo::query()->get(['listing_id', 'is_done'])
             ->keyBy(static fn (ListingSeo $seo): string => (string) $seo->listing_id);
 
         $items = Collection::make($corex->listings())
-            ->map(static fn (array $listing): array => [
-                'id' => (string) Arr::get($listing, 'id', ''),
-                'title' => (string) (Arr::get($listing, 'title') ?: 'Untitled listing'),
-                'slug' => ListingMapper::slug($listing),
-            ])
+            ->map(function (array $listing) use ($overrides): array {
+                $id = (string) Arr::get($listing, 'id', '');
+
+                return [
+                    'id' => $id,
+                    'title' => (string) (Arr::get($listing, 'title') ?: 'Untitled listing'),
+                    'status' => ListingMapper::statusKey($listing),
+                    'exclusive' => ListingMapper::isSole($listing),
+                    'customised' => $overrides->has($id),
+                    'done' => (bool) $overrides->get($id)?->is_done,
+                    'edit_url' => route('admin.properties.edit', $id),
+                ];
+            })
             ->when($search !== '', fn (Collection $listings): Collection => $listings->filter(
                 static fn (array $listing): bool => Str::contains(Str::lower($listing['title']), Str::lower($search)),
             ))
-            ->values()
-            ->map(fn (array $listing): array => [
-                'id' => $listing['id'],
-                'title' => $listing['title'],
-                'customised' => $overrides->has($listing['id']),
-                'done' => (bool) $overrides->get($listing['id'])?->is_done,
-                'edit_url' => route('admin.properties.edit', $listing['id']),
-            ]);
+            ->when($filter !== '' && $filter !== 'all', fn (Collection $listings): Collection => $listings->filter(
+                static fn (array $listing): bool => match ($filter) {
+                    'exclusive' => $listing['exclusive'],
+                    'done' => $listing['done'],
+                    'customised' => $listing['customised'],
+                    default => $listing['status'] === $filter,
+                },
+            ))
+            ->values();
 
         $perPage = 20;
         $page = LengthAwarePaginator::resolveCurrentPage();

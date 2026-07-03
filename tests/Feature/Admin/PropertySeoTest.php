@@ -29,8 +29,8 @@ class PropertySeoTest extends TestCase
             ]]),
             '*/listings*' => Http::response([
                 'data' => [
-                    ['id' => 55, 'title' => 'Seaside Villa', 'listing_type' => 'sale', 'status' => 'for_sale'],
-                    ['id' => 56, 'title' => 'Mountain Retreat', 'listing_type' => 'sale', 'status' => 'for_sale'],
+                    ['id' => 55, 'title' => 'Seaside Villa', 'listing_type' => 'sale', 'status' => 'for_sale', 'mandate_type' => 'sole'],
+                    ['id' => 56, 'title' => 'Mountain Retreat', 'listing_type' => 'rent', 'status' => 'to_let'],
                 ],
                 'meta' => ['last_page' => 1],
             ]),
@@ -50,6 +50,29 @@ class PropertySeoTest extends TestCase
                 ->has('properties.data', 2)
                 ->where('properties.data.0.title', 'Seaside Villa')
                 ->where('properties.data.0.customised', false)
+                ->where('properties.data.0.status', 'for-sale')
+                ->where('properties.data.0.exclusive', true)
+                ->where('properties.data.1.status', 'to-rent')
+                ->where('properties.data.1.exclusive', false)
+            );
+    }
+
+    public function test_property_list_can_be_filtered_by_tag(): void
+    {
+        $this->fakeListings();
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/pages?property_filter=to-rent')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('properties.data', 1)
+                ->where('properties.data.0.title', 'Mountain Retreat')
+            );
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/pages?property_filter=exclusive')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('properties.data', 1)
+                ->where('properties.data.0.title', 'Seaside Villa')
             );
     }
 

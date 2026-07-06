@@ -81,22 +81,60 @@ class CorexWebhookController extends Controller
     }
 
     /**
-     * Verify the HMAC-SHA256 signature over the raw request body. Aborts with a
-     * 401 when the signature is missing or does not match.
+     * Verify the HMAC-SHA256 signature over the RAW request body. Aborts with a
+     * 401 when the secret/signature is missing or the digest does not match.
+     *
+     * The header value is normalised before comparison so we accept the common
+     * shapes CoreX (and libraries generally) emit without weakening the check:
+     * an optional "sha256=" prefix is stripped, and the HMAC is matched against
+     * both its lowercase-hex and base64 encodings. We still compute the digest
+     * ourselves with our secret — only the encoding of the *same* digest is
+     * flexible, so a wrong secret or tampered body still fails.
      */
     protected function verifySignature(Request $request): void
     {
         $secret = (string) config('services.corex.webhook_secret');
-        $signature = (string) $request->header('X-CoreX-Signature', '');
+        $body = $request->getContent();
+        $signature = $this->normalizeSignature((string) $request->header('X-CoreX-Signature', ''));
 
-        $expected = hash_hmac('sha256', $request->getContent(), $secret);
+        $expectedHex = hash_hmac('sha256', $body, $secret);
+        $expectedBase64 = base64_encode(hash_hmac('sha256', $body, $secret, true));
 
-        if ($secret === '' || $signature === '' || ! hash_equals($expected, $signature)) {
+        $matches = $secret !== ''
+            && $signature !== ''
+            && (hash_equals($expectedHex, $signature) || hash_equals($expectedBase64, $signature));
+
+        if (! $matches) {
+            // Diagnose-first: emit the received vs computed signatures at WARNING
+            // level (survives LOG_LEVEL=warning) so the next real delivery reveals
+            // the exact mismatch. The secret is never logged; the body is truncated.
             Log::warning('CoreX webhook rejected: invalid signature', [
                 'event' => $request->header('X-CoreX-Event'),
+                'received_signature' => $signature,
+                'expected_hex' => $expectedHex,
+                'expected_base64' => $expectedBase64,
+                'body_length' => strlen($body),
+                'body_preview' => substr($body, 0, 60),
+                'has_secret' => $secret !== '',
             ]);
 
             abort(Response::HTTP_UNAUTHORIZED, 'Invalid signature.');
         }
+    }
+
+    /**
+     * Normalise the X-CoreX-Signature header for comparison: trim surrounding
+     * whitespace and strip an optional "sha256=" algorithm prefix (case-insensitive).
+     * The remaining value is the raw hex or base64 HMAC digest.
+     */
+    protected function normalizeSignature(string $signature): string
+    {
+        $signature = trim($signature);
+
+        if (preg_match('/^sha256=/i', $signature) === 1) {
+            $signature = substr($signature, 7);
+        }
+
+        return $signature;
     }
 }

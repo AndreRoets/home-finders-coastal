@@ -58,11 +58,45 @@ class CorexWebhookTest extends TestCase
             ->assertExactJson(['ok' => true]);
     }
 
+    public function test_a_delivery_signed_with_a_sha256_prefix_is_accepted(): void
+    {
+        $payload = ['event' => 'listing.updated', 'data' => ['id' => 42, 'reference' => 'REF42']];
+        $body = json_encode($payload);
+        $signature = 'sha256='.hash_hmac('sha256', $body, $this->secret);
+
+        $this->deliver($payload, 'listing.updated', signature: $signature)
+            ->assertOk()
+            ->assertExactJson(['ok' => true]);
+    }
+
+    public function test_a_delivery_signed_with_a_base64_hmac_is_accepted(): void
+    {
+        $payload = ['event' => 'listing.updated', 'data' => ['id' => 42, 'reference' => 'REF42']];
+        $body = json_encode($payload);
+        $signature = base64_encode(hash_hmac('sha256', $body, $this->secret, true));
+
+        $this->deliver($payload, 'listing.updated', signature: $signature)
+            ->assertOk()
+            ->assertExactJson(['ok' => true]);
+    }
+
     public function test_a_bad_signature_returns_401(): void
     {
         $payload = ['event' => 'listing.updated', 'data' => ['id' => 1]];
 
         $this->deliver($payload, 'listing.updated', signature: 'deadbeef')
+            ->assertUnauthorized();
+    }
+
+    public function test_a_signature_computed_with_a_different_secret_returns_401(): void
+    {
+        // A structurally valid HMAC, but produced with the wrong secret: must fail
+        // even with prefix/base64 handling in place (this is the ops-fix signal).
+        $payload = ['event' => 'listing.updated', 'data' => ['id' => 1]];
+        $body = json_encode($payload);
+        $signature = hash_hmac('sha256', $body, 'the-wrong-secret');
+
+        $this->deliver($payload, 'listing.updated', signature: $signature)
             ->assertUnauthorized();
     }
 

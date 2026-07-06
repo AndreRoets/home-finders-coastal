@@ -387,6 +387,41 @@ class CorexClient
     }
 
     /**
+     * Submit a website enquiry to CoreX as a lead so it lands in the agency's
+     * CRM. POSTs to the website API's leads endpoint with the visitor's details
+     * and the property they enquired about.
+     *
+     * Fails soft: on any network/auth error or non-2xx response it logs and
+     * returns false, so the enquiry flow still completes for the visitor (the
+     * email to the agent is the primary channel and is sent regardless).
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function createLead(array $payload): bool
+    {
+        try {
+            $response = $this->request()->post('/leads', $payload);
+
+            if ($response->failed()) {
+                Log::warning('CoreX lead submission failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            return true;
+        } catch (ConnectionException|RequestException $e) {
+            Log::warning('CoreX lead submission errored', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Perform a cached GET request, returning the decoded JSON body. On
      * failure an empty array is returned and the error is logged.
      *

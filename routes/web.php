@@ -11,6 +11,7 @@ use App\Http\Controllers\Public\BranchController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\ListingController;
 use App\Http\Controllers\Public\MediaController;
+use App\Http\Controllers\Public\PropertyEnquiryController;
 use App\Http\Controllers\SitemapController;
 use App\Models\Page;
 use App\Models\PageRedirect;
@@ -106,6 +107,12 @@ Route::get('privacy-policy', fn () => Inertia::render('privacy-policy'))->name('
 
 // Property detail pages are dynamic (CoreX-backed), not CMS-managed.
 Route::get('property/{idOrRef}', [ListingController::class, 'show'])->name('property.show');
+
+// Property enquiry — emails the listing's agent(s) and pushes the lead to CoreX.
+// Rate limited as a first line of defence against spam (honeypot is second).
+Route::post('property/{idOrRef}/enquire', [PropertyEnquiryController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('property.enquire');
 
 // Agent detail pages are dynamic (CoreX-backed), not CMS-managed. Registered as
 // a sub-path of the agents index so it never collides with a managed page slug.

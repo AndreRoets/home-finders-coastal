@@ -170,4 +170,15 @@ class DemoCorexClient extends CorexClient
     {
         return DemoData::findArticle($id);
     }
+
+    /**
+     * Demo mode has no live CoreX to receive leads, so accept the enquiry
+     * without hitting the network and report success.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function createLead(array $payload): bool
+    {
+        return true;
+    }
 }

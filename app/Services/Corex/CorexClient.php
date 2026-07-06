@@ -266,10 +266,17 @@ class CorexClient
 
     /**
      * Bust the caches affected by a listing change so the next page view pulls
-     * fresh data from CoreX. Both the single-resource entry (which may be keyed
-     * by id or by reference) and the listings collection are dropped.
+     * fresh data from CoreX. Drops the single-resource entry (which may be keyed
+     * by id or by reference), the agency-wide listings collection and — for every
+     * agent attributed to the listing — that agent's filtered listings collection,
+     * which is what the agent profile page reads. Without the last one a relisted
+     * or re-attributed property stays invisible on the agent's profile until the
+     * TTL lapses, even though it reappears in the main/search listings.
+     *
+     * @param  array<int, int|string>  $agentIds  Agents attributed to the listing
+     *                                            (primary + any co-listing agent).
      */
-    public function forgetListing(int|string|null $id = null, ?string $reference = null): void
+    public function forgetListing(int|string|null $id = null, ?string $reference = null, array $agentIds = []): void
     {
         foreach ([$id, $reference] as $idOrRef) {
             if ($idOrRef !== null && $idOrRef !== '') {
@@ -278,6 +285,31 @@ class CorexClient
         }
 
         Cache::forget($this->collectionCacheKey('listings', [], self::LISTINGS_PER_PAGE));
+
+        foreach ($agentIds as $agentId) {
+            $this->forgetAgentListings($agentId);
+        }
+    }
+
+    /**
+     * Bust an agent's filtered listings collection (GET /listings?agent_id={id}),
+     * which backs the agent profile page.
+     *
+     * The profile page caches this list keyed on the agent id, whose PHP type
+     * differs by entry point — a string from the "/agents/{id}" route param, an
+     * int from the id embedded on CoreX data when resolved via a name slug. Since
+     * the cache key is derived from serialize(), int 26 and string "26" hash to
+     * different keys, so we forget both variants to guarantee a hit.
+     */
+    protected function forgetAgentListings(int|string $agentId): void
+    {
+        if ($agentId === '' || $agentId === null) {
+            return;
+        }
+
+        foreach ([(int) $agentId, (string) $agentId] as $value) {
+            Cache::forget($this->collectionCacheKey('listings', ['agent_id' => $value], self::LISTINGS_PER_PAGE));
+        }
     }
 
     /**

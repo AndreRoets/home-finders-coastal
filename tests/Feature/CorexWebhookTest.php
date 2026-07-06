@@ -92,6 +92,61 @@ class CorexWebhookTest extends TestCase
         $this->assertFalse(Cache::has('corex:listings:'.md5(serialize([])).':50'));
     }
 
+    public function test_a_listing_event_busts_the_attributed_agents_scoped_listings(): void
+    {
+        // The agent profile page caches GET /listings?agent_id={id}. The id's PHP
+        // type differs by entry point (string "26" from the /agents/{id} route,
+        // int 26 when resolved via a name slug), and serialize() hashes the two
+        // to different keys — so both variants must be busted.
+        $stringKey = 'corex:listings:'.md5(serialize(['agent_id' => '26'])).':50';
+        $intKey = 'corex:listings:'.md5(serialize(['agent_id' => 26])).':50';
+        $coAgentKey = 'corex:listings:'.md5(serialize(['agent_id' => 41])).':50';
+
+        Cache::put($stringKey, ['stale'], 600);
+        Cache::put($intKey, ['stale'], 600);
+        Cache::put($coAgentKey, ['stale'], 600);
+
+        // A relisted property, delivered with its full agent linkage: agents[] is
+        // the source of truth (primary + co-listing), agent is the legacy mirror.
+        $payload = [
+            'event' => 'listing.updated',
+            'data' => [
+                'id' => 3522,
+                'reference' => '117054069',
+                'agent' => ['id' => 26, 'name' => 'Shawn Du Bois'],
+                'agents' => [
+                    ['id' => 26, 'is_primary' => true, 'name' => 'Shawn Du Bois'],
+                    ['id' => 41, 'is_primary' => false, 'name' => 'Co Lister'],
+                ],
+            ],
+        ];
+
+        $this->deliver($payload, 'listing.updated')->assertOk();
+
+        $this->assertFalse(Cache::has($stringKey));
+        $this->assertFalse(Cache::has($intKey));
+        $this->assertFalse(Cache::has($coAgentKey));
+    }
+
+    public function test_a_listing_event_without_agents_still_busts_the_listing_caches(): void
+    {
+        // Legacy payloads carrying only the singular agent must still work.
+        $agentKey = 'corex:listings:'.md5(serialize(['agent_id' => 26])).':50';
+
+        Cache::put('corex:listings:'.md5(serialize([])).':50', ['stale'], 600);
+        Cache::put($agentKey, ['stale'], 600);
+
+        $payload = [
+            'event' => 'listing.updated',
+            'data' => ['id' => 3522, 'reference' => '117054069', 'agent' => ['id' => 26]],
+        ];
+
+        $this->deliver($payload, 'listing.updated')->assertOk();
+
+        $this->assertFalse(Cache::has('corex:listings:'.md5(serialize([])).':50'));
+        $this->assertFalse(Cache::has($agentKey));
+    }
+
     public function test_an_agent_event_busts_the_agent_caches(): void
     {
         Cache::put('corex:agent:7', ['stale'], 600);

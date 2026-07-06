@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Corex\CorexClient;
+use App\Services\Corex\ListingMapper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,7 @@ class CorexWebhookController extends Controller
             $this->corex->forgetListing(
                 id: $data['id'] ?? null,
                 reference: isset($data['reference']) ? (string) $data['reference'] : null,
+                agentIds: $this->listingAgentIds($data),
             );
         } elseif (str_starts_with($event, 'agency.')) {
             $this->corex->forgetAgency();
@@ -52,6 +54,30 @@ class CorexWebhookController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Extract the ids of every agent attributed to a listing webhook payload.
+     *
+     * The payload mirrors a CoreX listing resource, so the `agents[]` array is
+     * the source of truth (primary + any co-listing agent, each flagged
+     * `is_primary`), with the singular `agent` as the legacy fallback — exactly
+     * what {@see ListingMapper::extractAgents()} already resolves. Their scoped
+     * listings caches (GET /listings?agent_id={id}) are then busted so the
+     * relisted property reappears on each agent's profile immediately.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, int|string>
+     */
+    protected function listingAgentIds(array $data): array
+    {
+        return array_values(array_filter(
+            array_map(
+                static fn (array $agent): int|string|null => $agent['id'] ?? null,
+                ListingMapper::extractAgents($data),
+            ),
+            static fn (int|string|null $id): bool => $id !== null && $id !== '',
+        ));
     }
 
     /**

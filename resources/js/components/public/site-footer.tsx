@@ -96,7 +96,6 @@ export default function SiteFooter() {
                 <div className="mx-auto max-w-7xl px-4 py-6 text-center text-xs tracking-wide text-neutral-500 sm:px-6 lg:px-8">
                     <p>Registered with the PPRA</p>
                     <p className="mt-1">&copy; {new Date().getFullYear()} CorexOS. All rights reserved.</p>
-                    <p className="mt-1 text-neutral-600">Operated by R R Technologies</p>
                 </div>
             </div>
         </footer>

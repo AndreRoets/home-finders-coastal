@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
-import { ChevronDown, MapPin, Search } from 'lucide-react';
+import { ChevronDown, MapPin, Search, X } from 'lucide-react';
 import { type FormEvent, type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface SearchFacets {
@@ -18,8 +18,8 @@ export interface SearchFacets {
 
 export interface SearchValues {
     q?: string;
-    suburb?: string;
-    type?: string;
+    suburbs?: string[];
+    types?: string[];
     beds?: number;
     baths?: number;
     min_price?: number | null;
@@ -54,8 +54,8 @@ export default function PropertySearch({
     branchId = null,
 }: PropertySearchProps) {
     const [mode, setMode] = useState<Mode>(initialMode);
-    const [suburb, setSuburb] = useState(values?.suburb ?? '');
-    const [type, setType] = useState(values?.type ?? '');
+    const [suburbs, setSuburbs] = useState<string[]>(values?.suburbs ?? []);
+    const [types, setTypes] = useState<string[]>(values?.types ?? []);
     const [beds, setBeds] = useState(values?.beds ?? 0);
     const [baths, setBaths] = useState(values?.baths ?? 0);
     const [q, setQ] = useState(values?.q ?? '');
@@ -85,10 +85,10 @@ export default function PropertySearch({
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
 
-        const params: Record<string, string | number> = {};
+        const params: Record<string, string | number | string[]> = {};
         if (q.trim()) params.q = q.trim();
-        if (suburb) params.suburb = suburb;
-        if (type) params.type = type;
+        if (suburbs.length > 0) params.suburb = suburbs;
+        if (types.length > 0) params.type = types;
         if (beds > 0) params.beds = beds;
         if (baths > 0) params.baths = baths;
         if (hasPrice && minPrice > range.min) params.min_price = minPrice;
@@ -126,29 +126,27 @@ export default function PropertySearch({
             {/* Selects */}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field label="Location" light={light}>
-                    <SelectControl value={suburb} onChange={setSuburb} light={light}>
-                        <option value="">Any area</option>
-                        {filters.suburbs.map((s) => (
-                            <option key={s} value={s}>
-                                {s}
-                            </option>
-                        ))}
-                    </SelectControl>
+                    <MultiSelectControl
+                        placeholder="Add an area"
+                        options={filters.suburbs}
+                        selected={suburbs}
+                        onAdd={(value) => setSuburbs((prev) => (prev.includes(value) ? prev : [...prev, value]))}
+                        onRemove={(value) => setSuburbs((prev) => prev.filter((s) => s !== value))}
+                    />
                 </Field>
 
                 <Field label="Property type" light={light}>
-                    <SelectControl value={type} onChange={setType} light={light}>
-                        <option value="">Any type</option>
-                        {filters.propertyTypes.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </SelectControl>
+                    <MultiSelectControl
+                        placeholder="Add a type"
+                        options={filters.propertyTypes}
+                        selected={types}
+                        onAdd={(value) => setTypes((prev) => (prev.includes(value) ? prev : [...prev, value]))}
+                        onRemove={(value) => setTypes((prev) => prev.filter((t) => t !== value))}
+                    />
                 </Field>
 
                 <Field label="Bedrooms" light={light}>
-                    <SelectControl value={String(beds)} onChange={(v) => setBeds(Number(v))} light={light}>
+                    <SelectControl value={String(beds)} onChange={(v) => setBeds(Number(v))}>
                         <option value="0">Any</option>
                         {Array.from({ length: filters.maxBeds }, (_, i) => i + 1).map((n) => (
                             <option key={n} value={n}>
@@ -159,7 +157,7 @@ export default function PropertySearch({
                 </Field>
 
                 <Field label="Bathrooms" light={light}>
-                    <SelectControl value={String(baths)} onChange={(v) => setBaths(Number(v))} light={light}>
+                    <SelectControl value={String(baths)} onChange={(v) => setBaths(Number(v))}>
                         <option value="0">Any</option>
                         {Array.from({ length: filters.maxBaths }, (_, i) => i + 1).map((n) => (
                             <option key={n} value={n}>
@@ -367,35 +365,97 @@ function Field({ label, light, children }: { label: string; light: boolean; chil
     );
 }
 
+/**
+ * Shared class for the search-bar dropdowns: a white field with navy text, so
+ * the control (and its options) stay legible on both the dark hero and the
+ * white page background.
+ */
+const DROPDOWN_CLASS =
+    'focus:border-navy text-navy w-full appearance-none rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm transition-colors outline-none';
+
 function SelectControl({
     value,
     onChange,
-    light,
     children,
 }: {
     value: string;
     onChange: (value: string) => void;
-    light: boolean;
     children: React.ReactNode;
 }) {
     return (
         <div className="relative">
-            <select
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className={cn(
-                    'focus:border-navy w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm transition-colors outline-none',
-                    light ? 'border-slate-300 bg-white text-neutral-800' : 'bg-ink/40 border-white/15 text-white',
-                )}
-            >
+            <select value={value} onChange={(event) => onChange(event.target.value)} className={DROPDOWN_CLASS}>
                 {children}
             </select>
-            <ChevronDown
-                className={cn(
-                    'pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2',
-                    light ? 'text-neutral-500' : 'text-neutral-400',
-                )}
-            />
+            <ChevronDown className="text-navy pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+        </div>
+    );
+}
+
+/**
+ * A picker that accumulates multiple choices instead of holding a single value.
+ * Choosing an option from the dropdown adds it to the selected set (the picker
+ * resets to its placeholder and drops that option from the list); each pick is
+ * shown as a removable chip below. Nothing searches here — the surrounding form
+ * only fires when the user presses Search.
+ */
+function MultiSelectControl({
+    placeholder,
+    options,
+    selected,
+    onAdd,
+    onRemove,
+}: {
+    placeholder: string;
+    options: string[];
+    selected: string[];
+    onAdd: (value: string) => void;
+    onRemove: (value: string) => void;
+}) {
+    const available = options.filter((option) => !selected.includes(option));
+
+    return (
+        <div>
+            <div className="relative">
+                <select
+                    value=""
+                    onChange={(event) => {
+                        if (event.target.value) {
+                            onAdd(event.target.value);
+                        }
+                    }}
+                    disabled={available.length === 0}
+                    className={cn(DROPDOWN_CLASS, 'disabled:cursor-not-allowed disabled:opacity-60')}
+                >
+                    <option value="">{available.length === 0 ? 'All selected' : placeholder}</option>
+                    {available.map((option) => (
+                        <option key={option} value={option}>
+                            {option}
+                        </option>
+                    ))}
+                </select>
+                <ChevronDown className="text-navy pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+            </div>
+            {selected.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selected.map((value) => (
+                        <span
+                            key={value}
+                            className="bg-navy inline-flex items-center gap-1 rounded-full py-1 pr-1 pl-2.5 text-xs font-medium text-white"
+                        >
+                            {value}
+                            <button
+                                type="button"
+                                onClick={() => onRemove(value)}
+                                aria-label={`Remove ${value}`}
+                                className="inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-white/25"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

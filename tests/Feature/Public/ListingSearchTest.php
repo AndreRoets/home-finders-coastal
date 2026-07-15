@@ -55,6 +55,31 @@ class ListingSearchTest extends TestCase
             );
     }
 
+    public function test_for_sale_filters_by_multiple_suburbs(): void
+    {
+        $this->fakeListings();
+
+        $this->get(route('for-sale', ['suburb' => ['Camps Bay', 'Sea Point']]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 2) // both active sale suburbs, rental + sold excluded
+                ->where('search.suburbs', ['Camps Bay', 'Sea Point'])
+            );
+    }
+
+    public function test_for_sale_filters_by_multiple_property_types(): void
+    {
+        $this->fakeListings();
+
+        $this->get(route('for-sale', ['type' => ['Villa', 'House']]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 1) // only the active Villa; House is sold
+                ->where('listings.data.0.title', 'Clifftop Villa')
+                ->where('search.types', ['Villa', 'House'])
+            );
+    }
+
     public function test_for_sale_filters_by_min_beds_and_price(): void
     {
         $this->fakeListings();

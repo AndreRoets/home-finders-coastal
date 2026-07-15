@@ -193,13 +193,28 @@ class ListingController extends Controller
     {
         return [
             'q' => (string) $request->query('q', ''),
-            'suburb' => (string) $request->query('suburb', ''),
-            'type' => (string) $request->query('type', ''),
+            'suburbs' => $this->queryList($request, 'suburb'),
+            'types' => $this->queryList($request, 'type'),
             'beds' => (int) $request->query('beds', 0),
             'baths' => (int) $request->query('baths', 0),
             'min_price' => is_numeric($request->query('min_price')) ? (int) $request->query('min_price') : null,
             'max_price' => is_numeric($request->query('max_price')) ? (int) $request->query('max_price') : null,
         ];
+    }
+
+    /**
+     * Read a query parameter that may be a single value or a repeated array
+     * (e.g. ?suburb[]=a&suburb[]=b) as a clean list of non-empty strings, so the
+     * search bar can pre-fill its multi-select chips.
+     *
+     * @return list<string>
+     */
+    protected function queryList(Request $request, string $key): array
+    {
+        return array_values(array_filter(
+            array_map(static fn (mixed $value): string => trim((string) $value), (array) $request->query($key, [])),
+            static fn (string $value): bool => $value !== '',
+        ));
     }
 
     /**

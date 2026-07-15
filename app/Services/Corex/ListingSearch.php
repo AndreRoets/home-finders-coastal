@@ -106,19 +106,19 @@ class ListingSearch
     public static function apply(array $listings, array $params): array
     {
         $q = strtolower(trim((string) ($params['q'] ?? '')));
-        $suburb = trim((string) ($params['suburb'] ?? ''));
-        $type = trim((string) ($params['type'] ?? ''));
+        $suburbs = self::toList($params['suburb'] ?? null);
+        $types = self::toList($params['type'] ?? null);
         $minBeds = (int) ($params['beds'] ?? 0);
         $minBaths = (int) ($params['baths'] ?? 0);
         $minPrice = is_numeric($params['min_price'] ?? null) ? (int) $params['min_price'] : null;
         $maxPrice = is_numeric($params['max_price'] ?? null) ? (int) $params['max_price'] : null;
 
-        $matches = static function (array $listing) use ($q, $suburb, $type, $minBeds, $minBaths, $minPrice, $maxPrice): bool {
-            if ($suburb !== '' && strcasecmp((string) Arr::get($listing, 'suburb', ''), $suburb) !== 0) {
+        $matches = static function (array $listing) use ($q, $suburbs, $types, $minBeds, $minBaths, $minPrice, $maxPrice): bool {
+            if ($suburbs !== [] && ! self::containsCi($suburbs, (string) Arr::get($listing, 'suburb', ''))) {
                 return false;
             }
 
-            if ($type !== '' && strcasecmp((string) Arr::get($listing, 'property_type', ''), $type) !== 0) {
+            if ($types !== [] && ! self::containsCi($types, (string) Arr::get($listing, 'property_type', ''))) {
                 return false;
             }
 
@@ -148,6 +148,39 @@ class ListingSearch
         };
 
         return array_values(array_filter($listings, $matches));
+    }
+
+    /**
+     * Normalise a search parameter that may arrive as a single value or a list
+     * (the search bar sends multiple suburbs / types as an array) into a clean
+     * list of non-empty trimmed strings.
+     *
+     * @return list<string>
+     */
+    protected static function toList(mixed $value): array
+    {
+        $values = is_array($value) ? $value : [$value];
+
+        return array_values(array_filter(
+            array_map(static fn (mixed $item): string => trim((string) $item), $values),
+            static fn (string $item): bool => $item !== '',
+        ));
+    }
+
+    /**
+     * Whether $needle case-insensitively matches any entry in $haystack.
+     *
+     * @param  list<string>  $haystack
+     */
+    protected static function containsCi(array $haystack, string $needle): bool
+    {
+        foreach ($haystack as $candidate) {
+            if (strcasecmp($candidate, $needle) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

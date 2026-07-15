@@ -114,7 +114,9 @@ class ListingSearch
         $maxPrice = is_numeric($params['max_price'] ?? null) ? (int) $params['max_price'] : null;
 
         $matches = static function (array $listing) use ($q, $suburbs, $types, $minBeds, $minBaths, $minPrice, $maxPrice): bool {
-            if ($suburbs !== [] && ! self::containsCi($suburbs, (string) Arr::get($listing, 'suburb', ''))) {
+            // The Location filter matches suburb, town or city so a place picked
+            // from the keyword suggestions (which draw on all three) still filters.
+            if ($suburbs !== [] && ! self::matchesPlace($suburbs, $listing)) {
                 return false;
             }
 
@@ -165,6 +167,24 @@ class ListingSearch
             array_map(static fn (mixed $item): string => trim((string) $item), $values),
             static fn (string $item): bool => $item !== '',
         ));
+    }
+
+    /**
+     * Whether any of the selected place names matches the listing's suburb, town
+     * or city (case-insensitively).
+     *
+     * @param  list<string>  $places
+     * @param  array<string, mixed>  $listing
+     */
+    protected static function matchesPlace(array $places, array $listing): bool
+    {
+        foreach (['suburb', 'town', 'city'] as $field) {
+            if (self::containsCi($places, (string) Arr::get($listing, $field, ''))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

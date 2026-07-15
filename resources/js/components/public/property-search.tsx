@@ -82,6 +82,10 @@ export default function PropertySearch({
         return mode === 'rent' ? `${formatted} /mo` : formatted;
     };
 
+    const addSuburb = (value: string) => {
+        setSuburbs((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    };
+
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -130,7 +134,7 @@ export default function PropertySearch({
                         placeholder="Add an area"
                         options={filters.suburbs}
                         selected={suburbs}
-                        onAdd={(value) => setSuburbs((prev) => (prev.includes(value) ? prev : [...prev, value]))}
+                        onAdd={addSuburb}
                         onRemove={(value) => setSuburbs((prev) => prev.filter((s) => s !== value))}
                     />
                 </Field>
@@ -146,25 +150,25 @@ export default function PropertySearch({
                 </Field>
 
                 <Field label="Bedrooms" light={light}>
-                    <SelectControl value={String(beds)} onChange={(v) => setBeds(Number(v))}>
-                        <option value="0">Any</option>
-                        {Array.from({ length: filters.maxBeds }, (_, i) => i + 1).map((n) => (
-                            <option key={n} value={n}>
-                                {n}+
-                            </option>
-                        ))}
-                    </SelectControl>
+                    <SingleSelect
+                        value={String(beds)}
+                        onChange={(v) => setBeds(Number(v))}
+                        options={[
+                            { value: '0', label: 'Any' },
+                            ...Array.from({ length: filters.maxBeds }, (_, i) => i + 1).map((n) => ({ value: String(n), label: `${n}+` })),
+                        ]}
+                    />
                 </Field>
 
                 <Field label="Bathrooms" light={light}>
-                    <SelectControl value={String(baths)} onChange={(v) => setBaths(Number(v))}>
-                        <option value="0">Any</option>
-                        {Array.from({ length: filters.maxBaths }, (_, i) => i + 1).map((n) => (
-                            <option key={n} value={n}>
-                                {n}+
-                            </option>
-                        ))}
-                    </SelectControl>
+                    <SingleSelect
+                        value={String(baths)}
+                        onChange={(v) => setBaths(Number(v))}
+                        options={[
+                            { value: '0', label: 'Any' },
+                            ...Array.from({ length: filters.maxBaths }, (_, i) => i + 1).map((n) => ({ value: String(n), label: `${n}+` })),
+                        ]}
+                    />
                 </Field>
             </div>
 
@@ -197,7 +201,7 @@ export default function PropertySearch({
 
             {/* Keyword + submit */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <KeywordAutocomplete value={q} onChange={setQ} suggestions={filters.suggestions} light={light} />
+                <KeywordAutocomplete value={q} onChange={setQ} onSelectPlace={addSuburb} suggestions={filters.suggestions} light={light} />
                 <button
                     type="submit"
                     className="bg-navy hover:bg-navy/90 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold tracking-wide text-white transition-colors"
@@ -216,16 +220,20 @@ export default function PropertySearch({
  * `suggestions`), so we only ever suggest somewhere that has properties — never
  * a hard-coded list. A match is any suggestion whose start, or the start of any
  * word within it, matches what's typed ("She" → "Shelly Beach", "Sea" → "Sea
- * View"). Selecting one fills the keyword; the surrounding form does the search.
+ * View"). Picking a suggested place adds it to the Location list (via
+ * `onSelectPlace`) and clears the box; anything left typed stays a free-text
+ * keyword. Either way the surrounding form does the search on submit.
  */
 function KeywordAutocomplete({
     value,
     onChange,
+    onSelectPlace,
     suggestions,
     light,
 }: {
     value: string;
     onChange: (value: string) => void;
+    onSelectPlace: (value: string) => void;
     suggestions: string[];
     light: boolean;
 }) {
@@ -266,7 +274,9 @@ function KeywordAutocomplete({
     const showList = open && matches.length > 0;
 
     const select = (suggestion: string) => {
-        onChange(suggestion);
+        // A picked place becomes a Location chip, not keyword text — clear the box.
+        onSelectPlace(suggestion);
+        onChange('');
         setOpen(false);
         setActive(-1);
     };
@@ -366,38 +376,146 @@ function Field({ label, light, children }: { label: string; light: boolean; chil
 }
 
 /**
- * Shared class for the search-bar dropdowns: a white field with navy text, so
- * the control (and its options) stay legible on both the dark hero and the
- * white page background.
+ * Shared trigger styling for the search-bar dropdowns: a white field with navy
+ * text, legible on both the dark hero and the white page background.
  */
 const DROPDOWN_CLASS =
-    'focus:border-navy text-navy w-full appearance-none rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm transition-colors outline-none';
+    'focus:border-navy text-navy flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-left text-sm transition-colors outline-none';
 
-function SelectControl({
+/**
+ * Close a dropdown when a pointer press lands outside it. Returns the ref to put
+ * on the dropdown's wrapper. Only listens while `open`, mirroring the keyword
+ * autocomplete's dismissal behaviour.
+ */
+function useDismissOnOutside(open: boolean, onDismiss: () => void) {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                onDismiss();
+            }
+        };
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('touchstart', handlePointerDown);
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('touchstart', handlePointerDown);
+        };
+    }, [open, onDismiss]);
+
+    return ref;
+}
+
+function DropdownTrigger({ open, onToggle, children }: { open: boolean; onToggle: () => void; children: React.ReactNode }) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                    onToggle();
+                }
+            }}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            className={DROPDOWN_CLASS}
+        >
+            <span className="truncate">{children}</span>
+            <ChevronDown className={cn('text-navy h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')} />
+        </button>
+    );
+}
+
+/**
+ * The options panel. Anchored with `top-full` so it always opens *downwards*
+ * from the trigger (never up, regardless of where the bar sits in the viewport),
+ * and scrolls internally once the list is long.
+ */
+function DropdownPanel({ children }: { children: React.ReactNode }) {
+    return (
+        <ul
+            role="listbox"
+            className="absolute top-full right-0 left-0 z-30 mt-2 max-h-60 overflow-auto rounded-xl border border-slate-200 bg-white py-1 text-left shadow-lg"
+        >
+            {children}
+        </ul>
+    );
+}
+
+function DropdownOption({ selected, onSelect, children }: { selected?: boolean; onSelect: () => void; children: React.ReactNode }) {
+    return (
+        <li role="option" aria-selected={selected}>
+            <button
+                type="button"
+                // Press, not click, so we act before the trigger blurs and closes the list.
+                onMouseDown={(event) => {
+                    event.preventDefault();
+                    onSelect();
+                }}
+                className={cn(
+                    'text-navy block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-100',
+                    selected && 'bg-slate-100 font-medium',
+                )}
+            >
+                {children}
+            </button>
+        </li>
+    );
+}
+
+/**
+ * A single-value dropdown built from a button + downward panel (rather than a
+ * native `<select>`, whose popup the browser may open upward). Picking an option
+ * sets the value and closes.
+ */
+function SingleSelect({
     value,
     onChange,
-    children,
+    options,
 }: {
     value: string;
     onChange: (value: string) => void;
-    children: React.ReactNode;
+    options: { value: string; label: string }[];
 }) {
+    const [open, setOpen] = useState(false);
+    const ref = useDismissOnOutside(open, () => setOpen(false));
+    const current = options.find((option) => option.value === value);
+
     return (
-        <div className="relative">
-            <select value={value} onChange={(event) => onChange(event.target.value)} className={DROPDOWN_CLASS}>
-                {children}
-            </select>
-            <ChevronDown className="text-navy pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+        <div ref={ref} className="relative">
+            <DropdownTrigger open={open} onToggle={() => setOpen((prev) => !prev)}>
+                {current?.label ?? ''}
+            </DropdownTrigger>
+            {open && (
+                <DropdownPanel>
+                    {options.map((option) => (
+                        <DropdownOption
+                            key={option.value}
+                            selected={option.value === value}
+                            onSelect={() => {
+                                onChange(option.value);
+                                setOpen(false);
+                            }}
+                        >
+                            {option.label}
+                        </DropdownOption>
+                    ))}
+                </DropdownPanel>
+            )}
         </div>
     );
 }
 
 /**
  * A picker that accumulates multiple choices instead of holding a single value.
- * Choosing an option from the dropdown adds it to the selected set (the picker
- * resets to its placeholder and drops that option from the list); each pick is
- * shown as a removable chip below. Nothing searches here — the surrounding form
- * only fires when the user presses Search.
+ * Choosing an option from the (downward-opening) panel adds it to the selected
+ * set and drops it from the list; each pick is shown as a removable chip below.
+ * The panel stays open so several can be added in a row. Nothing searches here —
+ * the surrounding form only fires when the user presses Search.
  */
 function MultiSelectControl({
     placeholder,
@@ -412,29 +530,29 @@ function MultiSelectControl({
     onAdd: (value: string) => void;
     onRemove: (value: string) => void;
 }) {
+    const [open, setOpen] = useState(false);
+    const ref = useDismissOnOutside(open, () => setOpen(false));
     const available = options.filter((option) => !selected.includes(option));
 
     return (
         <div>
-            <div className="relative">
-                <select
-                    value=""
-                    onChange={(event) => {
-                        if (event.target.value) {
-                            onAdd(event.target.value);
-                        }
-                    }}
-                    disabled={available.length === 0}
-                    className={cn(DROPDOWN_CLASS, 'disabled:cursor-not-allowed disabled:opacity-60')}
-                >
-                    <option value="">{available.length === 0 ? 'All selected' : placeholder}</option>
-                    {available.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-                <ChevronDown className="text-navy pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+            <div ref={ref} className="relative">
+                <DropdownTrigger open={open} onToggle={() => setOpen((prev) => !prev)}>
+                    {placeholder}
+                </DropdownTrigger>
+                {open && (
+                    <DropdownPanel>
+                        {available.length === 0 ? (
+                            <li className="px-4 py-2.5 text-sm text-neutral-400">All selected</li>
+                        ) : (
+                            available.map((option) => (
+                                <DropdownOption key={option} onSelect={() => onAdd(option)}>
+                                    {option}
+                                </DropdownOption>
+                            ))
+                        )}
+                    </DropdownPanel>
+                )}
             </div>
             {selected.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">

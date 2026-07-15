@@ -67,6 +67,27 @@ class ListingSearchTest extends TestCase
             );
     }
 
+    public function test_for_sale_location_filter_matches_town_and_city(): void
+    {
+        Http::fake([
+            '*/listings*' => Http::response([
+                'data' => [
+                    ['id' => 1, 'title' => 'Margate Cottage', 'listing_type' => 'sale', 'status' => 'for_sale', 'suburb' => 'Manaba Beach', 'town' => 'Margate', 'property_type' => 'House', 'price' => 1_000_000],
+                    ['id' => 2, 'title' => 'Elsewhere', 'listing_type' => 'sale', 'status' => 'for_sale', 'suburb' => 'Uvongo', 'town' => 'Uvongo', 'property_type' => 'House', 'price' => 2_000_000],
+                ],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
+
+        // "Margate" is only a town on listing 1, not its suburb — it must still match.
+        $this->get(route('for-sale', ['suburb' => ['Margate']]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('listings.data', 1)
+                ->where('listings.data.0.title', 'Margate Cottage')
+            );
+    }
+
     public function test_for_sale_filters_by_multiple_property_types(): void
     {
         $this->fakeListings();

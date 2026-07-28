@@ -37,15 +37,15 @@ function CategoryTile({ category }: { category: Category }) {
                     src={`https://images.unsplash.com/${image}?auto=format&fit=crop&w=900&q=70`}
                     alt={label}
                     loading="lazy"
-                    className="h-full w-full animate-kenburns object-cover will-change-transform"
+                    className="animate-kenburns h-full w-full object-cover will-change-transform"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/25 to-transparent transition-opacity group-hover:from-ink" />
+                <div className="from-ink/90 via-ink/25 group-hover:from-ink absolute inset-0 bg-gradient-to-t to-transparent transition-opacity" />
             </div>
 
             {/* Outline that traces around the square on hover — sits just outside the
                 tile so the navy stroke reads against the white page, not the dark image. */}
             <svg
-                className="pointer-events-none absolute -inset-1.5 h-[calc(100%+0.75rem)] w-[calc(100%+0.75rem)] text-navy"
+                className="text-navy pointer-events-none absolute -inset-1.5 h-[calc(100%+0.75rem)] w-[calc(100%+0.75rem)]"
                 viewBox="0 0 100 100"
                 preserveAspectRatio="none"
                 aria-hidden="true"
@@ -61,18 +61,18 @@ function CategoryTile({ category }: { category: Category }) {
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
                     pathLength={100}
-                    className="opacity-0 [stroke-dasharray:100] [stroke-dashoffset:100] transition-[stroke-dashoffset,opacity] duration-500 ease-out group-hover:opacity-100 group-hover:[stroke-dashoffset:0]"
+                    className="opacity-0 transition-[stroke-dashoffset,opacity] duration-500 ease-out [stroke-dasharray:100] [stroke-dashoffset:100] group-hover:opacity-100 group-hover:[stroke-dashoffset:0]"
                 />
             </svg>
 
             {/* Default navy corner bracket hugging the bottom-right; aligned with the hover
                 frame so it reads as a partial outline that completes as the full frame traces in. */}
-            <span className="pointer-events-none absolute -right-1.5 -bottom-1.5 h-0.5 w-14 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
-            <span className="pointer-events-none absolute -right-1.5 -bottom-1.5 h-14 w-0.5 bg-navy transition-opacity duration-300 group-hover:opacity-0" />
+            <span className="bg-navy pointer-events-none absolute -right-1.5 -bottom-1.5 h-0.5 w-14 transition-opacity duration-300 group-hover:opacity-0" />
+            <span className="bg-navy pointer-events-none absolute -right-1.5 -bottom-1.5 h-14 w-0.5 transition-opacity duration-300 group-hover:opacity-0" />
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-5">
                 <h3 className="text-xl font-light text-white sm:text-2xl">{label}</h3>
-                <ArrowUpRight className="h-5 w-5 shrink-0 text-white transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <ArrowUpRight className="h-5 w-5 shrink-0 text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
         </Link>
     );
@@ -167,7 +167,7 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
 
     return (
         <div className="relative mx-auto mt-12 max-w-5xl rounded-2xl border border-white/15 bg-white/10 px-6 py-10 text-center backdrop-blur sm:px-16 sm:py-14 lg:px-20">
-            <Quote className="mx-auto h-10 w-10 text-marine/60" />
+            <Quote className="text-marine/60 mx-auto h-10 w-10" />
             {/* All testimonials share one grid cell, and the cell keeps a floor
                 height, so the box holds one size regardless of quote length. */}
             <div className="mt-5 grid min-h-56 sm:min-h-52">
@@ -183,16 +183,17 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                         {item.rating !== null && (
                             <div className="flex justify-center gap-0.5">
                                 {Array.from({ length: item.rating }).map((_, i) => (
-                                    <Star key={i} className="h-4 w-4 fill-marine text-marine" />
+                                    <Star key={i} className="fill-marine text-marine h-4 w-4" />
                                 ))}
                             </div>
                         )}
-                        <blockquote className={cn('mt-6 font-light text-neutral-200', quoteTypography(item.body))}>
-                            “{item.body}”
-                        </blockquote>
+                        <blockquote className={cn('mt-6 font-light text-neutral-200', quoteTypography(item.body))}>“{item.body}”</blockquote>
                         <p className="mt-7 text-white">{item.author}</p>
                         {item.agent && (
-                            <Link href={agentUrl(item.agent)} className="mt-0.5 inline-block text-sm tracking-wide text-marine/80 transition-colors hover:text-marine">
+                            <Link
+                                href={agentUrl(item.agent)}
+                                className="text-marine/80 hover:text-marine mt-0.5 inline-block text-sm tracking-wide transition-colors"
+                            >
                                 — {item.agent.name}
                             </Link>
                         )}
@@ -210,7 +211,10 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                                 onClick={() => go(index)}
                                 aria-label={`Show testimonial ${index + 1}`}
                                 aria-current={index === active}
-                                className={cn('h-2 rounded-full transition-all', index === active ? 'w-6 bg-marine' : 'w-2 bg-white/30 hover:bg-white/60')}
+                                className={cn(
+                                    'h-2 rounded-full transition-all',
+                                    index === active ? 'bg-marine w-6' : 'w-2 bg-white/30 hover:bg-white/60',
+                                )}
                             />
                         ))}
                     </div>
@@ -219,7 +223,7 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                         type="button"
                         onClick={() => go(active - 1)}
                         aria-label="Previous testimonial"
-                        className="absolute top-1/2 left-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink/70 text-white backdrop-blur transition-colors hover:bg-ink sm:flex"
+                        className="bg-ink/70 hover:bg-ink absolute top-1/2 left-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 text-white backdrop-blur transition-colors sm:flex"
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
@@ -227,7 +231,7 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                         type="button"
                         onClick={() => go(active + 1)}
                         aria-label="Next testimonial"
-                        className="absolute top-1/2 right-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink/70 text-white backdrop-blur transition-colors hover:bg-ink sm:flex"
+                        className="bg-ink/70 hover:bg-ink absolute top-1/2 right-3 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 text-white backdrop-blur transition-colors sm:flex"
                     >
                         <ChevronRight className="h-5 w-5" />
                     </button>
@@ -290,8 +294,8 @@ export default function Home({
                     className="absolute inset-0 h-full w-full object-cover will-change-transform"
                     style={{ transform: `translate3d(0, ${scrollY * 0.1}px, 0) scale(1.25)` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-ink/55 via-ink/30 to-white" />
-                <div className="absolute inset-0 bg-gradient-to-r from-ink/70 to-transparent" />
+                <div className="from-ink/55 via-ink/30 absolute inset-0 bg-gradient-to-b to-white" />
+                <div className="from-ink/70 absolute inset-0 bg-gradient-to-r to-transparent" />
 
                 <div
                     className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-start px-6 pt-28 pb-20 lg:justify-center lg:px-8 lg:pt-0 lg:pb-0"
@@ -329,72 +333,72 @@ export default function Home({
             {/* Featured residences */}
             <section className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
                 <Reveal>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p className="text-xs tracking-[0.3em] text-marine uppercase">Just Listed</p>
-                        <h2 className="mt-4 text-4xl font-light text-navy sm:text-5xl">Recent Listings</h2>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-marine text-xs tracking-[0.3em] uppercase">Just Listed</p>
+                            <h2 className="text-navy mt-4 text-4xl font-light sm:text-5xl">Recent Listings</h2>
+                        </div>
+                        <Link
+                            href={route('for-sale')}
+                            className="group hover:text-marine inline-flex items-center gap-2 text-sm tracking-wide text-neutral-600 transition-colors"
+                        >
+                            Browse all properties
+                            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </Link>
                     </div>
-                    <Link
-                        href={route('for-sale')}
-                        className="group inline-flex items-center gap-2 text-sm tracking-wide text-neutral-600 transition-colors hover:text-marine"
-                    >
-                        Browse all properties
-                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                    </Link>
-                </div>
 
-                {listings.length === 0 ? (
-                    <div className="mt-14 rounded-sm border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-neutral-500">
-                        New listings are on their way — please check back soon.
-                    </div>
-                ) : (
-                <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
-                    {listings.slice(0, 6).map((listing) => {
-                        const href = route('property.show', listing.slug ?? listing.ref ?? listing.id);
+                    {listings.length === 0 ? (
+                        <div className="mt-14 rounded-sm border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-neutral-500">
+                            New listings are on their way — please check back soon.
+                        </div>
+                    ) : (
+                        <div className="mt-14 grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+                            {listings.slice(0, 6).map((listing) => {
+                                const href = route('property.show', listing.slug ?? listing.ref ?? listing.id);
 
-                        return (
-                            // Not an <a>: holds both a property link and an agent link.
-                            <div key={listing.id} className="group block">
-                                <Link href={href} className="block">
-                                    <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
-                                        <img
-                                            src={listing.image}
-                                            alt={listing.title}
-                                            loading="lazy"
-                                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-                                        <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-ink/50 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
-                                            {listing.location}
-                                        </span>
+                                return (
+                                    // Not an <a>: holds both a property link and an agent link.
+                                    <div key={listing.id} className="group block">
+                                        <Link href={href} className="block">
+                                            <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
+                                                <img
+                                                    src={listing.image}
+                                                    alt={listing.title}
+                                                    loading="lazy"
+                                                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                                />
+                                                <div className="from-ink/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
+                                                <span className="bg-ink/50 absolute top-4 left-4 rounded-full border border-white/40 px-3 py-1 text-[11px] tracking-[0.2em] text-white uppercase backdrop-blur">
+                                                    {listing.location}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                        <Link href={href} className="mt-5 flex items-start justify-between gap-4">
+                                            <div>
+                                                <h3 className="text-navy group-hover:text-marine text-xl font-light transition-colors">
+                                                    {listing.title}
+                                                </h3>
+                                                <p className="mt-1 text-sm text-neutral-500">{listing.price}</p>
+                                            </div>
+                                            <ArrowUpRight className="group-hover:text-marine mt-1 h-5 w-5 shrink-0 text-neutral-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                        </Link>
+                                        <div className="mt-4 flex items-center gap-5 border-t border-slate-200 pt-4 text-xs tracking-wide text-neutral-500">
+                                            <span className="flex items-center gap-1.5">
+                                                <BedDouble className="h-4 w-4" /> {listing.beds}
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Bath className="h-4 w-4" /> {listing.baths}
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Maximize className="h-4 w-4" /> {listing.area}
+                                            </span>
+                                        </div>
+                                        <ListingAgents listing={listing} />
                                     </div>
-                                </Link>
-                                <Link href={href} className="mt-5 flex items-start justify-between gap-4">
-                                    <div>
-                                        <h3 className="text-xl font-light text-navy transition-colors group-hover:text-marine">
-                                            {listing.title}
-                                        </h3>
-                                        <p className="mt-1 text-sm text-neutral-500">{listing.price}</p>
-                                    </div>
-                                    <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-neutral-400 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-marine" />
-                                </Link>
-                                <div className="mt-4 flex items-center gap-5 border-t border-slate-200 pt-4 text-xs tracking-wide text-neutral-500">
-                                    <span className="flex items-center gap-1.5">
-                                        <BedDouble className="h-4 w-4" /> {listing.beds}
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <Bath className="h-4 w-4" /> {listing.baths}
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <Maximize className="h-4 w-4" /> {listing.area}
-                                    </span>
-                                </div>
-                                <ListingAgents listing={listing} />
-                            </div>
-                        );
-                    })}
-                </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    )}
                 </Reveal>
             </section>
 
@@ -409,10 +413,10 @@ export default function Home({
                         alt="Coastline"
                         className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-ink/80" />
+                    <div className="bg-ink/80 absolute inset-0" />
                     <Reveal className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
                         <div className="text-center">
-                            <p className="text-xs tracking-[0.3em] text-marine/80 uppercase">Testimonials</p>
+                            <p className="text-marine/80 text-xs tracking-[0.3em] uppercase">Testimonials</p>
                             <h2 className="mt-4 text-4xl font-light text-white sm:text-5xl">What our clients say</h2>
                         </div>
 

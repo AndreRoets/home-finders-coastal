@@ -5,8 +5,10 @@ import { type Article } from '@/components/public/articles';
 import { type Listing } from '@/components/public/listings';
 import { type Testimonial } from '@/components/public/testimonials';
 import PublicLayout from '@/layouts/public-layout';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowLeft, Mail, Phone, Quote, Star } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Mail, Phone, Quote, Star } from 'lucide-react';
+import { useState } from 'react';
 
 interface Agent {
     id: number | string;
@@ -40,6 +42,86 @@ function AgentNotFound() {
                 </Link>
             </div>
         </PublicLayout>
+    );
+}
+
+/** Testimonials shown per carousel page on an agent profile. */
+const TESTIMONIALS_PER_PAGE = 2;
+
+/**
+ * Client reviews in pages of two. Agents can accumulate a long tail of reviews,
+ * so the profile shows one page at a time with prev/next controls that wrap;
+ * with two or fewer reviews the controls are omitted entirely.
+ */
+function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
+    const [page, setPage] = useState(0);
+    const pageCount = Math.ceil(items.length / TESTIMONIALS_PER_PAGE);
+    const hasControls = pageCount > 1;
+    const visible = items.slice(page * TESTIMONIALS_PER_PAGE, page * TESTIMONIALS_PER_PAGE + TESTIMONIALS_PER_PAGE);
+
+    const go = (index: number) => setPage((index + pageCount) % pageCount);
+
+    return (
+        <>
+            <div className="flex items-center justify-between gap-4">
+                <h2 className="text-navy text-2xl font-light sm:text-3xl">What clients say</h2>
+                {hasControls && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => go(page - 1)}
+                            aria-label="Previous testimonials"
+                            className="text-navy hover:border-marine hover:text-marine flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => go(page + 1)}
+                            aria-label="Next testimonials"
+                            className="text-navy hover:border-marine hover:text-marine flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors"
+                        >
+                            <ChevronRight className="h-5 w-5" />
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-8 grid items-stretch gap-6 md:grid-cols-2">
+                {visible.map((testimonial) => (
+                    <figure key={testimonial.id} className="h-full rounded-sm border border-slate-200 bg-slate-50 p-6">
+                        <Quote className="text-marine/60 h-8 w-8" />
+                        {testimonial.rating !== null && (
+                            <div className="mt-4 flex gap-0.5">
+                                {Array.from({ length: testimonial.rating }).map((_, i) => (
+                                    <Star key={i} className="fill-marine text-marine h-4 w-4" />
+                                ))}
+                            </div>
+                        )}
+                        <blockquote className="mt-4 leading-relaxed text-pretty text-neutral-600">“{testimonial.body}”</blockquote>
+                        <figcaption className="text-navy mt-5 text-sm">— {testimonial.author}</figcaption>
+                    </figure>
+                ))}
+            </div>
+
+            {hasControls && (
+                <div className="mt-8 flex justify-center gap-2">
+                    {Array.from({ length: pageCount }).map((_, index) => (
+                        <button
+                            key={index}
+                            type="button"
+                            onClick={() => go(index)}
+                            aria-label={`Show testimonials page ${index + 1}`}
+                            aria-current={index === page}
+                            className={cn(
+                                'h-2 rounded-full transition-all',
+                                index === page ? 'bg-marine w-6' : 'w-2 bg-slate-300 hover:bg-slate-400',
+                            )}
+                        />
+                    ))}
+                </div>
+            )}
+        </>
     );
 }
 
@@ -133,23 +215,7 @@ export default function AgentDetail({
                 {/* Testimonials */}
                 {testimonials.length > 0 && (
                     <section className="mt-16">
-                        <h2 className="text-navy text-2xl font-light sm:text-3xl">What clients say</h2>
-                        <div className="mt-8 grid gap-6 md:grid-cols-2">
-                            {testimonials.map((testimonial) => (
-                                <figure key={testimonial.id} className="rounded-sm border border-slate-200 bg-slate-50 p-6">
-                                    <Quote className="text-marine/60 h-8 w-8" />
-                                    {testimonial.rating !== null && (
-                                        <div className="mt-4 flex gap-0.5">
-                                            {Array.from({ length: testimonial.rating }).map((_, i) => (
-                                                <Star key={i} className="fill-marine text-marine h-4 w-4" />
-                                            ))}
-                                        </div>
-                                    )}
-                                    <blockquote className="mt-4 leading-relaxed text-neutral-600">“{testimonial.body}”</blockquote>
-                                    <figcaption className="text-navy mt-5 text-sm">— {testimonial.author}</figcaption>
-                                </figure>
-                            ))}
-                        </div>
+                        <TestimonialsCarousel items={testimonials} />
                     </section>
                 )}
             </div>

@@ -114,6 +114,30 @@ function Reveal({ children, className }: { children: ReactNode; className?: stri
 }
 
 /**
+ * Type scale for a testimonial body. CoreX reviews range from a few words to
+ * several hundred characters, so longer quotes step down a size (and tighten
+ * their leading) to stay inside the carousel's fixed height.
+ */
+function quoteTypography(body: string): string {
+    const length = body.length;
+
+    if (length <= 120) {
+        return 'text-2xl leading-relaxed text-balance sm:text-3xl';
+    }
+    if (length <= 220) {
+        return 'text-xl leading-relaxed text-balance sm:text-2xl';
+    }
+    if (length <= 360) {
+        return 'text-lg leading-snug text-pretty sm:text-xl';
+    }
+    if (length <= 550) {
+        return 'text-base leading-snug text-pretty sm:text-lg';
+    }
+
+    return 'text-sm leading-snug text-pretty sm:text-base';
+}
+
+/**
  * Rotating testimonials. A single testimonial renders static; two or more get
  * carousel controls (dots + arrows) and auto-advance every 8s, holding 15s
  * after a manual interaction.
@@ -142,16 +166,17 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
     };
 
     return (
-        <div className="relative mx-auto mt-12 max-w-3xl rounded-2xl border border-white/15 bg-white/10 px-6 py-10 text-center backdrop-blur sm:px-14 sm:py-14">
+        <div className="relative mx-auto mt-12 max-w-5xl rounded-2xl border border-white/15 bg-white/10 px-6 py-10 text-center backdrop-blur sm:px-16 sm:py-14 lg:px-20">
             <Quote className="mx-auto h-10 w-10 text-marine/60" />
-            {/* All testimonials share one grid cell so the box never resizes. */}
-            <div className="mt-5 grid">
+            {/* All testimonials share one grid cell, and the cell keeps a floor
+                height, so the box holds one size regardless of quote length. */}
+            <div className="mt-5 grid min-h-56 sm:min-h-52">
                 {items.map((item, index) => (
                     <div
                         key={item.id}
                         aria-hidden={index !== active}
                         className={cn(
-                            'col-start-1 row-start-1 transition-opacity duration-700 ease-out',
+                            'col-start-1 row-start-1 flex flex-col justify-center transition-opacity duration-700 ease-out',
                             index === active ? 'opacity-100' : 'pointer-events-none opacity-0',
                         )}
                     >
@@ -162,7 +187,7 @@ function TestimonialsCarousel({ items }: { items: Testimonial[] }) {
                                 ))}
                             </div>
                         )}
-                        <blockquote className="mt-6 text-2xl leading-relaxed font-light text-neutral-200 sm:text-3xl">
+                        <blockquote className={cn('mt-6 font-light text-neutral-200', quoteTypography(item.body))}>
                             “{item.body}”
                         </blockquote>
                         <p className="mt-7 text-white">{item.author}</p>

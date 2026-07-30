@@ -24,6 +24,7 @@ interface Property {
 interface Seo {
     meta_title: string;
     meta_description: string;
+    meta_keywords: string;
     canonical_url: string;
     is_done: boolean;
 }
@@ -38,6 +39,7 @@ export default function PropertySeoEdit({ property, seo }: { property: Property;
     const { data, setData, put, transform, processing, errors, recentlySuccessful } = useForm({
         meta_title: seo.meta_title ?? '',
         meta_description: seo.meta_description ?? '',
+        meta_keywords: seo.meta_keywords ?? '',
         canonical_url: seo.canonical_url ?? '',
         is_done: seo.is_done ?? false,
     });
@@ -122,6 +124,15 @@ export default function PropertySeoEdit({ property, seo }: { property: Property;
                             hint={
                                 property.defaults.meta_description ? `Auto: ${property.defaults.meta_description}` : 'Aim for under 160 characters.'
                             }
+                        />
+                        <TextField
+                            id="meta_keywords"
+                            label="Meta keywords"
+                            value={data.meta_keywords}
+                            onChange={(v) => setData('meta_keywords', v)}
+                            error={errors.meta_keywords}
+                            placeholder="beachfront home margate, 4 bedroom house for sale"
+                            hint="Comma-separated keywords for this listing. Leave blank to output no keywords tag."
                         />
                         <TextField
                             id="canonical_url"

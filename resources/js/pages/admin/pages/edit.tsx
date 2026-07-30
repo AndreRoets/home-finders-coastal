@@ -1,5 +1,5 @@
 import FlashMessages from '@/components/admin/flash-messages';
-import { CheckboxField, FieldGroup, SelectField, TextField, TextareaField } from '@/components/admin/form-fields';
+import { CheckboxField, FieldGroup, ImageField, SelectField, TextField, TextareaField } from '@/components/admin/form-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
@@ -25,7 +25,7 @@ const twitterCardOptions = [
     { value: 'summary_large_image', label: 'Summary large image' },
 ];
 
-export default function PageEdit({ page, redirects }: { page: PageRecord; redirects: Redirect[] }) {
+export default function PageEdit({ page, redirects, defaultOgImage }: { page: PageRecord; redirects: Redirect[]; defaultOgImage: string | null }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/admin' },
         { title: 'Pages & SEO', href: '/admin/pages' },
@@ -70,7 +70,7 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
             <form onSubmit={submit} className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <Link href="/admin/pages" className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                        <Link href="/admin/pages" className="text-muted-foreground hover:text-foreground mb-1 inline-flex items-center gap-1 text-sm">
                             <ArrowLeft className="h-3.5 w-3.5" /> Back to pages
                         </Link>
                         <h1 className="text-2xl font-semibold tracking-tight">{page.name}</h1>
@@ -88,7 +88,14 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                         <CardDescription>The slug controls this page's public URL.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-5">
-                        <TextField id="name" label="Internal name" value={data.name} onChange={(v) => setData('name', v)} error={errors.name} required />
+                        <TextField
+                            id="name"
+                            label="Internal name"
+                            value={data.name}
+                            onChange={(v) => setData('name', v)}
+                            error={errors.name}
+                            required
+                        />
                         <TextField
                             id="slug"
                             label="URL slug"
@@ -152,8 +159,20 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                             placeholder="Leave blank to use this page's own URL"
                         />
                         <FieldGroup columns={2}>
-                            <CheckboxField id="robots_index" label="Allow indexing" checked={data.robots_index} onChange={(v) => setData('robots_index', v)} hint="index vs noindex" />
-                            <CheckboxField id="robots_follow" label="Follow links" checked={data.robots_follow} onChange={(v) => setData('robots_follow', v)} hint="follow vs nofollow" />
+                            <CheckboxField
+                                id="robots_index"
+                                label="Allow indexing"
+                                checked={data.robots_index}
+                                onChange={(v) => setData('robots_index', v)}
+                                hint="index vs noindex"
+                            />
+                            <CheckboxField
+                                id="robots_follow"
+                                label="Follow links"
+                                checked={data.robots_follow}
+                                onChange={(v) => setData('robots_follow', v)}
+                                hint="follow vs nofollow"
+                            />
                         </FieldGroup>
                     </CardContent>
                 </Card>
@@ -161,21 +180,71 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                 <Card>
                     <CardHeader>
                         <CardTitle>Social sharing</CardTitle>
-                        <CardDescription>Open Graph &amp; Twitter cards for link previews.</CardDescription>
+                        <CardDescription>
+                            The image, title and description shown when this page's URL is shared on Facebook, WhatsApp, LinkedIn or X.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-5">
-                        <TextField id="og_title" label="OG title" value={data.og_title} onChange={(v) => setData('og_title', v)} error={errors.og_title} />
-                        <TextareaField id="og_description" label="OG description" value={data.og_description} onChange={(v) => setData('og_description', v)} error={errors.og_description} />
-                        <FieldGroup columns={2}>
-                            <TextField id="og_image" label="OG image URL" value={data.og_image} onChange={(v) => setData('og_image', v)} error={errors.og_image} placeholder="https://…" />
-                            <SelectField id="og_type" label="OG type" value={data.og_type} onChange={(v) => setData('og_type', v)} options={ogTypeOptions} />
-                        </FieldGroup>
-                        <FieldGroup columns={2}>
-                            <SelectField id="twitter_card" label="Twitter card type" value={data.twitter_card} onChange={(v) => setData('twitter_card', v)} options={twitterCardOptions} />
-                            <TextField id="twitter_image" label="Twitter image URL" value={data.twitter_image} onChange={(v) => setData('twitter_image', v)} error={errors.twitter_image} placeholder="https://…" />
-                        </FieldGroup>
-                        <TextField id="twitter_title" label="Twitter title" value={data.twitter_title} onChange={(v) => setData('twitter_title', v)} error={errors.twitter_title} />
-                        <TextareaField id="twitter_description" label="Twitter description" value={data.twitter_description} onChange={(v) => setData('twitter_description', v)} error={errors.twitter_description} />
+                        <ImageField
+                            id="og_image"
+                            label="Share image"
+                            value={data.og_image}
+                            onChange={(v) => setData('og_image', v)}
+                            error={errors.og_image}
+                            fallback={defaultOgImage}
+                            hint="Shown when this URL is shared. Use a 1200 × 630px image. Leave blank to fall back to the site-wide default from Marketing & Analytics."
+                        />
+                        <TextField
+                            id="og_title"
+                            label="OG title"
+                            value={data.og_title}
+                            onChange={(v) => setData('og_title', v)}
+                            error={errors.og_title}
+                        />
+                        <TextareaField
+                            id="og_description"
+                            label="OG description"
+                            value={data.og_description}
+                            onChange={(v) => setData('og_description', v)}
+                            error={errors.og_description}
+                        />
+                        <SelectField
+                            id="og_type"
+                            label="OG type"
+                            value={data.og_type}
+                            onChange={(v) => setData('og_type', v)}
+                            options={ogTypeOptions}
+                        />
+                        <ImageField
+                            id="twitter_image"
+                            label="Twitter/X image"
+                            value={data.twitter_image}
+                            onChange={(v) => setData('twitter_image', v)}
+                            error={errors.twitter_image}
+                            fallback={data.og_image || defaultOgImage}
+                            hint="Leave blank to reuse the share image above."
+                        />
+                        <SelectField
+                            id="twitter_card"
+                            label="Twitter card type"
+                            value={data.twitter_card}
+                            onChange={(v) => setData('twitter_card', v)}
+                            options={twitterCardOptions}
+                        />
+                        <TextField
+                            id="twitter_title"
+                            label="Twitter title"
+                            value={data.twitter_title}
+                            onChange={(v) => setData('twitter_title', v)}
+                            error={errors.twitter_title}
+                        />
+                        <TextareaField
+                            id="twitter_description"
+                            label="Twitter description"
+                            value={data.twitter_description}
+                            onChange={(v) => setData('twitter_description', v)}
+                            error={errors.twitter_description}
+                        />
                     </CardContent>
                 </Card>
 
@@ -215,8 +284,20 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                     </CardHeader>
                     <CardContent>
                         <FieldGroup columns={2}>
-                            <SelectField id="sitemap_priority" label="Priority" value={data.sitemap_priority} onChange={(v) => setData('sitemap_priority', v)} options={priorityOptions} />
-                            <SelectField id="sitemap_frequency" label="Change frequency" value={data.sitemap_frequency} onChange={(v) => setData('sitemap_frequency', v)} options={frequencyOptions} />
+                            <SelectField
+                                id="sitemap_priority"
+                                label="Priority"
+                                value={data.sitemap_priority}
+                                onChange={(v) => setData('sitemap_priority', v)}
+                                options={priorityOptions}
+                            />
+                            <SelectField
+                                id="sitemap_frequency"
+                                label="Change frequency"
+                                value={data.sitemap_frequency}
+                                onChange={(v) => setData('sitemap_frequency', v)}
+                                options={frequencyOptions}
+                            />
                         </FieldGroup>
                     </CardContent>
                 </Card>
@@ -230,7 +311,7 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                         <CardContent className="grid gap-2">
                             {redirects.map((redirect) => (
                                 <div key={redirect.id} className="flex items-center gap-2 text-sm">
-                                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/{redirect.old_slug}</code>
+                                    <code className="bg-muted rounded px-1.5 py-0.5 text-xs">/{redirect.old_slug}</code>
                                     <span className="text-muted-foreground">→ {redirect.status_code}</span>
                                 </div>
                             ))}
@@ -242,7 +323,7 @@ export default function PageEdit({ page, redirects }: { page: PageRecord; redire
                     <Button type="submit" disabled={processing}>
                         Save changes
                     </Button>
-                    {recentlySuccessful && <span className="text-sm text-muted-foreground">Saved</span>}
+                    {recentlySuccessful && <span className="text-muted-foreground text-sm">Saved</span>}
                 </div>
             </form>
         </AppLayout>

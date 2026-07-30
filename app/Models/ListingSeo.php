@@ -39,6 +39,7 @@ class ListingSeo extends Model
         return array_filter([
             'meta_title' => (string) $this->meta_title,
             'meta_description' => (string) $this->meta_description,
+            'meta_keywords' => (string) $this->meta_keywords,
             'canonical_url' => (string) $this->canonical_url,
         ], static fn (string $value): bool => trim($value) !== '');
     }

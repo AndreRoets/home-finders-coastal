@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MediaUploadController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PropertySeoController;
 use App\Http\Controllers\Admin\SiteSettingController;
@@ -34,6 +35,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('properties/{id}/edit', [PropertySeoController::class, 'edit'])->name('properties.edit');
     Route::put('properties/{id}', [PropertySeoController::class, 'update'])->name('properties.update');
 
+    // Image uploads for social share cards / marketing artwork.
+    Route::post('media', [MediaUploadController::class, 'store'])->name('media.store');
+
     Route::get('marketing', [SiteSettingController::class, 'edit'])->name('marketing.edit');
     Route::put('marketing', [SiteSettingController::class, 'update'])->name('marketing.update');
 
@@ -53,6 +57,12 @@ Route::get('robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 // Listing image proxy — trims the white border off letterboxed CoreX photos.
 Route::get('media/trimmed', [MediaController::class, 'trimmed'])->name('media.trimmed');
+
+// Admin-uploaded marketing images (og:image and friends), served publicly so
+// social crawlers can fetch them.
+Route::get('media/uploads/{file}', [MediaController::class, 'uploaded'])
+    ->where('file', '[A-Za-z0-9._-]+')
+    ->name('media.uploaded');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

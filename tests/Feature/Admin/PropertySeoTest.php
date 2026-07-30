@@ -96,6 +96,7 @@ class PropertySeoTest extends TestCase
             ->put('/admin/properties/55', [
                 'meta_title' => 'Luxury Seaside Villa for Sale',
                 'meta_description' => 'A hand-picked beachfront home.',
+                'meta_keywords' => 'seaside villa margate, beachfront home for sale',
                 'canonical_url' => 'https://hfcoastal.co.za/property/seaside-villa-55',
             ])
             ->assertRedirect();
@@ -103,7 +104,36 @@ class PropertySeoTest extends TestCase
         $this->assertDatabaseHas('listing_seo', [
             'listing_id' => '55',
             'meta_title' => 'Luxury Seaside Villa for Sale',
+            'meta_keywords' => 'seaside villa margate, beachfront home for sale',
         ]);
+    }
+
+    public function test_listing_keywords_are_rendered_on_the_public_property_page(): void
+    {
+        $this->fakeListings();
+
+        ListingSeo::create([
+            'listing_id' => '55',
+            'meta_keywords' => 'seaside villa margate, beachfront home for sale',
+        ]);
+
+        $this->get(route('property.show', 'seaside-villa-55'))
+            ->assertOk()
+            ->assertSee('<meta name="keywords" content="seaside villa margate, beachfront home for sale">', false);
+    }
+
+    public function test_the_editor_exposes_the_saved_keywords(): void
+    {
+        $this->fakeListings();
+
+        ListingSeo::create(['listing_id' => '55', 'meta_keywords' => 'beachfront home for sale']);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/properties/55/edit')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('admin/properties/edit')
+                ->where('seo.meta_keywords', 'beachfront home for sale')
+            );
     }
 
     public function test_saved_override_is_applied_to_the_public_property_meta(): void

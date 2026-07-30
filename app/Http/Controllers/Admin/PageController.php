@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePageRequest;
 use App\Models\ListingSeo;
 use App\Models\Page;
+use App\Models\SiteSetting;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use Illuminate\Http\RedirectResponse;
@@ -108,6 +109,8 @@ class PageController extends Controller
         return Inertia::render('admin/pages/edit', [
             'page' => $page,
             'redirects' => $page->redirects()->latest()->get(['id', 'old_slug', 'status_code']),
+            // The site-wide share image this page falls back to when it has none.
+            'defaultOgImage' => SiteSetting::current()->default_og_image,
         ]);
     }
 

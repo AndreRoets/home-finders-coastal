@@ -3,8 +3,10 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Page;
+use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class PageManagementTest extends TestCase
@@ -65,6 +67,46 @@ class PageManagementTest extends TestCase
             'meta_title' => 'Talk to us | HFC',
             'meta_description' => 'Reach the coastal team.',
         ]);
+    }
+
+    public function test_an_uploaded_share_image_is_saved_and_rendered_on_the_page(): void
+    {
+        $this->actingAsAdmin();
+        $page = $this->page();
+        $shareImage = url('/media/uploads/share-banner-a1b2c3d4.jpg');
+
+        $this->put("/admin/pages/{$page->id}", [
+            'name' => 'Contact Us',
+            'slug' => 'contact',
+            'is_active' => true,
+            'og_image' => $shareImage,
+            'robots_index' => true,
+            'robots_follow' => true,
+            'og_type' => 'website',
+            'twitter_card' => 'summary_large_image',
+            'sitemap_priority' => '0.5',
+            'sitemap_frequency' => 'monthly',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('pages', ['id' => $page->id, 'og_image' => $shareImage]);
+
+        $this->get('/contact')
+            ->assertSee('<meta property="og:image" content="'.$shareImage.'">', false)
+            ->assertSee('<meta name="twitter:image" content="'.$shareImage.'">', false);
+    }
+
+    public function test_the_page_editor_exposes_the_site_wide_default_share_image(): void
+    {
+        $this->actingAsAdmin();
+        $page = $this->page();
+        SiteSetting::current()->update(['default_og_image' => 'https://hfcoastal.co.za/media/uploads/default.jpg']);
+
+        $this->get("/admin/pages/{$page->id}/edit")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $view) => $view
+                ->component('admin/pages/edit')
+                ->where('defaultOgImage', 'https://hfcoastal.co.za/media/uploads/default.jpg')
+            );
     }
 
     public function test_changing_the_slug_creates_a_redirect_from_the_old_slug(): void

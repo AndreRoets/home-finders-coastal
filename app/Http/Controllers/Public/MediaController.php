@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Http\Controllers\Admin\MediaUploadController;
 use App\Http\Controllers\Controller;
 use App\Support\WhiteBorderTrimmer;
 use Illuminate\Http\RedirectResponse;
@@ -44,6 +45,25 @@ class MediaController extends Controller
 
         return response()->file($disk->path($path), [
             'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]);
+    }
+
+    /**
+     * Serve an admin-uploaded marketing image (social share cards) from the
+     * public disk. Served through the app rather than a `storage` symlink so
+     * social crawlers can always reach it, whatever the host allows.
+     */
+    public function uploaded(string $file): Response
+    {
+        $path = MediaUploadController::DIRECTORY.'/'.$file;
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($disk->path($path), [
             'Cache-Control' => 'public, max-age=31536000, immutable',
         ]);
     }

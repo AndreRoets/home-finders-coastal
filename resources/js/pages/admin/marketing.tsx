@@ -1,5 +1,5 @@
 import FlashMessages from '@/components/admin/flash-messages';
-import { FieldGroup, TextField, TextareaField } from '@/components/admin/form-fields';
+import { FieldGroup, ImageField, TextField, TextareaField } from '@/components/admin/form-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
@@ -56,7 +56,7 @@ export default function Marketing({ settings }: { settings: Settings }) {
                 <div className="flex items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">Marketing &amp; Analytics</h1>
-                        <p className="text-sm text-muted-foreground">Site-wide Google integrations applied to every public page.</p>
+                        <p className="text-muted-foreground text-sm">Site-wide Google integrations applied to every public page.</p>
                     </div>
                     <Button type="submit" disabled={processing}>
                         Save
@@ -121,7 +121,13 @@ export default function Marketing({ settings }: { settings: Settings }) {
                         <CardDescription>Fallback values used when a page has no specific override.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-5">
-                        <TextField id="site_name" label="Site name" value={data.site_name} onChange={(v) => setData('site_name', v)} error={errors.site_name} />
+                        <TextField
+                            id="site_name"
+                            label="Site name"
+                            value={data.site_name}
+                            onChange={(v) => setData('site_name', v)}
+                            error={errors.site_name}
+                        />
                         <TextareaField
                             id="default_meta_description"
                             label="Default meta description"
@@ -129,10 +135,22 @@ export default function Marketing({ settings }: { settings: Settings }) {
                             onChange={(v) => setData('default_meta_description', v)}
                             error={errors.default_meta_description}
                         />
-                        <FieldGroup columns={2}>
-                            <TextField id="default_og_image" label="Default OG image URL" value={data.default_og_image} onChange={(v) => setData('default_og_image', v)} error={errors.default_og_image} placeholder="https://…" />
-                            <TextField id="default_twitter_handle" label="Twitter handle" value={data.default_twitter_handle} onChange={(v) => setData('default_twitter_handle', v)} error={errors.default_twitter_handle} placeholder="@homefinders" />
-                        </FieldGroup>
+                        <ImageField
+                            id="default_og_image"
+                            label="Default share image"
+                            value={data.default_og_image}
+                            onChange={(v) => setData('default_og_image', v)}
+                            error={errors.default_og_image}
+                            hint="Used for link previews on any page without its own share image. Use a 1200 × 630px image."
+                        />
+                        <TextField
+                            id="default_twitter_handle"
+                            label="Twitter handle"
+                            value={data.default_twitter_handle}
+                            onChange={(v) => setData('default_twitter_handle', v)}
+                            error={errors.default_twitter_handle}
+                            placeholder="@homefinders"
+                        />
                     </CardContent>
                 </Card>
 
@@ -188,7 +206,7 @@ export default function Marketing({ settings }: { settings: Settings }) {
                     <Button type="submit" disabled={processing}>
                         Save
                     </Button>
-                    {recentlySuccessful && <span className="text-sm text-muted-foreground">Saved</span>}
+                    {recentlySuccessful && <span className="text-muted-foreground text-sm">Saved</span>}
                 </div>
             </form>
         </AppLayout>

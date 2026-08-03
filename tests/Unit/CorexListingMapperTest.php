@@ -281,6 +281,7 @@ class CorexListingMapperTest extends TestCase
                     'features' => [],
                     'units' => [
                         ['label' => 'Bedroom 1', 'features' => ['En-suite']],
+                        ['label' => 'Bedroom 2', 'features' => []],
                     ],
                 ],
                 [
@@ -301,12 +302,34 @@ class CorexListingMapperTest extends TestCase
 
         $this->assertSame(2.5, $spaces[1]['count']); // half preserved as float
         $this->assertNull($spaces[1]['description']);
-        $this->assertCount(1, $spaces[1]['units']);
+        $this->assertCount(1, $spaces[1]['units']); // featureless "Bedroom 2" dropped
         $this->assertSame('Bedroom 1', $spaces[1]['units'][0]['label']);
         $this->assertSame(['En-suite'], $spaces[1]['units'][0]['features']);
 
         $this->assertNull($spaces[2]['count']);
         $this->assertSame([], $spaces[2]['units']);
+    }
+
+    public function test_detail_drops_units_that_carry_no_features(): void
+    {
+        $detail = ListingMapper::detail([
+            'id' => 612,
+            'spaces' => [
+                [
+                    'type' => 'Bedroom',
+                    'count' => 5,
+                    'units' => [
+                        ['label' => 'Bedroom 1', 'features' => []],
+                        ['label' => 'Bedroom 2', 'features' => []],
+                        ['label' => 'Bedroom 3'],
+                    ],
+                ],
+            ],
+        ]);
+
+        // Only the "Bedroom × 5" heading remains — the per-room rows repeat it.
+        $this->assertSame([], $detail['spaces'][0]['units']);
+        $this->assertSame(5, $detail['spaces'][0]['count']);
     }
 
     public function test_detail_yields_empty_spaces_when_absent(): void

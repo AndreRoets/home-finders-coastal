@@ -321,7 +321,8 @@ class ListingMapper
      *
      * Each space is `{ type, count, features[], description, units[]? }`.
      * `count` may be an integer, a half (2.5) or null; `units` (per-room
-     * detail) is optional. Returns [] when the feed sends no spaces.
+     * detail) is optional and only keeps rooms that carry their own features.
+     * Returns [] when the feed sends no spaces.
      *
      * @param  array<string, mixed>  $listing
      * @return array<int, array{type: string, count: int|float|null, features: array<int, string>, description: string|null, units: array<int, array{label: string, features: array<int, string>}>}>
@@ -337,6 +338,16 @@ class ListingMapper
         return array_values(array_map(static function (array $space): array {
             $units = Arr::get($space, 'units');
 
+            $mappedUnits = is_array($units)
+                ? array_map(static fn (array $unit): array => [
+                    'label' => (string) Arr::get($unit, 'label', ''),
+                    'features' => array_values(array_filter(
+                        (array) Arr::get($unit, 'features', []),
+                        static fn ($f): bool => is_string($f) && $f !== '',
+                    )),
+                ], array_filter($units, 'is_array'))
+                : [];
+
             return [
                 'type' => (string) Arr::get($space, 'type', ''),
                 'count' => self::spaceCount(Arr::get($space, 'count')),
@@ -345,15 +356,12 @@ class ListingMapper
                     static fn ($f): bool => is_string($f) && $f !== '',
                 )),
                 'description' => self::nullableString(Arr::get($space, 'description')),
-                'units' => is_array($units)
-                    ? array_values(array_map(static fn (array $unit): array => [
-                        'label' => (string) Arr::get($unit, 'label', ''),
-                        'features' => array_values(array_filter(
-                            (array) Arr::get($unit, 'features', []),
-                            static fn ($f): bool => is_string($f) && $f !== '',
-                        )),
-                    ], array_filter($units, 'is_array')))
-                    : [],
+                // Drop featureless units: "Bedroom 1 … Bedroom 5" only repeats
+                // the count already shown in the heading.
+                'units' => array_values(array_filter(
+                    $mappedUnits,
+                    static fn (array $unit): bool => $unit['features'] !== [],
+                )),
             ];
         }, array_filter($spaces, 'is_array')));
     }

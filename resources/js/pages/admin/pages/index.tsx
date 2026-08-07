@@ -34,6 +34,7 @@ interface PropertyRow {
     exclusive: boolean;
     customised: boolean;
     done: boolean;
+    has_keywords: boolean;
     edit_url: string;
 }
 
@@ -202,6 +203,15 @@ export default function PagesIndex({
                                     {property.customised && <Badge variant="secondary">Customised</Badge>}
                                 </div>
                                 <div className="flex shrink-0 items-center gap-2">
+                                    <span
+                                        title={property.has_keywords ? 'Meta keywords added' : 'No meta keywords yet'}
+                                        aria-label={property.has_keywords ? 'Meta keywords added' : 'No meta keywords yet'}
+                                        className={`inline-flex h-5 w-5 items-center justify-center rounded border ${
+                                            property.has_keywords ? 'border-green-600 bg-green-600 text-white' : 'border-input bg-background'
+                                        }`}
+                                    >
+                                        {property.has_keywords && <Check className="h-3.5 w-3.5" />}
+                                    </span>
                                     <Link href={property.edit_url}>
                                         <Button size="sm">
                                             <Pencil className="h-4 w-4" />

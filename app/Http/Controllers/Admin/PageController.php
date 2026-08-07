@@ -52,19 +52,20 @@ class PageController extends Controller
      * (`property_filter`), each flagged with its status, exclusivity, override
      * and done state so the admin can see and filter by every tag.
      *
-     * @return LengthAwarePaginator<int, array{id: string, title: string, status: string, exclusive: bool, customised: bool, done: bool, edit_url: string}>
+     * @return LengthAwarePaginator<int, array{id: string, title: string, status: string, exclusive: bool, customised: bool, done: bool, has_keywords: bool, edit_url: string}>
      */
     protected function properties(Request $request, CorexClient $corex): LengthAwarePaginator
     {
         $search = trim((string) $request->query('property_search', ''));
         $filter = (string) $request->query('property_filter', '');
 
-        $overrides = ListingSeo::query()->get(['listing_id', 'is_done'])
+        $overrides = ListingSeo::query()->get(['listing_id', 'is_done', 'meta_keywords'])
             ->keyBy(static fn (ListingSeo $seo): string => (string) $seo->listing_id);
 
         $items = Collection::make($corex->listings())
             ->map(function (array $listing) use ($overrides): array {
                 $id = (string) Arr::get($listing, 'id', '');
+                $override = $overrides->get($id);
 
                 return [
                     'id' => $id,
@@ -72,7 +73,8 @@ class PageController extends Controller
                     'status' => ListingMapper::statusKey($listing),
                     'exclusive' => ListingMapper::isSole($listing),
                     'customised' => $overrides->has($id),
-                    'done' => (bool) $overrides->get($id)?->is_done,
+                    'done' => (bool) $override?->is_done,
+                    'has_keywords' => trim((string) $override?->meta_keywords) !== '',
                     'edit_url' => route('admin.properties.edit', $id),
                 ];
             })

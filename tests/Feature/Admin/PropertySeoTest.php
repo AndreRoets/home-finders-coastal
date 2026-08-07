@@ -186,6 +186,21 @@ class PropertySeoTest extends TestCase
             );
     }
 
+    public function test_keyword_status_is_surfaced_on_the_pages_index(): void
+    {
+        $this->fakeListings();
+
+        ListingSeo::create(['listing_id' => '55', 'meta_keywords' => 'beachfront home for sale']);
+        ListingSeo::create(['listing_id' => '56', 'meta_keywords' => '   ']);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/pages')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('properties.data.0.has_keywords', true)
+                ->where('properties.data.1.has_keywords', false)
+            );
+    }
+
     public function test_property_seo_editor_requires_authentication(): void
     {
         $this->get('/admin/properties/55/edit')->assertRedirect('/login');

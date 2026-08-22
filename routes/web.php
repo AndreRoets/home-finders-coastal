@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MediaUploadController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PropertySeoController;
+use App\Http\Controllers\Admin\SitemapController as AdminSitemapController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\AgentController;
@@ -37,6 +38,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Image uploads for social share cards / marketing artwork.
     Route::post('media', [MediaUploadController::class, 'store'])->name('media.store');
+
+    Route::get('sitemap', [AdminSitemapController::class, 'index'])->name('sitemap');
 
     Route::get('marketing', [SiteSettingController::class, 'edit'])->name('marketing.edit');
     Route::put('marketing', [SiteSettingController::class, 'update'])->name('marketing.update');

@@ -9,6 +9,8 @@ use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\ListingSearch;
 use App\Services\Corex\TestimonialMapper;
+use App\Services\Stats\ListingStatEvent;
+use App\Services\Stats\ListingStatsRecorder;
 use App\Support\DynamicSeo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +27,7 @@ class ListingController extends Controller
     public function __construct(
         protected CorexClient $corex,
         protected BranchContext $branches,
+        protected ListingStatsRecorder $stats,
     ) {}
 
     /**
@@ -34,7 +37,7 @@ class ListingController extends Controller
      * reference. Non-canonical URLs 301-redirect to the title slug so each
      * property has a single, indexable address.
      */
-    public function show(string $idOrRef): Response|RedirectResponse
+    public function show(Request $request, string $idOrRef): Response|RedirectResponse
     {
         $listing = $this->corex->listing(ListingMapper::idFromSlug($idOrRef));
 
@@ -48,6 +51,11 @@ class ListingController extends Controller
             return redirect()->route('property.show', $property['slug'], 301);
         }
 
+        // Count the view against the listing so CoreX can report it back to the
+        // agency. Recorded after the canonical redirect above, so a visit that
+        // arrives on a bare id or reference is never counted twice.
+        $this->stats->recordDetailView($property['id'], $property['ref'], $request);
+
         $canonical = route('property.show', $property['slug']);
         View::share('seoPage', DynamicSeo::forListing($property, $canonical));
 
@@ -59,9 +67,13 @@ class ListingController extends Controller
     /**
      * Home page with a handful of featured (sole-mandate) listings.
      */
-    public function home(): Response
+    public function home(Request $request): Response
     {
-        return Inertia::render('home', $this->homeData());
+        $data = $this->homeData();
+
+        $this->recordImpressions($data['recent'], $request);
+
+        return Inertia::render('home', $data);
     }
 
     /**
@@ -316,13 +328,40 @@ class ListingController extends Controller
         $page = LengthAwarePaginator::resolveCurrentPage();
         $slice = array_slice($listings, ($page - 1) * $perPage, $perPage);
 
+        $cards = ListingMapper::collection($slice, $forceStatus);
+
+        $this->recordImpressions($cards, $request);
+
         return new LengthAwarePaginator(
-            ListingMapper::collection($slice, $forceStatus),
+            $cards,
             count($listings),
             $perPage,
             $page,
             ['path' => $request->url(), 'query' => $request->query()],
         );
+    }
+
+    /**
+     * Count one impression ("hit") per listing card rendered on a results or
+     * home page, so CoreX can show the agency how often a property was seen in
+     * a list versus how often it was actually opened. One bulk write, whatever
+     * the page size.
+     *
+     * @param  array<int, array<string, mixed>>  $cards  Mapped listing cards
+     */
+    protected function recordImpressions(array $cards, Request $request): void
+    {
+        $references = [];
+
+        foreach ($cards as $card) {
+            $id = (string) ($card['id'] ?? '');
+
+            if ($id !== '') {
+                $references[$id] = $card['ref'] ?? null;
+            }
+        }
+
+        $this->stats->recordMany($references, ListingStatEvent::Impression, $request);
     }
 
     /**

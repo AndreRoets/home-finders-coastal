@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
                 apiKey: config('services.corex.api_key'),
                 timeout: (int) config('services.corex.timeout'),
                 cacheTtl: (int) config('services.corex.cache_ttl'),
+                statsEndpoint: (string) config('services.corex.stats.endpoint'),
             );
         });
     }

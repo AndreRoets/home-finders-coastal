@@ -8,13 +8,18 @@ use App\Mail\PropertyEnquiry;
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
+use App\Services\Stats\ListingStatEvent;
+use App\Services\Stats\ListingStatsRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PropertyEnquiryController extends Controller
 {
-    public function __construct(protected CorexClient $corex) {}
+    public function __construct(
+        protected CorexClient $corex,
+        protected ListingStatsRecorder $stats,
+    ) {}
 
     /**
      * Handle a property enquiry: validate (with a honeypot), email the listing's
@@ -35,6 +40,11 @@ class PropertyEnquiryController extends Controller
 
         $this->emailAgents($property, $validated);
         $this->pushLead($property, $validated);
+
+        // Count the enquiry against the listing too. The lead itself already
+        // reaches the CRM; this is what lets CoreX show the conversion rate
+        // alongside the property's views and impressions.
+        $this->stats->record($property['id'], $property['ref'], ListingStatEvent::Enquiry);
 
         return back()->with('success', 'Thanks for your enquiry — the agent will be in touch shortly.');
     }

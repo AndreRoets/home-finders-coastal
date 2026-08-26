@@ -2,6 +2,7 @@
 
 namespace App\Services\Corex;
 
+use App\Services\Stats\ListingStatsPayload;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -41,6 +42,7 @@ class CorexClient
         protected ?string $apiKey,
         protected int $timeout = 10,
         protected int $cacheTtl = 300,
+        protected string $statsEndpoint = '/listings/stats',
     ) {}
 
     /**
@@ -414,6 +416,48 @@ class CorexClient
             return true;
         } catch (ConnectionException|RequestException $e) {
             Log::warning('CoreX lead submission errored', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Report a batch of website engagement statistics (views, impressions,
+     * contact clicks, enquiries) for the listings CoreX syndicates to us, so
+     * the agency can see how each property is performing on the site from
+     * inside their CRM.
+     *
+     * The payload is built by {@see ListingStatsPayload}
+     * and carries a `batch_id` for idempotent redelivery. Returns true only on
+     * a 2xx — the caller relies on that to decide whether the counters were
+     * accepted, so anything else must fail (and be retried on the next run)
+     * rather than be silently swallowed.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function pushListingStats(array $payload): bool
+    {
+        try {
+            $response = $this->request()->post($this->statsEndpoint, $payload);
+
+            if ($response->failed()) {
+                Log::warning('CoreX listing stats push failed', [
+                    'endpoint' => $this->statsEndpoint,
+                    'batch_id' => $payload['batch_id'] ?? null,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            return true;
+        } catch (ConnectionException|RequestException $e) {
+            Log::warning('CoreX listing stats push errored', [
+                'endpoint' => $this->statsEndpoint,
+                'batch_id' => $payload['batch_id'] ?? null,
                 'message' => $e->getMessage(),
             ]);
 

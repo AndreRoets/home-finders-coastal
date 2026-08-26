@@ -6,6 +6,7 @@ import PropertyGallery from '@/components/public/property-gallery';
 import ShareButton from '@/components/public/share-button';
 import PublicLayout from '@/layouts/public-layout';
 import { agentUrl } from '@/lib/routes';
+import { trackPropertyEvent } from '@/lib/track-property';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Bath, BedDouble, Car, Mail, MapPin, Maximize, PawPrint, Phone, Play, SquareParking, Trees } from 'lucide-react';
@@ -123,6 +124,11 @@ export default function PropertyDetail({ property }: { property: Property }) {
     // Prefer the labelled, grouped features; fall back to the flat list.
     const featureGroups = property.featuresGrouped ?? [];
     const flatFeatures = property.features ?? [];
+
+    // Engagement the server can't see. Reported to our own endpoint and pushed
+    // on to CoreX, so the agency sees it against the property in their CRM.
+    const track = (event: Parameters<typeof trackPropertyEvent>[1]) => trackPropertyEvent(property.id, event);
+
     const video = property.video;
     const hasVideo = !!(video && (video.youtubeId || video.youtubeUrl || video.matterportId || video.virtualTourUrl));
 
@@ -137,7 +143,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                         <ArrowLeft className="h-4 w-4" />
                         Back to listings
                     </Link>
-                    <ShareButton title={property.title} />
+                    <ShareButton title={property.title} onShare={() => track('share_click')} />
                 </div>
 
                 {/* Gallery — cover + thumbnails, opening a full-screen lightbox */}
@@ -145,6 +151,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                     <PropertyGallery
                         images={images}
                         title={property.title}
+                        onOpen={() => track('gallery_open')}
                         badges={
                             <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                                 <span
@@ -368,6 +375,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                                     {agent.phone && (
                                                         <a
                                                             href={`tel:${agent.phone.replace(/\s/g, '')}`}
+                                                            onClick={() => track('phone_click')}
                                                             className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
                                                         >
                                                             <Phone className="h-4 w-4 text-neutral-400" />
@@ -377,6 +385,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                                     {agent.email && (
                                                         <a
                                                             href={`mailto:${agent.email}`}
+                                                            onClick={() => track('email_click')}
                                                             className="hover:text-marine flex items-center gap-2 text-neutral-600 transition-colors"
                                                         >
                                                             <Mail className="h-4 w-4 text-neutral-400" />
@@ -394,7 +403,12 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                 <div className="mt-6 border-t border-slate-200 pt-6">
                                     <PropertyEnquiryForm slug={property.slug ?? String(property.id)} title={property.title} />
                                 </div>
-                                <ShareButton title={property.title} className="mt-3 flex justify-center" fullWidth />
+                                <ShareButton
+                                    title={property.title}
+                                    className="mt-3 flex justify-center"
+                                    fullWidth
+                                    onShare={() => track('share_click')}
+                                />
                             </div>
 
                             {/* Bond repayment estimate, pre-filled with this property's price. */}

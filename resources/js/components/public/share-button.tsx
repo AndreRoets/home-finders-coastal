@@ -40,8 +40,22 @@ const TARGETS: ShareTarget[] = [
  * Share control for a listing. Uses the native Web Share sheet when the browser
  * supports it (typically mobile), otherwise falls back to a popover with the
  * usual platforms plus a copy-link action.
+ *
+ * `onShare` fires once per share intent (the button press), not once per
+ * platform — the native sheet gives no way to tell which target was chosen, so
+ * counting the intent is the only figure that means the same thing everywhere.
  */
-export default function ShareButton({ title, className, fullWidth = false }: { title: string; className?: string; fullWidth?: boolean }) {
+export default function ShareButton({
+    title,
+    className,
+    fullWidth = false,
+    onShare,
+}: {
+    title: string;
+    className?: string;
+    fullWidth?: boolean;
+    onShare?: () => void;
+}) {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +90,8 @@ export default function ShareButton({ title, className, fullWidth = false }: { t
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     async function handleClick() {
+        onShare?.();
+
         if (typeof navigator !== 'undefined' && navigator.share) {
             try {
                 await navigator.share({ title, url: currentUrl });

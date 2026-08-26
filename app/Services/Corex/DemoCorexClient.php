@@ -181,4 +181,16 @@ class DemoCorexClient extends CorexClient
     {
         return true;
     }
+
+    /**
+     * Demo mode has no live CoreX to receive stats. Report success so the
+     * local counters still advance and the push command can be exercised
+     * end to end without a network call.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function pushListingStats(array $payload): bool
+    {
+        return true;
+    }
 }

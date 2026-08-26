@@ -44,6 +44,20 @@ return [
         // When true, the site is served from the local demo dataset instead of
         // the live CoreX API (handy while the feed is unavailable).
         'demo' => (bool) env('COREX_DEMO', false),
+        // Website -> CoreX engagement reporting (views, impressions, contact
+        // clicks, enquiries), batched and pushed by `corex:push-stats`.
+        'stats' => [
+            'enabled' => (bool) env('COREX_STATS_ENABLED', true),
+            // POST target, relative to base_url. CoreX must expose this.
+            'endpoint' => env('COREX_STATS_ENDPOINT', '/listings/stats'),
+            // Identifies this website in the payload — an agency may run more
+            // than one site off the same CoreX agency.
+            'site' => env('COREX_SITE_KEY', 'home-finders-coastal'),
+            // Listings per POST, so one run never builds an unbounded body.
+            'chunk' => (int) env('COREX_STATS_CHUNK', 200),
+            // How long fully-pushed daily rows are kept locally before pruning.
+            'retain_days' => (int) env('COREX_STATS_RETAIN_DAYS', 400),
+        ],
         // Hosts whose listing images may be served through the white-border
         // trimming proxy. Anything else is left as a direct URL (and rejected
         // by the proxy) so this can never become an open image proxy.

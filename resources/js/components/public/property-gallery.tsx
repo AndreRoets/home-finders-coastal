@@ -7,8 +7,21 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
  * it. When there are more photos than fit, the last thumbnail shows a "+N"
  * overlay. Clicking the cover or any thumbnail opens a full-screen lightbox that
  * steps through every photo (arrows, keyboard, and a thumbnail strip).
+ *
+ * `onOpen` fires each time the lightbox is opened, so the listing's photo
+ * engagement can be counted; stepping between photos is not reported.
  */
-export default function PropertyGallery({ images, title, badges }: { images: string[]; title: string; badges?: ReactNode }) {
+export default function PropertyGallery({
+    images,
+    title,
+    badges,
+    onOpen,
+}: {
+    images: string[];
+    title: string;
+    badges?: ReactNode;
+    onOpen?: () => void;
+}) {
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
 
@@ -18,10 +31,14 @@ export default function PropertyGallery({ images, title, badges }: { images: str
     const hiddenCount = Math.max(0, images.length - 7);
     const hasMany = images.length > 1;
 
-    const show = useCallback((index: number) => {
-        setActive(index);
-        setOpen(true);
-    }, []);
+    const show = useCallback(
+        (index: number) => {
+            setActive(index);
+            setOpen(true);
+            onOpen?.();
+        },
+        [onOpen],
+    );
     const close = useCallback(() => setOpen(false), []);
     const next = useCallback(() => setActive((i) => (i + 1) % images.length), [images.length]);
     const prev = useCallback(() => setActive((i) => (i - 1 + images.length) % images.length), [images.length]);
@@ -55,7 +72,7 @@ export default function PropertyGallery({ images, title, badges }: { images: str
                 <img src={cover} alt={title} className="h-full w-full object-cover" />
                 {badges}
                 {hasMany && (
-                    <span className="absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-ink/50 px-3 py-1.5 text-xs font-medium tracking-wide text-white backdrop-blur transition-colors group-hover:bg-ink/70">
+                    <span className="bg-ink/50 group-hover:bg-ink/70 absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-full border border-white/40 px-3 py-1.5 text-xs font-medium tracking-wide text-white backdrop-blur transition-colors">
                         <Expand className="h-3.5 w-3.5" />
                         View all {images.length} photos
                     </span>
@@ -76,11 +93,11 @@ export default function PropertyGallery({ images, title, badges }: { images: str
                                 type="button"
                                 onClick={() => show(index)}
                                 aria-label={`View image ${index + 1} of ${images.length}`}
-                                className="relative aspect-[4/3] overflow-hidden rounded-sm bg-slate-100 ring-2 ring-transparent transition hover:ring-marine"
+                                className="hover:ring-marine relative aspect-[4/3] overflow-hidden rounded-sm bg-slate-100 ring-2 ring-transparent transition"
                             >
                                 <img src={src} alt={`${title} ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
                                 {showOverlay && (
-                                    <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-lg font-light text-white backdrop-blur-[1px]">
+                                    <span className="bg-ink/60 absolute inset-0 flex items-center justify-center text-lg font-light text-white backdrop-blur-[1px]">
                                         +{hiddenCount}
                                     </span>
                                 )}
@@ -92,7 +109,7 @@ export default function PropertyGallery({ images, title, badges }: { images: str
 
             {/* Lightbox */}
             {open && (
-                <div className="fixed inset-0 z-50 flex flex-col bg-ink/95" role="dialog" aria-modal="true" aria-label={`${title} photos`}>
+                <div className="bg-ink/95 fixed inset-0 z-50 flex flex-col" role="dialog" aria-modal="true" aria-label={`${title} photos`}>
                     <div className="flex items-center justify-between px-4 py-3 text-white sm:px-6">
                         <span className="text-sm tracking-wide text-white/80">
                             {active + 1} / {images.length}
@@ -143,7 +160,7 @@ export default function PropertyGallery({ images, title, badges }: { images: str
                                     aria-current={i === active}
                                     className={cn(
                                         'h-16 w-20 shrink-0 overflow-hidden rounded-sm ring-2 transition',
-                                        i === active ? 'ring-marine' : 'ring-transparent opacity-60 hover:opacity-100',
+                                        i === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
                                     )}
                                 >
                                     <img src={src} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" />

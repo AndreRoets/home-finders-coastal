@@ -411,8 +411,8 @@ export default function PropertyDetail({ property }: { property: Property }) {
                                 />
                             </div>
 
-                            {/* Bond repayment estimate, pre-filled with this property's price. */}
-                            <BondCalculator initialAmount={property.price} compact />
+                            {/* Bond repayment estimate, pre-filled with this property's price — sales only. */}
+                            {property.status === 'for-sale' && <BondCalculator initialAmount={property.price} compact />}
                         </div>
                     </aside>
                 </div>

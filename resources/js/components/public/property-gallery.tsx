@@ -1,3 +1,4 @@
+import { imageAt, imageSrcSet } from '@/lib/images';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Expand, X } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
@@ -69,7 +70,15 @@ export default function PropertyGallery({
                 aria-label="View photos"
                 className="group relative block aspect-[4/3] w-full cursor-zoom-in overflow-hidden bg-slate-100 md:aspect-[16/9]"
             >
-                <img src={cover} alt={title} className="h-full w-full object-cover" />
+                <img
+                    src={imageAt(cover, 960)}
+                    srcSet={imageSrcSet(cover, [960, 1600])}
+                    sizes="(min-width: 1280px) 1200px, 100vw"
+                    alt={title}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                />
                 {badges}
                 {hasMany && (
                     <span className="bg-ink/50 group-hover:bg-ink/70 absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-full border border-white/40 px-3 py-1.5 text-xs font-medium tracking-wide text-white backdrop-blur transition-colors">
@@ -95,7 +104,13 @@ export default function PropertyGallery({
                                 aria-label={`View image ${index + 1} of ${images.length}`}
                                 className="hover:ring-marine relative aspect-[4/3] overflow-hidden rounded-sm bg-slate-100 ring-2 ring-transparent transition"
                             >
-                                <img src={src} alt={`${title} ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                                <img
+                                    src={imageAt(src, 480)}
+                                    alt={`${title} ${index + 1}`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-full w-full object-cover"
+                                />
                                 {showOverlay && (
                                     <span className="bg-ink/60 absolute inset-0 flex items-center justify-center text-lg font-light text-white backdrop-blur-[1px]">
                                         +{hiddenCount}
@@ -125,7 +140,14 @@ export default function PropertyGallery({
                     </div>
 
                     <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 sm:px-16">
-                        <img src={images[active]} alt={`${title} ${active + 1}`} className="max-h-full max-w-full object-contain" />
+                        <img src={imageAt(images[active], 1600)} alt={`${title} ${active + 1}`} className="max-h-full max-w-full object-contain" />
+                        {/* Preload the neighbours so stepping through photos feels instant. */}
+                        {hasMany && (
+                            <div hidden>
+                                <img src={imageAt(images[(active + 1) % images.length], 1600)} alt="" />
+                                <img src={imageAt(images[(active - 1 + images.length) % images.length], 1600)} alt="" />
+                            </div>
+                        )}
 
                         {hasMany && (
                             <>
@@ -163,7 +185,13 @@ export default function PropertyGallery({
                                         i === active ? 'ring-marine' : 'opacity-60 ring-transparent hover:opacity-100',
                                     )}
                                 >
-                                    <img src={src} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" />
+                                    <img
+                                        src={imageAt(src, 480)}
+                                        alt={`${title} ${i + 1}`}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="h-full w-full object-cover"
+                                    />
                                 </button>
                             ))}
                         </div>

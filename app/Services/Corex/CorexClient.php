@@ -3,9 +3,12 @@
 namespace App\Services\Corex;
 
 use App\Services\Stats\ListingStatsPayload;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +39,12 @@ class CorexClient
     protected const ARTICLES_PER_PAGE = 50;
 
     protected const BRANCHES_PER_PAGE = 100;
+
+    /**
+     * Pages requested at once after page 1; bounded so a full listings refresh
+     * never opens dozens of simultaneous connections to CoreX.
+     */
+    protected const CONCURRENT_PAGES = 5;
 
     public function __construct(
         protected string $baseUrl,
@@ -206,53 +215,188 @@ class CorexClient
      */
     protected function allPages(string $key, string $path, array $query, int $perPage): array
     {
+        if ($this->cacheTtl <= 0) {
+            return $this->fetchAllPages($path, $query, $perPage)['rows'];
+        }
+
         $cacheKey = $this->collectionCacheKey($key, $query, $perPage);
+        $cached = Cache::get($cacheKey);
 
-        $fetch = function () use ($path, $query, $perPage): array {
-            $rows = [];
-            $page = 1;
+        if ($cached !== null) {
+            return $cached;
+        }
 
-            do {
-                $response = $this->get($path, array_merge($query, [
-                    'per_page' => $perPage,
-                    'page' => $page,
-                ]));
+        // Cold cache. Rebuilding a big collection takes seconds, so only one
+        // request does it; concurrent visitors wait for that result rather than
+        // each repeating the whole fetch and exhausting the PHP worker pool.
+        $lock = Cache::lock('lock:'.$cacheKey, 120);
 
-                $data = $response['data'] ?? [];
+        try {
+            $lock->block(25);
+        } catch (LockTimeoutException) {
+            return Cache::get($cacheKey) ?? $this->fetchAllPages($path, $query, $perPage)['rows'];
+        }
+
+        try {
+            $cached = Cache::get($cacheKey);
+
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $result = $this->fetchAllPages($path, $query, $perPage);
+
+            // Never pin a truncated collection for the whole TTL.
+            if ($result['complete']) {
+                Cache::put($cacheKey, $result['rows'], $this->cacheTtl);
+            }
+
+            return $result['rows'];
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Refresh the shared CoreX collections in place, so visitors keep reading
+     * the current copy until the new one lands and never pay for a cold fetch.
+     * Run on a schedule more often than the cache TTL. A failed or empty
+     * response leaves the existing cache entry untouched.
+     *
+     * @return int Number of cache entries refreshed.
+     */
+    public function warm(): int
+    {
+        if ($this->cacheTtl <= 0) {
+            return 0;
+        }
+
+        $refreshed = 0;
+
+        $collections = [
+            ['listings', '/listings', self::LISTINGS_PER_PAGE],
+            ['agents', '/agents', self::AGENTS_PER_PAGE],
+            ['testimonials', '/testimonials', self::TESTIMONIALS_PER_PAGE],
+            ['articles', '/articles', self::ARTICLES_PER_PAGE],
+            ['branches', '/branches', self::BRANCHES_PER_PAGE],
+        ];
+
+        foreach ($collections as [$key, $path, $perPage]) {
+            $result = $this->fetchAllPages($path, [], $perPage);
+
+            if ($result['complete'] && $result['rows'] !== []) {
+                Cache::put($this->collectionCacheKey($key, [], $perPage), $result['rows'], $this->cacheTtl);
+                $refreshed++;
+            }
+        }
+
+        $agency = $this->get('/agency');
+
+        if ($agency !== []) {
+            Cache::put('corex:agency', $agency, $this->cacheTtl);
+            $refreshed++;
+        }
+
+        return $refreshed;
+    }
+
+    /**
+     * Fetch every page of a Laravel-paginated collection. Page 1 reveals the
+     * page count; the remaining pages are then requested concurrently.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array{rows: array<int, array<string, mixed>>, complete: bool}
+     */
+    protected function fetchAllPages(string $path, array $query, int $perPage): array
+    {
+        $pageQuery = static fn (int $page): array => array_merge($query, [
+            'per_page' => $perPage,
+            'page' => $page,
+        ]);
+
+        $first = $this->get($path, $pageQuery(1));
+        $rows = $first['data'] ?? [];
+
+        if ($rows === []) {
+            return ['rows' => [], 'complete' => $first !== []];
+        }
+
+        // CoreX exposes the page count under meta.last_page, but fail safe if
+        // it ever moves or is omitted: without a known last page we keep paging
+        // until a short (final) page arrives, so the full collection is fetched
+        // instead of silently stopping at page 1.
+        $lastPage = $first['meta']['last_page'] ?? $first['last_page'] ?? null;
+
+        if ($lastPage === null) {
+            return $this->fetchRemainingSequentially($path, $pageQuery, $rows, $perPage);
+        }
+
+        $lastPage = (int) $lastPage;
+
+        if ($lastPage < 2) {
+            return ['rows' => $rows, 'complete' => true];
+        }
+
+        $complete = true;
+
+        foreach (array_chunk(range(2, $lastPage), self::CONCURRENT_PAGES) as $pages) {
+            $responses = Http::pool(fn (Pool $pool): array => array_map(
+                fn (int $page) => $pool->as((string) $page)
+                    ->baseUrl($this->baseUrl)
+                    ->acceptJson()
+                    ->withToken($this->apiKey)
+                    ->timeout($this->timeout)
+                    ->get($path, $pageQuery($page)),
+                $pages,
+            ));
+
+            foreach ($pages as $page) {
+                $response = $responses[(string) $page] ?? null;
+
+                // A failed concurrent page is retried once on the normal
+                // (retrying, logging) path before the collection is declared
+                // incomplete.
+                $data = $response instanceof Response && $response->successful()
+                    ? ($response->json('data') ?? [])
+                    : ($this->get($path, $pageQuery($page))['data'] ?? []);
 
                 if ($data === []) {
-                    break;
+                    $complete = false;
+
+                    continue;
                 }
 
                 array_push($rows, ...$data);
-
-                // CoreX exposes the page count under meta.last_page, but fail
-                // safe if it ever moves or is omitted: without a known last page
-                // we keep paging until a short (final) page arrives, so the full
-                // collection is fetched instead of silently stopping at page 1.
-                $lastPage = $response['meta']['last_page'] ?? $response['last_page'] ?? null;
-
-                if ($lastPage !== null) {
-                    if (++$page > (int) $lastPage) {
-                        break;
-                    }
-                } else {
-                    if (count($data) < $perPage) {
-                        break;
-                    }
-
-                    $page++;
-                }
-            } while (true);
-
-            return $rows;
-        };
-
-        if ($this->cacheTtl <= 0) {
-            return $fetch();
+            }
         }
 
-        return Cache::remember($cacheKey, $this->cacheTtl, $fetch);
+        return ['rows' => $rows, 'complete' => $complete];
+    }
+
+    /**
+     * Page one page at a time until a short (final) page arrives. Used only when
+     * CoreX omits the page count.
+     *
+     * @param  callable(int): array<string, mixed>  $pageQuery
+     * @param  array<int, array<string, mixed>>  $rows  Rows of page 1.
+     * @return array{rows: array<int, array<string, mixed>>, complete: bool}
+     */
+    protected function fetchRemainingSequentially(string $path, callable $pageQuery, array $rows, int $perPage): array
+    {
+        $page = 1;
+        $data = $rows;
+
+        while (count($data) >= $perPage) {
+            $data = $this->get($path, $pageQuery(++$page))['data'] ?? [];
+
+            if ($data === []) {
+                break;
+            }
+
+            array_push($rows, ...$data);
+        }
+
+        return ['rows' => $rows, 'complete' => true];
     }
 
     /**

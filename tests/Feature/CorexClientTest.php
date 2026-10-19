@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\Corex\CorexClient;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -46,6 +47,75 @@ class CorexClientTest extends TestCase
 
         $this->assertCount(2, $this->makeClient()->listings());
         Http::assertSentCount(2);
+    }
+
+    public function test_it_fetches_the_remaining_pages_concurrently_in_order(): void
+    {
+        Http::fake([
+            'corex.test/*page=1*' => Http::response(['data' => [['id' => 1]], 'meta' => ['last_page' => 3]]),
+            'corex.test/*page=2*' => Http::response(['data' => [['id' => 2]], 'meta' => ['last_page' => 3]]),
+            'corex.test/*page=3*' => Http::response(['data' => [['id' => 3]], 'meta' => ['last_page' => 3]]),
+        ]);
+
+        $listings = $this->makeClient()->listings();
+
+        $this->assertSame([1, 2, 3], array_column($listings, 'id'));
+        Http::assertSentCount(3);
+    }
+
+    public function test_a_single_page_collection_makes_one_request(): void
+    {
+        Http::fake(['corex.test/*' => Http::response(['data' => [['id' => 1]], 'meta' => ['last_page' => 1]])]);
+
+        $this->assertCount(1, $this->makeClient()->listings());
+        Http::assertSentCount(1);
+    }
+
+    public function test_a_truncated_collection_is_not_cached(): void
+    {
+        Http::fake([
+            'corex.test/*page=1*' => Http::response(['data' => [['id' => 1]], 'meta' => ['last_page' => 2]]),
+            'corex.test/*page=2*' => Http::response(['message' => 'boom'], 500),
+        ]);
+
+        $client = $this->makeClient(300);
+
+        $this->assertCount(1, $client->listings());
+        $this->assertNull(Cache::get('corex:listings:'.md5(serialize([])).':50'));
+    }
+
+    public function test_a_complete_collection_is_served_from_cache_on_the_second_call(): void
+    {
+        Http::fake(['corex.test/*' => Http::response(['data' => [['id' => 1]], 'meta' => ['last_page' => 1]])]);
+
+        $client = $this->makeClient(300);
+        $client->listings();
+        $client->listings();
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_warm_keeps_the_existing_copy_when_corex_is_down(): void
+    {
+        $key = 'corex:listings:'.md5(serialize([])).':50';
+        Cache::put($key, [['id' => 'old']], 300);
+
+        Http::fake(['corex.test/*' => Http::response(['message' => 'down'], 503)]);
+
+        $this->makeClient(300)->warm();
+
+        $this->assertSame([['id' => 'old']], Cache::get($key));
+    }
+
+    public function test_warm_replaces_the_cached_collection_in_place(): void
+    {
+        $key = 'corex:listings:'.md5(serialize([])).':50';
+        Cache::put($key, [['id' => 'old']], 300);
+
+        Http::fake(['corex.test/*' => Http::response(['data' => [['id' => 'new']], 'meta' => ['last_page' => 1]])]);
+
+        $this->assertGreaterThan(0, $this->makeClient(300)->warm());
+        $this->assertSame([['id' => 'new']], Cache::get($key));
     }
 
     public function test_it_follows_pagination_when_last_page_meta_is_absent(): void

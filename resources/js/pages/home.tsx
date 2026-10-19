@@ -4,6 +4,7 @@ import { type Listing } from '@/components/public/listings';
 import PropertySearch, { type SearchFacets } from '@/components/public/property-search';
 import { type Testimonial } from '@/components/public/testimonials';
 import PublicLayout from '@/layouts/public-layout';
+import { imageAt, imageSrcSet } from '@/lib/images';
 import { agentUrl } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
@@ -362,9 +363,12 @@ export default function Home({
                                         <Link href={href} className="block">
                                             <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
                                                 <img
-                                                    src={listing.image}
+                                                    src={imageAt(listing.image, 960)}
+                                                    srcSet={imageSrcSet(listing.image, [480, 960])}
+                                                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                                                     alt={listing.title}
                                                     loading="lazy"
+                                                    decoding="async"
                                                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                                 />
                                                 <div className="from-ink/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />

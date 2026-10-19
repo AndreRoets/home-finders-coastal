@@ -1,3 +1,4 @@
+import { imageAt, imageSrcSet } from '@/lib/images';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Bath, BedDouble, MapPin, Maximize } from 'lucide-react';
@@ -21,9 +22,12 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
             <Link href={href} className="block">
                 <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
                     <img
-                        src={listing.image}
+                        src={imageAt(listing.image, 960)}
+                        srcSet={imageSrcSet(listing.image, [480, 960])}
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                         alt={listing.title}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                     <div className="from-ink/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />

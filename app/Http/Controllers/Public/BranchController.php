@@ -7,6 +7,9 @@ use App\Services\Branches\BranchMapper;
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
+use App\Support\DynamicSeo;
+use App\Support\StructuredData;
+use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,6 +28,8 @@ class BranchController extends Controller
         $agency = AgencyMapper::map($this->corex->agency());
 
         $this->abortUnlessEnabled($agency);
+
+        View::share('seoPage', DynamicSeo::forBranches(route('branches')));
 
         return Inertia::render('branches', [
             'branches' => BranchMapper::collection($this->corex->branches(), $agency ?? []),
@@ -48,8 +53,20 @@ class BranchController extends Controller
             throw new NotFoundHttpException('Branch not found.');
         }
 
+        $mappedBranch = BranchMapper::map($branch, $agency ?? []);
+        $canonical = route('branches.show', $id);
+
+        View::share('seoPage', DynamicSeo::forBranch($mappedBranch, $canonical));
+        View::share('structuredData', [
+            StructuredData::breadcrumbs([
+                StructuredData::homeCrumb(),
+                ['Our Branches', route('branches')],
+                [$mappedBranch['tradingName'], $canonical],
+            ]),
+        ]);
+
         return Inertia::render('branch', [
-            'branch' => BranchMapper::map($branch, $agency ?? []),
+            'branch' => $mappedBranch,
             'listings' => ListingMapper::collection($this->corex->listings(['branch_id' => $id])),
         ]);
     }

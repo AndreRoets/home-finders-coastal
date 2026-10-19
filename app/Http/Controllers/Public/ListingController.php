@@ -12,6 +12,7 @@ use App\Services\Corex\TestimonialMapper;
 use App\Services\Stats\ListingStatEvent;
 use App\Services\Stats\ListingStatsRecorder;
 use App\Support\DynamicSeo;
+use App\Support\StructuredData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -58,6 +59,18 @@ class ListingController extends Controller
 
         $canonical = route('property.show', $property['slug']);
         View::share('seoPage', DynamicSeo::forListing($property, $canonical));
+        View::share('structuredData', [
+            StructuredData::listing($property, $canonical),
+            StructuredData::breadcrumbs([
+                StructuredData::homeCrumb(),
+                match ($property['status']) {
+                    'to-rent' => ['To Rent', route('to-rent')],
+                    'sold' => ['Sold', route('sold')],
+                    default => ['For Sale', route('for-sale')],
+                },
+                [$property['title'], $canonical],
+            ]),
+        ]);
 
         return Inertia::render('property-detail', [
             'property' => $property,

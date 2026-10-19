@@ -63,6 +63,8 @@ export interface SharedData {
     flash: { success?: string | null; error?: string | null };
     /** Agency contact/social/hours from CoreX; null on a fetch error. */
     agency: Agency | null;
+    /** Server-resolved SEO meta; `title` is the exact document title. */
+    seo?: { title: string };
     [key: string]: unknown;
 }
 

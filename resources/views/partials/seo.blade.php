@@ -4,16 +4,19 @@
 
     $site = $siteSettings ?? \App\Models\SiteSetting::current();
 
-    $metaTitle = $seoPage?->meta_title ?: ($seoPage?->name ?: config('app.name'));
+    $metaTitle = \App\Support\DynamicSeo::titleFor($seoPage);
     $metaDescription = $seoPage?->meta_description ?: $site->default_meta_description;
     $metaKeywords = $seoPage?->meta_keywords;
-    $canonical = $seoPage?->canonical_url ?: url()->current();
+    $canonical = \App\Support\DynamicSeo::canonicalUrl($seoPage, request());
     $robots = $seoPage?->robotsDirective() ?? 'index, follow';
 
     $ogTitle = $seoPage?->og_title ?: $metaTitle;
     $ogDescription = $seoPage?->og_description ?: $metaDescription;
     $ogImage = $seoPage?->og_image ?: $site->default_og_image;
+    $ogImageAlt = $seoPage?->og_image_alt ?: ($seoPage?->name ?: $ogTitle);
+    $ogImageSize = \App\Support\DynamicSeo::imageSize($ogImage);
     $ogType = $seoPage?->og_type ?: 'website';
+    $ogSiteName = trim((string) $site->site_name) ?: config('app.name');
 
     $twitterCard = $seoPage?->twitter_card ?: 'summary_large_image';
     $twitterTitle = $seoPage?->twitter_title ?: $ogTitle;
@@ -22,6 +25,15 @@
     $twitterHandle = $site->default_twitter_handle;
 
     $injectAnalytics = $injectAnalytics ?? false;
+
+    // Only a bare meta content code is valid here; an HTML-file token pasted
+    // into the field ("google-site-verification: google….html") is verified
+    // by the file in /public instead, so never echo it as a meta tag.
+    $searchConsoleToken = trim((string) $site->google_search_console_verification);
+    $searchConsoleToken = str_contains($searchConsoleToken, '.html') || str_contains(strtolower($searchConsoleToken), 'google-site-verification:') ? '' : $searchConsoleToken;
+
+    // Schema.org JSON-LD (Organization + any page nodes) on public pages only.
+    $structuredDataJson = $injectAnalytics ? \App\Support\StructuredData::render($structuredData ?? []) : null;
     $ga4 = trim((string) $site->ga4_measurement_id);
     $gtm = trim((string) $site->gtm_container_id);
     $adsId = trim((string) $site->google_ads_conversion_id);
@@ -29,8 +41,8 @@
 @endphp
 
 {{-- Google Search Console site verification --}}
-@if($injectAnalytics && trim((string) $site->google_search_console_verification) !== '')
-    <meta name="google-site-verification" content="{{ $site->google_search_console_verification }}">
+@if($injectAnalytics && $searchConsoleToken !== '')
+    <meta name="google-site-verification" content="{{ $searchConsoleToken }}">
 @endif
 
 {{-- Core SEO meta --}}
@@ -49,13 +61,16 @@
     <meta property="og:description" content="{{ $ogDescription }}">
 @endif
 <meta property="og:type" content="{{ $ogType }}">
-<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:url" content="{{ $canonical }}">
 @if($ogImage)
     <meta property="og:image" content="{{ $ogImage }}">
+    @if($ogImageSize)
+        <meta property="og:image:width" content="{{ $ogImageSize['width'] }}">
+        <meta property="og:image:height" content="{{ $ogImageSize['height'] }}">
+    @endif
+    <meta property="og:image:alt" content="{{ $ogImageAlt }}">
 @endif
-@if($site->site_name)
-    <meta property="og:site_name" content="{{ $site->site_name }}">
-@endif
+<meta property="og:site_name" content="{{ $ogSiteName }}">
 
 {{-- Twitter Card --}}
 <meta name="twitter:card" content="{{ $twitterCard }}">
@@ -65,12 +80,16 @@
 @endif
 @if($twitterImage)
     <meta name="twitter:image" content="{{ $twitterImage }}">
+    <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
 @endif
 @if($twitterHandle)
     <meta name="twitter:site" content="{{ $twitterHandle }}">
 @endif
 
-{{-- Structured data (JSON-LD) --}}
+{{-- Structured data (JSON-LD): generated, then any admin-entered block --}}
+@if($structuredDataJson)
+    <script type="application/ld+json">{!! $structuredDataJson !!}</script>
+@endif
 @if($seoPage && trim((string) $seoPage->json_ld) !== '')
     <script type="application/ld+json">{!! $seoPage->json_ld !!}</script>
 @endif

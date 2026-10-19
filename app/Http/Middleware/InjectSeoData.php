@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Page;
 use App\Models\SiteSetting;
+use App\Support\DynamicSeo;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
@@ -34,6 +35,11 @@ class InjectSeoData
         } catch (\Throwable) {
             $page = null;
             $settings = new SiteSetting;
+        }
+
+        // Fixed tool/legal pages have no CMS row; give them their own meta.
+        if (! $isAdminArea) {
+            $page ??= DynamicSeo::forRoute($routeName);
         }
 
         View::share('seoPage', $page);

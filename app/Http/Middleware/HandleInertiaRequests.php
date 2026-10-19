@@ -4,8 +4,10 @@ namespace App\Http\Middleware;
 
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
+use App\Support\DynamicSeo;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -50,6 +52,10 @@ class HandleInertiaRequests extends Middleware
             // shared footer/header. Cached server-side by CorexClient and fails
             // soft to null, so the layout renders without it on a fetch error.
             'agency' => fn (): ?array => AgencyMapper::map($this->corex->agency()),
+            // The server-resolved document title, so the client <Head> renders
+            // exactly what the Blade <title> did. Lazy: resolved at response
+            // time, after InjectSeoData and the controllers have shared seoPage.
+            'seo' => fn (): array => ['title' => DynamicSeo::titleFor(View::shared('seoPage'))],
             'auth' => [
                 'user' => $request->user(),
             ],

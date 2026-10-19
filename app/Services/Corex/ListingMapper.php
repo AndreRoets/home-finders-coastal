@@ -238,6 +238,15 @@ class ListingMapper
                 : null,
             'petFriendly' => (bool) Arr::get($listing, 'pet_friendly', false),
             'address' => self::address($listing),
+            // Structured location/price/date pieces for the SEO title and the
+            // JSON-LD listing node (the display `location`/`price` are composites).
+            'suburb' => self::text($listing, 'suburb'),
+            'town' => self::text($listing, 'town') ?? self::text($listing, 'city'),
+            'priceAmount' => self::priceAmount($listing),
+            'listedAt' => self::text($listing, 'listed_at')
+                ?? self::text($listing, 'published_at')
+                ?? self::text($listing, 'date_listed')
+                ?? self::text($listing, 'created_at'),
             'features' => array_values(array_filter(
                 (array) Arr::get($listing, 'features', []),
                 'is_string',
@@ -452,6 +461,35 @@ class ListingMapper
         ]);
 
         return $parts !== [] ? implode(', ', $parts) : (string) Arr::get($listing, 'province', '');
+    }
+
+    /**
+     * The raw asking price (or monthly rental) as a number, or null when it is
+     * on application or missing. Used for structured data, never for display.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    protected static function priceAmount(array $listing): ?float
+    {
+        if (Arr::get($listing, 'price_on_application')) {
+            return null;
+        }
+
+        $amount = Arr::get($listing, 'rental.rental_amount') ?? Arr::get($listing, 'price');
+
+        return is_numeric($amount) && (float) $amount > 0 ? (float) $amount : null;
+    }
+
+    /**
+     * A trimmed, non-empty string field, or null.
+     *
+     * @param  array<string, mixed>  $listing
+     */
+    protected static function text(array $listing, string $key): ?string
+    {
+        $value = Arr::get($listing, $key);
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /**

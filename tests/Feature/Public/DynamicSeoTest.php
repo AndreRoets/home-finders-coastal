@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Public;
 
+use App\Models\ListingSeo;
+use App\Support\DynamicSeo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -58,6 +60,82 @@ class DynamicSeoTest extends TestCase
         $this->get(route('property.show', 'hillside-plot-77'))
             ->assertOk()
             ->assertSee('3 bedroom House for sale', false);
+    }
+
+    public function test_listing_title_is_built_from_structured_fields_without_the_province(): void
+    {
+        $title = DynamicSeo::listingTitle([
+            'title' => 'Apartment for sale in Shelly Beach, Margate, KwaZulu Natal',
+            'propertyType' => 'Apartment',
+            'listingType' => 'sale',
+            'beds' => 2,
+            'suburb' => 'Shelly Beach',
+            'town' => 'Margate',
+            'price' => 'R 1 250 000',
+            'priceAmount' => 1250000.0,
+        ]);
+
+        // The site suffix doesn't fit alongside the price, so it is dropped — never cut mid-word.
+        $this->assertSame('2 Bed Apartment for Sale in Shelly Beach | R 1 250 000', $title);
+        $this->assertStringNotContainsString('KwaZulu', $title);
+        $this->assertStringNotContainsString('…', $title);
+    }
+
+    public function test_listing_title_keeps_the_site_suffix_when_it_fits(): void
+    {
+        $title = DynamicSeo::listingTitle([
+            'propertyType' => 'house',
+            'listingType' => 'to_let',
+            'beds' => 3,
+            'suburb' => 'Uvongo',
+            'price' => 'Price on application',
+            'priceAmount' => null,
+        ]);
+
+        $this->assertSame('3 Bed House to Rent in Uvongo | Home Finders Coastal', $title);
+    }
+
+    public function test_a_long_suburb_is_never_cut_and_the_title_stays_within_sixty_characters(): void
+    {
+        $title = DynamicSeo::listingTitle([
+            'propertyType' => 'Townhouse',
+            'listingType' => 'sale',
+            'beds' => 4,
+            'suburb' => 'Port Edward Extension Seventeen',
+            'price' => 'R 3 500 000',
+            'priceAmount' => 3500000.0,
+        ]);
+
+        $this->assertSame('4 Bed Townhouse for Sale in Port Edward Extension Seventeen', $title);
+        $this->assertLessThanOrEqual(60, mb_strlen($title));
+    }
+
+    public function test_a_listing_without_structured_fields_falls_back_to_a_word_boundary_headline(): void
+    {
+        $title = DynamicSeo::listingTitle([
+            'title' => 'Magnificent sea-facing family home with flatlet and sweeping ocean views',
+        ]);
+
+        $this->assertLessThanOrEqual(60, mb_strlen($title));
+        $this->assertSame('Magnificent sea-facing family home with flatlet and…', $title);
+    }
+
+    public function test_agent_title_drops_a_designation_that_does_not_fit(): void
+    {
+        $long = DynamicSeo::forAgent(['name' => 'Elize Reichel', 'designation' => 'Principal Property Practitioner'], 'https://example.test/agents/elize-reichel');
+        $short = DynamicSeo::forAgent(['name' => 'Elize Reichel', 'designation' => 'Rentals'], 'https://example.test/agents/elize-reichel');
+
+        $this->assertSame('Elize Reichel | Home Finders Coastal', $long->meta_title);
+        $this->assertSame('Elize Reichel – Rentals | Home Finders Coastal', $short->meta_title);
+    }
+
+    public function test_an_admin_listing_override_still_wins_over_the_generated_title(): void
+    {
+        ListingSeo::query()->create(['listing_id' => '55', 'meta_title' => 'Hand-written listing title']);
+
+        $page = DynamicSeo::forListing(['id' => 55, 'propertyType' => 'House', 'suburb' => 'Margate'], 'https://example.test/property/x-55');
+
+        $this->assertSame('Hand-written listing title', $page->meta_title);
     }
 
     public function test_sitemap_includes_dynamic_property_and_agent_urls(): void

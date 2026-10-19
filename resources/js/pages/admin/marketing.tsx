@@ -93,7 +93,8 @@ export default function Marketing({ settings }: { settings: Settings }) {
                             value={data.google_search_console_verification}
                             onChange={(v) => setData('google_search_console_verification', v)}
                             error={errors.google_search_console_verification}
-                            hint="The content value from the google-site-verification meta tag."
+                            placeholder="AbC123_xyz"
+                            hint='Only the content="…" code from the HTML-tag method. Leave empty if you verified with an HTML file or DNS.'
                         />
                         <FieldGroup columns={2}>
                             <TextField

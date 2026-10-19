@@ -10,6 +10,7 @@ use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
 use App\Services\Corex\TestimonialMapper;
 use App\Support\DynamicSeo;
+use App\Support\StructuredData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -81,7 +82,17 @@ class AgentController extends Controller
 
         $mappedAgent = AgentMapper::map($agent);
 
-        View::share('seoPage', DynamicSeo::forAgent($mappedAgent, route('agents.show', AgentMapper::slug($agent))));
+        $canonical = route('agents.show', AgentMapper::slug($agent));
+
+        View::share('seoPage', DynamicSeo::forAgent($mappedAgent, $canonical));
+        View::share('structuredData', [
+            StructuredData::agent($mappedAgent, $canonical),
+            StructuredData::breadcrumbs([
+                StructuredData::homeCrumb(),
+                ['Agents', route('agents')],
+                [$mappedAgent['name'], $canonical],
+            ]),
+        ]);
 
         return Inertia::render('agent', [
             'agent' => $mappedAgent,

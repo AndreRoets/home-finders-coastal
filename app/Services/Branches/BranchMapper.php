@@ -40,12 +40,17 @@ class BranchMapper
     {
         $phone = self::string($branch, 'phone') ?? Arr::get($defaults, 'contact.phone');
         $phoneSecondary = self::string($branch, 'phone_secondary');
+        $address = self::string($branch, 'address') ?? Arr::get($defaults, 'contact.address');
 
         return [
             'id' => Arr::get($branch, 'id'),
             'tradingName' => (string) (self::string($branch, 'trading_name') ?? 'Office'),
             'tagline' => self::string($branch, 'tagline'),
-            'address' => self::string($branch, 'address') ?? Arr::get($defaults, 'contact.address'),
+            'address' => $address,
+            'town' => self::string($branch, 'town')
+                ?? self::string($branch, 'city')
+                ?? self::string($branch, 'suburb')
+                ?? self::townFromAddress($address),
             'phone' => $phone,
             'phoneHref' => self::href($phone),
             'phoneLabel' => self::string($branch, 'phone_label'),
@@ -61,6 +66,27 @@ class BranchMapper
                 array_values(array_filter((array) Arr::get($branch, 'agents', []), 'is_array')),
             ),
         ];
+    }
+
+    /**
+     * Best-effort town from a free-text address: the last comma-separated part
+     * that isn't a postal code, e.g. "12 Marina Drive, Margate, 4275" → "Margate".
+     */
+    protected static function townFromAddress(?string $address): ?string
+    {
+        if ($address === null) {
+            return null;
+        }
+
+        $parts = array_reverse(array_map('trim', explode(',', $address)));
+
+        foreach (array_slice($parts, 0, count($parts) > 1 ? -1 : 1) as $part) {
+            if ($part !== '' && preg_match('/^\d+$/', $part) !== 1) {
+                return $part;
+            }
+        }
+
+        return null;
     }
 
     /**

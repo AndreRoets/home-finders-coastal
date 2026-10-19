@@ -7,6 +7,7 @@ use App\Services\Corex\AgentMapper;
 use App\Services\Corex\ArticleMapper;
 use App\Services\Corex\CorexClient;
 use App\Support\DynamicSeo;
+use App\Support\StructuredData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\View;
@@ -43,11 +44,21 @@ class ArticleController extends Controller
 
         $mappedArticle = ArticleMapper::map($article);
 
-        View::share('seoPage', DynamicSeo::forArticle($mappedArticle, route('articles.show', $mappedArticle['slug'] ?: $slug)));
+        $canonical = route('articles.show', $mappedArticle['slug'] ?: $slug);
+        $author = $this->resolveAgent(Arr::get($article, 'agent_id'));
+
+        View::share('seoPage', DynamicSeo::forArticle($mappedArticle, $canonical));
+        View::share('structuredData', [
+            StructuredData::article($mappedArticle, $canonical, $author),
+            StructuredData::breadcrumbs([
+                StructuredData::homeCrumb(),
+                [$mappedArticle['title'], $canonical],
+            ]),
+        ]);
 
         return Inertia::render('article', [
             'article' => $mappedArticle,
-            'agent' => $this->resolveAgent(Arr::get($article, 'agent_id')),
+            'agent' => $author,
         ])->toResponse($request);
     }
 

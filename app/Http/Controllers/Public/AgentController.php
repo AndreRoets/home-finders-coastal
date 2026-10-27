@@ -69,11 +69,12 @@ class AgentController extends Controller
         }
 
         $listings = $this->corex->listings(['agent_id' => $id]);
+        $sold = $this->soldBy($id);
 
         $agent = $this->corex->agent($id);
 
         if ($agent === []) {
-            $agent = $this->agentFromListings($listings, $id);
+            $agent = $this->agentFromListings([...$listings, ...$sold], $id);
         }
 
         if ($agent === []) {
@@ -96,7 +97,10 @@ class AgentController extends Controller
 
         return Inertia::render('agent', [
             'agent' => $mappedAgent,
-            'listings' => ListingMapper::collection($listings),
+            'listings' => [
+                ...ListingMapper::collection($listings),
+                ...ListingMapper::soldCollection($sold),
+            ],
             'testimonials' => TestimonialMapper::collection(
                 $this->corex->testimonials(['agent_id' => $id]),
             ),
@@ -147,6 +151,25 @@ class AgentController extends Controller
         return Inertia::render('agent', ['agent' => null])
             ->toResponse($request)
             ->setStatusCode(HttpResponse::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * The agent's sold properties, newest sale first. /sold takes no agent
+     * filter, so the agency-wide collection is narrowed to the items that list
+     * the agent as primary or co-agent.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function soldBy(int|string $id): array
+    {
+        return ListingMapper::newestSaleFirst(array_values(array_filter(
+            $this->corex->sold(),
+            static fn (array $item): bool => in_array(
+                (string) $id,
+                array_map(static fn (array $agent): string => (string) Arr::get($agent, 'id'), ListingMapper::extractAgents($item)),
+                true,
+            ),
+        )));
     }
 
     /**

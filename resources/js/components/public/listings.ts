@@ -23,6 +23,11 @@ export interface Listing {
     exclusive?: boolean;
     image: string;
     url?: string | null;
+    /** Sale date (Y-m-d) — sold items only. */
+    soldAt?: string | null;
+    /** Sale date for display, e.g. "20 Oct 2026" — sold items only. */
+    soldOn?: string | null;
+    daysOnMarket?: number | null;
     /** Primary agent, kept for backwards compatibility — prefer `agents`. */
     agent?: ListingAgent | null;
     /** Every agent attributed to the listing (a property may be co-listed). */

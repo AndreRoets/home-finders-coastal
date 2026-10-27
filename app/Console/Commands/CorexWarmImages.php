@@ -69,7 +69,9 @@ class CorexWarmImages extends Command
      */
     protected function pendingUrls(CorexClient $corex, TrimmedImageStore $images): \Generator
     {
-        $listings = $corex->listings();
+        // Sold stock comes from its own endpoint but its photos go through the
+        // same trimming proxy, so they are warmed alongside the live listings.
+        $listings = [...$corex->listings(), ...$corex->sold()];
 
         foreach ([true, false] as $coversOnly) {
             foreach ($listings as $listing) {

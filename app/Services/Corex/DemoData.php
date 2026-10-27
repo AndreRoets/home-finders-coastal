@@ -114,10 +114,59 @@ class DemoData
         $listings = [];
 
         for ($i = 1; $i <= self::LISTING_COUNT; $i++) {
-            $listings[] = self::makeListing($i);
+            $listing = self::makeListing($i);
+
+            // Like the live API, /listings carries on-market stock only.
+            if ($listing['status'] !== 'sold') {
+                $listings[] = $listing;
+            }
         }
 
         return $listings;
+    }
+
+    /**
+     * All demo sold properties in the raw CoreX /sold shape: sale price and
+     * date, suburb + city only (no street address).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function sold(): array
+    {
+        $sold = [];
+
+        for ($i = 1; $i <= self::LISTING_COUNT; $i++) {
+            $listing = self::makeListing($i);
+
+            if ($listing['status'] !== 'sold') {
+                continue;
+            }
+
+            $sold[] = [
+                'id' => 5000 + $i,
+                'property_id' => $listing['id'],
+                'cycle' => 1,
+                'title' => $listing['title'],
+                'description' => $listing['description'],
+                'features' => $listing['features'],
+                'property_type' => $listing['property_type'],
+                'listing_type' => 'sale',
+                'address' => $listing['suburb'].', '.$listing['city'],
+                'suburb' => $listing['suburb'],
+                'city' => $listing['city'],
+                'beds' => $listing['beds'],
+                'baths' => $listing['baths'],
+                'size_m2' => $listing['size_m2'],
+                'asking_price' => $listing['price'],
+                'sale_price' => (int) round($listing['price'] * 0.96, -4),
+                'sold_at' => date('Y-m-d', strtotime('-'.(3 * $i).' days')),
+                'days_on_market' => 20 + (($i * 13) % 160),
+                'images' => $listing['images'],
+                'agents' => $listing['agents'] ?? [['is_primary' => true, ...$listing['agent']]],
+            ];
+        }
+
+        return $sold;
     }
 
     /**

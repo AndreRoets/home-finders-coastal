@@ -258,17 +258,34 @@ class ListingController extends Controller
     }
 
     /**
-     * Recently sold properties.
+     * Recently sold properties, newest sale first, from CoreX's /sold endpoint
+     * (/listings carries on-market stock only).
+     *
+     * /sold takes no branch filter, so a selected branch is applied through
+     * the branch-scoped agent set, the same way a hidden agent is dropped.
+     * Sold items have no property page, so no impressions are recorded.
      */
     public function sold(Request $request): Response
     {
         $visibleAgentIds = $this->visibleAgentIds();
 
+        $sold = array_values(array_filter(
+            $this->corex->sold(),
+            fn (array $item): bool => $this->attributedToVisibleAgent($item, $visibleAgentIds),
+        ));
+
+        $sold = ListingMapper::newestSaleFirst($sold);
+
+        $perPage = 21;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
         return Inertia::render('sold', [
-            'listings' => $this->paginate(
-                $this->filter(fn (array $l): bool => str_contains($this->status($l), 'sold')
-                    && $this->attributedToVisibleAgent($l, $visibleAgentIds)),
-                $request,
+            'listings' => new LengthAwarePaginator(
+                ListingMapper::soldCollection(array_slice($sold, ($page - 1) * $perPage, $perPage)),
+                count($sold),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()],
             ),
             ...$this->branchProps(),
         ]);
@@ -430,8 +447,10 @@ class ListingController extends Controller
     }
 
     /**
-     * Available = on the market, i.e. not sold, withdrawn or still a draft.
-     * (CoreX uses status values such as "for_sale"/"to_let" for live listings.)
+     * Available = on the market, i.e. not sold, prospecting, withdrawn or still
+     * a draft. (CoreX uses status values such as "for_sale"/"to_let" for live
+     * listings.) /listings should no longer carry sold or prospecting stock at
+     * all; this guards against a stray one reaching For Sale.
      *
      * @param  array<string, mixed>  $listing
      */
@@ -440,6 +459,7 @@ class ListingController extends Controller
         $status = $this->status($listing);
 
         return ! str_contains($status, 'sold')
+            && ! str_contains($status, 'prospect')
             && ! str_contains($status, 'withdrawn')
             && ! str_contains($status, 'draft');
     }

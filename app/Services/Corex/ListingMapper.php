@@ -78,6 +78,84 @@ class ListingMapper
     }
 
     /**
+     * Map a collection of CoreX /sold items to sold cards.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    public static function soldCollection(array $items): array
+    {
+        return array_values(array_map(self::sold(...), $items));
+    }
+
+    /**
+     * Order raw /sold items newest sale first; undated sales sort last. CoreX
+     * already defaults to -sale_date, but the order is enforced here so it
+     * never depends on the endpoint's default.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    public static function newestSaleFirst(array $items): array
+    {
+        $soldAt = static function (array $item): int {
+            $value = self::text($item, 'sold_at');
+            $timestamp = $value !== null ? strtotime($value) : false;
+
+            return $timestamp !== false ? $timestamp : PHP_INT_MIN;
+        };
+
+        usort($items, static fn (array $a, array $b): int => $soldAt($b) <=> $soldAt($a));
+
+        return $items;
+    }
+
+    /**
+     * Map a single CoreX /sold item to the frontend listing shape.
+     *
+     * Sold items have no property page (/listings no longer serves them), so
+     * `slug` is null and the card is not linked. The price shown is the sale
+     * price only — never the asking price — and the location is suburb + city,
+     * as CoreX does not publish a sold property's street address. The id is
+     * prefixed so a sold card never collides with an on-market listing that
+     * shares its number (an agent profile shows both side by side).
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    public static function sold(array $item): array
+    {
+        $agents = self::cardAgents($item);
+        $salePrice = Arr::get($item, 'sale_price');
+        $soldAt = self::text($item, 'sold_at');
+        $soldTimestamp = $soldAt !== null ? strtotime($soldAt) : false;
+        $daysOnMarket = Arr::get($item, 'days_on_market');
+
+        return [
+            'id' => 'sold-'.Arr::get($item, 'id', ''),
+            'ref' => null,
+            'title' => (string) (self::text($item, 'title') ?? 'Sold property'),
+            'location' => self::location($item),
+            'price' => is_numeric($salePrice) && (float) $salePrice > 0
+                ? 'R '.number_format((float) $salePrice, 0, '.', ' ')
+                : 'Price undisclosed',
+            'beds' => (int) Arr::get($item, 'beds', 0),
+            'baths' => (int) round((float) Arr::get($item, 'baths', 0)),
+            'area' => self::area($item),
+            'status' => 'sold',
+            'exclusive' => false,
+            'image' => self::image($item),
+            'slug' => null,
+            'url' => null,
+            'soldAt' => $soldTimestamp !== false ? date('Y-m-d', $soldTimestamp) : null,
+            'soldOn' => $soldTimestamp !== false ? date('j M Y', $soldTimestamp) : null,
+            'daysOnMarket' => is_numeric($daysOnMarket) ? (int) $daysOnMarket : null,
+            'agent' => $agents[0] ?? null,
+            'agents' => $agents,
+        ];
+    }
+
+    /**
      * Build the canonical, title-based URL slug for a listing:
      * "{slugified-title}-{id}", e.g. "apartment-for-sale-in-margate-kwazulu-natal-12345".
      *

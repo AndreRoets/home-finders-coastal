@@ -54,8 +54,15 @@ class ListingPagesTest extends TestCase
 
     public function test_sold_page_shows_only_sold(): void
     {
+        // Sold stock comes from /sold; the sold row on /listings is ignored.
         $this->fakeListings();
-        Http::fake(['*/agents*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]])]);
+        Http::fake([
+            '*/agents*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
+            '*/sold*' => Http::response([
+                'data' => [['id' => 30, 'title' => 'Sold House', 'sale_price' => 1_500_000, 'sold_at' => '2026-10-01']],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
 
         $this->get(route('sold'))
             ->assertOk()
@@ -69,19 +76,19 @@ class ListingPagesTest extends TestCase
     {
         // CoreX's /agents endpoint only returns website-visible agents: agent 7
         // is live, agent 29 has been turned off (absent from /agents) but is still
-        // embedded on their sold listing.
+        // embedded on their sold item.
         Http::fake([
             '*/agents*' => Http::response([
                 'data' => [['id' => 7, 'name' => 'Thandi Mbeki']],
                 'meta' => ['last_page' => 1],
             ]),
-            '*/listings*' => Http::response([
+            '*/sold*' => Http::response([
                 'data' => [
-                    ['id' => 1, 'title' => 'Visible Sold', 'listing_type' => 'sale', 'status' => 'sold',
-                        'agent' => ['id' => 7, 'name' => 'Thandi Mbeki']],
-                    ['id' => 2, 'title' => 'Hidden Agent Sold', 'listing_type' => 'sale', 'status' => 'sold',
-                        'agent' => ['id' => 29, 'name' => 'Maggie Venter']],
-                    ['id' => 3, 'title' => 'No Agent Sold', 'listing_type' => 'sale', 'status' => 'sold'],
+                    ['id' => 1, 'title' => 'Visible Sold', 'sold_at' => '2026-10-03',
+                        'agents' => [['id' => 7, 'name' => 'Thandi Mbeki']]],
+                    ['id' => 2, 'title' => 'Hidden Agent Sold', 'sold_at' => '2026-10-02',
+                        'agents' => [['id' => 29, 'name' => 'Maggie Venter']]],
+                    ['id' => 3, 'title' => 'No Agent Sold', 'sold_at' => '2026-10-01'],
                 ],
                 'meta' => ['last_page' => 1],
             ]),

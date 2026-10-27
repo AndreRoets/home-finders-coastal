@@ -116,6 +116,15 @@ class DemoCorexClient extends CorexClient
      * @param  array<string, mixed>  $query
      * @return array<int, array<string, mixed>>
      */
+    public function sold(array $query = []): array
+    {
+        return DemoData::sold();
+    }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
     public function branches(array $query = []): array
     {
         return DemoData::branches();

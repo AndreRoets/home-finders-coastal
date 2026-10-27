@@ -41,6 +41,12 @@ class CorexWebhookController extends Controller
                 reference: isset($data['reference']) ? (string) $data['reference'] : null,
                 agentIds: $this->listingAgentIds($data),
             );
+
+            // A listing leaving for-sale has usually sold, and sold stock lives
+            // in its own /sold collection, which the bust above never touches.
+            if ($event === 'listing.removed') {
+                $this->corex->refreshSold();
+            }
         } elseif (str_starts_with($event, 'agency.')) {
             $this->corex->forgetAgency();
         } elseif (str_starts_with($event, 'agent.')) {

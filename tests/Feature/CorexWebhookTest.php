@@ -126,6 +126,35 @@ class CorexWebhookTest extends TestCase
         $this->assertFalse(Cache::has('corex:listings:'.md5(serialize([])).':50'));
     }
 
+    public function test_a_listing_removed_event_refreshes_the_sold_cache(): void
+    {
+        config(['services.corex.cache_ttl' => 300]);
+
+        Http::fake([
+            '*/sold*' => Http::response(['data' => [['id' => 1, 'title' => 'Just Sold']], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $soldKey = 'corex:sold:'.md5(serialize([])).':50';
+        Cache::put($soldKey, ['stale'], 600);
+
+        $this->deliver(['event' => 'listing.removed', 'data' => ['id' => 42]], 'listing.removed')->assertOk();
+
+        $this->assertSame([['id' => 1, 'title' => 'Just Sold']], Cache::get($soldKey));
+    }
+
+    public function test_a_listing_updated_event_leaves_the_sold_cache_alone(): void
+    {
+        Http::fake();
+
+        $soldKey = 'corex:sold:'.md5(serialize([])).':50';
+        Cache::put($soldKey, ['cached'], 600);
+
+        $this->deliver(['event' => 'listing.updated', 'data' => ['id' => 42]], 'listing.updated')->assertOk();
+
+        $this->assertSame(['cached'], Cache::get($soldKey));
+        Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/sold'));
+    }
+
     public function test_a_listing_event_busts_the_attributed_agents_scoped_listings(): void
     {
         // The agent profile page caches GET /listings?agent_id={id}. The id's PHP

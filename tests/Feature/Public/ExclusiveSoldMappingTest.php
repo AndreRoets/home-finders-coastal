@@ -61,7 +61,14 @@ class ExclusiveSoldMappingTest extends TestCase
 
     public function test_sold_listing_appears_on_sold_page_with_sold_badge(): void
     {
+        // Sold stock is served by /sold, never /listings.
         $this->fakeListings();
+        Http::fake([
+            '*/sold*' => Http::response([
+                'data' => [['id' => 6, 'title' => 'Sold home', 'sale_price' => 3_000_000, 'sold_at' => '2026-10-01']],
+                'meta' => ['last_page' => 1],
+            ]),
+        ]);
 
         $this->get(route('sold'))
             ->assertOk()

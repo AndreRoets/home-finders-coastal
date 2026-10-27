@@ -32,6 +32,8 @@ class CorexClient
      */
     protected const LISTINGS_PER_PAGE = 50;
 
+    protected const SOLD_PER_PAGE = 50;
+
     protected const AGENTS_PER_PAGE = 100;
 
     protected const TESTIMONIALS_PER_PAGE = 100;
@@ -109,6 +111,34 @@ class CorexClient
     public function listings(array $query = []): array
     {
         return $this->allPages('listings', '/listings', $query, self::LISTINGS_PER_PAGE);
+    }
+
+    /**
+     * Fetch every sold property, transparently following pagination.
+     *
+     * Since 27 Oct 2026 /listings carries on-market stock only; sold stock is
+     * served from its own /sold endpoint with a different shape (sale_price,
+     * sold_at, days_on_market; suburb + city only, never a street address).
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<int, array<string, mixed>>
+     */
+    public function sold(array $query = []): array
+    {
+        return $this->allPages('sold', '/sold', $query, self::SOLD_PER_PAGE);
+    }
+
+    /**
+     * Respond to a listing leaving the market (listing.removed): drop the
+     * cached /sold collection and re-pull it, so a property that just sold
+     * shows on the Sold page straight away rather than after the TTL lapses.
+     * Fails soft like every other fetch.
+     */
+    public function refreshSold(): void
+    {
+        Cache::forget($this->collectionCacheKey('sold', [], self::SOLD_PER_PAGE));
+
+        $this->sold();
     }
 
     /**
@@ -275,6 +305,7 @@ class CorexClient
 
         $collections = [
             ['listings', '/listings', self::LISTINGS_PER_PAGE],
+            ['sold', '/sold', self::SOLD_PER_PAGE],
             ['agents', '/agents', self::AGENTS_PER_PAGE],
             ['testimonials', '/testimonials', self::TESTIMONIALS_PER_PAGE],
             ['articles', '/articles', self::ARTICLES_PER_PAGE],

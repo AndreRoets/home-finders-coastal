@@ -12,14 +12,29 @@ const statusBadge: Record<Listing['status'], string> = {
     sold: 'Sold',
 };
 
+/**
+ * Links to the property page, or a plain block for a sold item: sold stock has
+ * no property page (CoreX serves it from /sold, not /listings).
+ */
+function CardLink({ href, className, children }: { href: string | null; className: string; children: React.ReactNode }) {
+    return href ? (
+        <Link href={href} className={className}>
+            {children}
+        </Link>
+    ) : (
+        <div className={className}>{children}</div>
+    );
+}
+
 export default function PropertyCard({ listing }: { listing: Listing }) {
-    const href = route('property.show', listing.slug ?? listing.ref ?? listing.id);
+    const isSoldItem = listing.status === 'sold' && !listing.slug;
+    const href = isSoldItem ? null : route('property.show', listing.slug ?? listing.ref ?? listing.id);
 
     return (
         // Not an <a>: the card holds two independent links (property + agent),
         // so nesting anchors would be invalid. `group` still drives the hover.
         <div className="group block">
-            <Link href={href} className="block">
+            <CardLink href={href} className="block">
                 <div className="relative aspect-[8/5] overflow-hidden bg-slate-100">
                     <img
                         src={imageAt(listing.image, 960)}
@@ -47,8 +62,8 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                         )}
                     </div>
                 </div>
-            </Link>
-            <Link href={href} className="mt-5 flex items-start justify-between gap-4">
+            </CardLink>
+            <CardLink href={href} className="mt-5 flex items-start justify-between gap-4">
                 <div>
                     <h3 className="text-navy group-hover:text-navy/70 line-clamp-1 text-xl font-light transition-colors">{listing.title}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
@@ -56,8 +71,11 @@ export default function PropertyCard({ listing }: { listing: Listing }) {
                         {listing.location}
                     </p>
                 </div>
-                <p className="text-brand-red shrink-0 text-sm font-semibold">{listing.price}</p>
-            </Link>
+                <div className="shrink-0 text-right">
+                    <p className="text-brand-red text-sm font-semibold">{listing.price}</p>
+                    {listing.soldOn && <p className="mt-1 text-xs text-neutral-500">Sold {listing.soldOn}</p>}
+                </div>
+            </CardLink>
             <div className="mt-4 flex items-center gap-5 border-t border-slate-200 pt-4 text-xs tracking-wide text-neutral-500">
                 <span className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4" />

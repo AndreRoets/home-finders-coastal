@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EnquiryController;
 use App\Http\Controllers\Admin\MediaUploadController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PropertySeoController;
@@ -44,6 +45,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('marketing', [SiteSettingController::class, 'update'])->name('marketing.update');
 
     Route::resource('users', UserController::class)->except(['show']);
+
+    // Form submissions and the marketing channel each is credited to.
+    Route::get('enquiries', [EnquiryController::class, 'index'])->name('enquiries.index');
+    Route::get('enquiries/export', [EnquiryController::class, 'download'])->name('enquiries.download');
+    Route::get('enquiries/{enquiry}', [EnquiryController::class, 'show'])->whereNumber('enquiry')->name('enquiries.show');
 });
 
 // Legacy starter-kit dashboard link now lands on the marketing panel.

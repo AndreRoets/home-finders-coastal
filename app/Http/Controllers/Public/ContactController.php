@@ -7,6 +7,8 @@ use App\Http\Requests\ContactRequest;
 use App\Mail\ContactMessage;
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
+use App\Services\Enquiries\EnquiryForm;
+use App\Services\Enquiries\EnquiryRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -14,7 +16,10 @@ use Inertia\Response;
 
 class ContactController extends Controller
 {
-    public function __construct(protected CorexClient $corex) {}
+    public function __construct(
+        protected CorexClient $corex,
+        protected EnquiryRecorder $enquiries,
+    ) {}
 
     /**
      * The public contact page. Contact details and social links come from the
@@ -26,14 +31,18 @@ class ContactController extends Controller
     }
 
     /**
-     * Handle a contact-form submission: validate (with a honeypot), then email
-     * the agency's public address. Always redirects back with a success flash —
-     * even when delivery is skipped — so we never leak whether a recipient is
-     * configured.
+     * Handle a contact-form submission: validate (with a honeypot), save it as
+     * an enquiry with the visitor's first touch, then email the agency's public
+     * address. Always redirects back with a success flash — even when delivery
+     * is skipped — so we never leak whether a recipient is configured. The
+     * `form_submitted` flash (which fires GA4's form_submit) is only set when
+     * the enquiry was actually saved.
      */
     public function send(ContactRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+
+        $enquiry = $this->enquiries->record(EnquiryForm::Contact, $validated, $validated['attribution'] ?? [], $request);
 
         if (($recipient = $this->recipient()) !== null) {
             Mail::to($recipient)->send(new ContactMessage(
@@ -44,7 +53,9 @@ class ContactController extends Controller
             ));
         }
 
-        return back()->with('success', 'Thanks for getting in touch — we’ll be in contact shortly.');
+        return back()
+            ->with('success', 'Thanks for getting in touch — we’ll be in contact shortly.')
+            ->with('form_submitted', $enquiry?->form->value);
     }
 
     /**

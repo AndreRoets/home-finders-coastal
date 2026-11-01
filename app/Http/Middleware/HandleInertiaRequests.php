@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SiteSetting;
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
 use App\Support\DynamicSeo;
@@ -62,6 +63,15 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                // The EnquiryForm value of an enquiry that was just saved; the
+                // form reports it to GA4 as form_submit (resources/js/lib/attribution.ts).
+                'form_submitted' => $request->session()->get('form_submitted'),
+            ],
+            // How long the browser keeps a visitor's first touch before a new
+            // visit replaces it. Lazy, so it reads the settings row InjectSeoData
+            // already loaded rather than querying again.
+            'attribution' => fn (): array => [
+                'windowDays' => (int) (View::shared('siteSettings')?->attribution_window_days ?: SiteSetting::DEFAULT_ATTRIBUTION_WINDOW_DAYS),
             ],
         ]);
     }

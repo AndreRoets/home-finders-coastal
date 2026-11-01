@@ -8,6 +8,8 @@ use App\Mail\PropertyEnquiry;
 use App\Services\Corex\AgencyMapper;
 use App\Services\Corex\CorexClient;
 use App\Services\Corex\ListingMapper;
+use App\Services\Enquiries\EnquiryForm;
+use App\Services\Enquiries\EnquiryRecorder;
 use App\Services\Stats\ListingStatEvent;
 use App\Services\Stats\ListingStatsRecorder;
 use Illuminate\Http\RedirectResponse;
@@ -19,10 +21,12 @@ class PropertyEnquiryController extends Controller
     public function __construct(
         protected CorexClient $corex,
         protected ListingStatsRecorder $stats,
+        protected EnquiryRecorder $enquiries,
     ) {}
 
     /**
-     * Handle a property enquiry: validate (with a honeypot), email the listing's
+     * Handle a property enquiry: validate (with a honeypot), save it as an
+     * enquiry with the visitor's first touch, email the listing's
      * agent(s) — with the visitor as reply-to — and push the lead to CoreX so it
      * lands in the agency's CRM. Always redirects back with a success flash, even
      * when a channel is skipped, so we never leak recipient configuration.
@@ -38,6 +42,12 @@ class PropertyEnquiryController extends Controller
         $property = ListingMapper::detail($listing);
         $validated = $request->validated();
 
+        $enquiry = $this->enquiries->record(EnquiryForm::PropertyEnquiry, [
+            ...$validated,
+            'listing_id' => isset($property['id']) ? (string) $property['id'] : null,
+            'listing_reference' => $property['ref'] ?? null,
+        ], $validated['attribution'] ?? [], $request);
+
         $this->emailAgents($property, $validated);
         $this->pushLead($property, $validated);
 
@@ -46,7 +56,10 @@ class PropertyEnquiryController extends Controller
         // alongside the property's views and impressions.
         $this->stats->record($property['id'], $property['ref'], ListingStatEvent::Enquiry);
 
-        return back()->with('success', 'Thanks for your enquiry — the agent will be in touch shortly.');
+        // form_submitted fires GA4's form_submit — only for a saved enquiry.
+        return back()
+            ->with('success', 'Thanks for your enquiry — the agent will be in touch shortly.')
+            ->with('form_submitted', $enquiry?->form->value);
     }
 
     /**

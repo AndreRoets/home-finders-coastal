@@ -25,9 +25,25 @@ interface Settings {
     head_scripts: string | null;
     body_scripts: string | null;
     robots_txt: string | null;
+    attribution_window_days: number | null;
+    channel_search_sources: string | null;
+    channel_social_sources: string | null;
+    channel_paid_mediums: string | null;
+    channel_email_mediums: string | null;
+    channel_social_mediums: string | null;
 }
 
-export default function Marketing({ settings }: { settings: Settings }) {
+/** The values the enquiry channel rules fall back to while a setting is blank. */
+interface AttributionDefaults {
+    attribution_window_days: number;
+    channel_search_sources: string;
+    channel_social_sources: string;
+    channel_paid_mediums: string;
+    channel_email_mediums: string;
+    channel_social_mediums: string;
+}
+
+export default function Marketing({ settings, attributionDefaults }: { settings: Settings; attributionDefaults: AttributionDefaults }) {
     const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         site_name: settings.site_name ?? '',
         default_meta_description: settings.default_meta_description ?? '',
@@ -41,6 +57,13 @@ export default function Marketing({ settings }: { settings: Settings }) {
         head_scripts: settings.head_scripts ?? '',
         body_scripts: settings.body_scripts ?? '',
         robots_txt: settings.robots_txt ?? '',
+        // Pre-filled with what is in effect, so editing starts from the defaults.
+        attribution_window_days: String(settings.attribution_window_days ?? attributionDefaults.attribution_window_days),
+        channel_search_sources: settings.channel_search_sources ?? attributionDefaults.channel_search_sources,
+        channel_social_sources: settings.channel_social_sources ?? attributionDefaults.channel_social_sources,
+        channel_paid_mediums: settings.channel_paid_mediums ?? attributionDefaults.channel_paid_mediums,
+        channel_email_mediums: settings.channel_email_mediums ?? attributionDefaults.channel_email_mediums,
+        channel_social_mediums: settings.channel_social_mediums ?? attributionDefaults.channel_social_mediums,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -181,6 +204,79 @@ export default function Marketing({ settings }: { settings: Settings }) {
                             mono
                             placeholder="<!-- Injected at the top of <body> -->"
                         />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Enquiry attribution</CardTitle>
+                        <CardDescription>
+                            How each enquiry is credited to a channel on the Enquiries screen. One entry per line. Changes apply to new enquiries only
+                            — existing ones keep the channel they were saved with.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-5">
+                        <TextField
+                            id="attribution_window_days"
+                            label="Remember a visitor's first visit for (days)"
+                            type="number"
+                            value={data.attribution_window_days}
+                            onChange={(v) => setData('attribution_window_days', v)}
+                            error={errors.attribution_window_days}
+                            hint="A visitor who lands from an ad and enquires within this many days is credited to that ad. After that, their next visit starts afresh."
+                        />
+                        <FieldGroup columns={2}>
+                            <TextareaField
+                                id="channel_search_sources"
+                                label="Search engines"
+                                value={data.channel_search_sources}
+                                onChange={(v) => setData('channel_search_sources', v)}
+                                error={errors.channel_search_sources}
+                                rows={6}
+                                mono
+                                hint="Matched against utm_source and the referrer's domain → Organic Search."
+                            />
+                            <TextareaField
+                                id="channel_social_sources"
+                                label="Social networks"
+                                value={data.channel_social_sources}
+                                onChange={(v) => setData('channel_social_sources', v)}
+                                error={errors.channel_social_sources}
+                                rows={6}
+                                mono
+                                hint="Matched against utm_source and the referrer's domain → Organic Social (Paid Social with a paid medium)."
+                            />
+                            <TextareaField
+                                id="channel_paid_mediums"
+                                label="Paid mediums"
+                                value={data.channel_paid_mediums}
+                                onChange={(v) => setData('channel_paid_mediums', v)}
+                                error={errors.channel_paid_mediums}
+                                rows={6}
+                                mono
+                                hint="utm_medium values for bought media → Paid Search or Paid Social. * is a wildcard."
+                            />
+                            <TextareaField
+                                id="channel_social_mediums"
+                                label="Social mediums"
+                                value={data.channel_social_mediums}
+                                onChange={(v) => setData('channel_social_mediums', v)}
+                                error={errors.channel_social_mediums}
+                                rows={6}
+                                mono
+                                hint="utm_medium values meaning social → Organic Social. * is a wildcard."
+                            />
+                            <TextareaField
+                                id="channel_email_mediums"
+                                label="Email mediums"
+                                value={data.channel_email_mediums}
+                                onChange={(v) => setData('channel_email_mediums', v)}
+                                error={errors.channel_email_mediums}
+                                rows={4}
+                                mono
+                                hint="utm_medium or utm_source values → Email."
+                            />
+                        </FieldGroup>
                     </CardContent>
                 </Card>
 

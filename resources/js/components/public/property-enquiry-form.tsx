@@ -1,3 +1,5 @@
+import { attributionPayload, reportFormSubmit } from '@/lib/attribution';
+import { type SharedData } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
@@ -10,12 +12,12 @@ interface PropertyEnquiryFormProps {
 
 /**
  * Property24-style enquiry form shown in the property sidebar. Posts to
- * `property.enquire`, which emails the listing's agent(s) and pushes the lead
- * to CoreX. The message field is pre-filled with a sensible default so a
+ * `property.enquire` (with the visitor's first-touch attribution), which saves
+ * the enquiry, emails the listing's agent(s) and pushes the lead to CoreX. The message field is pre-filled with a sensible default so a
  * visitor can enquire in one click.
  */
 export default function PropertyEnquiryForm({ slug, title }: PropertyEnquiryFormProps) {
-    const { data, setData, post, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, post, transform, processing, errors, reset, recentlySuccessful } = useForm({
         name: '',
         email: '',
         phone: '',
@@ -25,9 +27,13 @@ export default function PropertyEnquiryForm({ slug, title }: PropertyEnquiryForm
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
+        transform((fields) => ({ ...fields, attribution: attributionPayload() }));
         post(route('property.enquire', slug), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: (page) => {
+                reportFormSubmit((page.props as unknown as SharedData).flash?.form_submitted);
+                reset();
+            },
         });
     };
 

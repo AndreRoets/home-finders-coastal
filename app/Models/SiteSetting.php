@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class SiteSetting extends Model
 {
+    /** How long a visitor's first touch is kept when no window is set. */
+    public const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 90;
+
     /**
      * @var list<string>
      */

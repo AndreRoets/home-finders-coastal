@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesAttribution;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PropertyEnquiryRequest extends FormRequest
 {
+    use ValidatesAttribution;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -30,6 +33,7 @@ class PropertyEnquiryRequest extends FormRequest
             // Honeypot: a real user never fills a hidden field, so any value
             // here means a bot. It must be present but empty.
             'company' => ['present', 'max:0'],
+            ...$this->attributionRules(),
         ];
     }
 

@@ -60,7 +60,10 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
-    flash: { success?: string | null; error?: string | null };
+    /** `form_submitted` is the form name of an enquiry that was just saved (fires GA4 form_submit). */
+    flash: { success?: string | null; error?: string | null; form_submitted?: string | null };
+    /** How many days the browser keeps a visitor's first touch. */
+    attribution?: { windowDays: number };
     /** Agency contact/social/hours from CoreX; null on a fetch error. */
     agency: Agency | null;
     /** Server-resolved SEO meta; `title` is the exact document title. */

@@ -33,6 +33,14 @@ class UpdateSiteSettingRequest extends FormRequest
             'head_scripts' => ['nullable', 'string'],
             'body_scripts' => ['nullable', 'string'],
             'robots_txt' => ['nullable', 'string', 'max:5000'],
+
+            // Enquiry attribution (see App\Services\Enquiries\ChannelClassifier).
+            'attribution_window_days' => ['nullable', 'integer', 'min:1', 'max:730'],
+            'channel_search_sources' => ['nullable', 'string', 'max:5000'],
+            'channel_social_sources' => ['nullable', 'string', 'max:5000'],
+            'channel_paid_mediums' => ['nullable', 'string', 'max:5000'],
+            'channel_email_mediums' => ['nullable', 'string', 'max:5000'],
+            'channel_social_mediums' => ['nullable', 'string', 'max:5000'],
         ];
     }
 

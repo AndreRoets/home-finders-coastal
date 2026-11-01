@@ -1,5 +1,6 @@
 import PageHero from '@/components/public/page-hero';
 import PublicLayout from '@/layouts/public-layout';
+import { attributionPayload, reportFormSubmit } from '@/lib/attribution';
 import { type SharedData } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
 import { Clock, Mail, MapPin, Phone } from 'lucide-react';
@@ -11,7 +12,7 @@ export default function Contact() {
     const openHours = agency?.openHours ?? [];
     const email = contact?.email;
 
-    const { data, setData, post, processing, errors, reset, recentlySuccessful } = useForm({
+    const { data, setData, post, transform, processing, errors, reset, recentlySuccessful } = useForm({
         name: '',
         email: '',
         phone: '',
@@ -21,9 +22,13 @@ export default function Contact() {
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
+        transform((fields) => ({ ...fields, attribution: attributionPayload() }));
         post(route('contact.send'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: (page) => {
+                reportFormSubmit((page.props as unknown as SharedData).flash?.form_submitted);
+                reset();
+            },
         });
     };
 

@@ -148,11 +148,65 @@ export function reportFormSubmit(formName: string | null | undefined): void {
         return;
     }
 
+    trackEvent('form_submit', { form_name: formName });
+    // The name the lead plan counts as the conversion; form_submit is kept as
+    // well because existing GA4 reports already use it.
+    trackEvent('lead_form_submit', { form_name: formName });
+}
+
+/**
+ * Send one GA4 event: through gtag when the site loads it, otherwise as a
+ * dataLayer event for a Tag Manager trigger (never both, so it is not counted
+ * twice). Does nothing when neither is present.
+ */
+export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     const w = window as unknown as { gtag?: (...args: unknown[]) => void; dataLayer?: unknown[] };
 
     if (typeof w.gtag === 'function') {
-        w.gtag('event', 'form_submit', { form_name: formName });
+        w.gtag('event', name, params);
     } else if (Array.isArray(w.dataLayer)) {
-        w.dataLayer.push({ event: 'form_submit', form_name: formName });
+        w.dataLayer.push({ event: name, ...params });
     }
+}
+
+let contactTrackingInstalled = false;
+
+/**
+ * Report clicks on phone, email and WhatsApp links to GA4 as `call_click`,
+ * `email_click` and `whatsapp_click`. One delegated listener covers every such
+ * link on every page (including ones added later), and only the page path is
+ * sent, never the number or address clicked. Share links (`wa.me/?text=`,
+ * `mailto:?subject=`) are not contact clicks and are ignored.
+ */
+export function installContactClickTracking(): void {
+    if (typeof document === 'undefined' || contactTrackingInstalled) {
+        return;
+    }
+
+    contactTrackingInstalled = true;
+
+    document.addEventListener(
+        'click',
+        (event) => {
+            const link = (event.target as Element | null)?.closest?.('a[href]');
+            const href = link?.getAttribute('href')?.trim().toLowerCase() ?? '';
+
+            const eventName = href.startsWith('tel:')
+                ? 'call_click'
+                : /^mailto:[^?]/.test(href)
+                  ? 'email_click'
+                  : /^https?:\/\/(?:wa\.me|api\.whatsapp\.com\/send\?phone=)\/?\d/.test(href)
+                    ? 'whatsapp_click'
+                    : null;
+
+            if (eventName) {
+                trackEvent(eventName, { link_location: window.location.pathname });
+            }
+        },
+        true,
+    );
 }

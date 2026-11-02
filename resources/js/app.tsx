@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
+import { installContactClickTracking } from './lib/attribution';
 import { formatDocumentTitle } from './lib/document-title';
 
 declare global {
@@ -28,3 +29,6 @@ createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+// call_click / email_click / whatsapp_click for GA4.
+installContactClickTracking();

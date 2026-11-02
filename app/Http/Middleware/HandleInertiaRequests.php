@@ -10,6 +10,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Inertia\Middleware;
+use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -48,6 +49,8 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
+            // The SSR server has no `@routes` global, so it builds `route()` from this.
+            'ziggy' => fn (): array => [...(new Ziggy)->toArray(), 'location' => $request->url()],
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             // Agency contact details, social links and opening hours for the
             // shared footer/header. Cached server-side by CorexClient and fails

@@ -147,10 +147,13 @@ class AgencyMapper
     protected static function socialUrl(string $platform, string $value): string
     {
         if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
-            return $value;
+            // A pasted handle sometimes carries a stray domain in the path
+            // ("instagram.com/tagram.com/handle"); drop those segments.
+            return (string) preg_replace('#^(https?://[^/]+/)(?:[^/]+\.[a-z]{2,}/)+#i', '$1', $value);
         }
 
-        $handle = ltrim($value, '@/');
+        // Drop a pasted domain prefix ("tagram.com/handle") so only the handle is kept.
+        $handle = (string) preg_replace('#^(?:[^/@]+\.[a-z]{2,}/)+#i', '', ltrim($value, '@/'));
 
         return match ($platform) {
             'facebook' => 'https://facebook.com/'.$handle,

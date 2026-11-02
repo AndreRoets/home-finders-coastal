@@ -24,6 +24,13 @@ class StructuredData
 {
     public const AREA_SERVED = 'KwaZulu-Natal South Coast';
 
+    /** The registered office. CoreX's agency record still says "Shop 5 … King Rd". */
+    public const OFFICE_STREET = 'Office 5, The Emporium, cnr Kings Road & Marine Drive';
+
+    public const OFFICE_LOCALITY = 'Shelly Beach';
+
+    public const OFFICE_POSTCODE = '4265';
+
     /**
      * The encoded JSON-LD document for a public page: the Organization node
      * plus the given page nodes. Returns null when there is nothing to emit.
@@ -74,8 +81,6 @@ class StructuredData
             $siteName = '';
         }
 
-        $address = Arr::get($agency, 'contact.address');
-
         return self::filled([
             '@type' => 'RealEstateAgent',
             '@id' => self::organizationId(),
@@ -83,14 +88,17 @@ class StructuredData
             'url' => url('/'),
             'logo' => Arr::get($agency, 'logo') ?: asset('images/hfc-logo.png'),
             'image' => Arr::get($agency, 'logo') ?: asset('images/hfc-logo.png'),
-            'telephone' => Arr::get($agency, 'contact.phone'),
+            'telephone' => self::internationalPhone(Arr::get($agency, 'contact.phone')),
             'email' => Arr::get($agency, 'contact.email'),
-            'address' => $address ? [
+            'address' => [
                 '@type' => 'PostalAddress',
-                'streetAddress' => $address,
+                'streetAddress' => self::OFFICE_STREET,
+                'addressLocality' => self::OFFICE_LOCALITY,
                 'addressRegion' => 'KwaZulu-Natal',
+                'postalCode' => self::OFFICE_POSTCODE,
                 'addressCountry' => 'ZA',
-            ] : null,
+            ],
+            'openingHours' => self::openingHours((array) Arr::get($agency, 'openHours', [])),
             'areaServed' => ['@type' => 'Place', 'name' => self::AREA_SERVED],
             'sameAs' => array_values((array) Arr::get($agency, 'socials', [])),
         ]);
@@ -116,7 +124,7 @@ class StructuredData
             '@id' => $url.'#listing',
             'url' => $url,
             'name' => Arr::get($property, 'title'),
-            'description' => self::text(Arr::get($property, 'description'), 5000),
+            'description' => self::text(DynamicSeo::cleanListingText((string) Arr::get($property, 'description')), 5000),
             'image' => array_slice($images !== [] ? $images : [Arr::get($property, 'image')], 0, 10),
             'datePosted' => self::date(Arr::get($property, 'listedAt')),
             'offers' => $amount !== null ? [
@@ -135,7 +143,7 @@ class StructuredData
                 'address' => [
                     '@type' => 'PostalAddress',
                     'addressLocality' => Arr::get($property, 'suburb') ?: Arr::get($property, 'town'),
-                    'addressRegion' => Arr::get($property, 'suburb') ? Arr::get($property, 'town') : null,
+                    'addressRegion' => 'KwaZulu-Natal',
                     'addressCountry' => 'ZA',
                 ],
             ],
@@ -228,6 +236,68 @@ class StructuredData
     protected static function organizationId(): string
     {
         return url('/').'#organization';
+    }
+
+    /**
+     * A South African number in E.164 form ("071 351 0291" → "+27713510291"),
+     * or the input unchanged when it is not a recognisable local number.
+     */
+    public static function internationalPhone(mixed $phone): ?string
+    {
+        if (! is_string($phone) || trim($phone) === '') {
+            return null;
+        }
+
+        $digits = (string) preg_replace('/\D/', '', $phone);
+
+        if (str_starts_with($digits, '0') && strlen($digits) === 10) {
+            return '+27'.substr($digits, 1);
+        }
+
+        if (str_starts_with($digits, '27') && strlen($digits) === 11) {
+            return '+'.$digits;
+        }
+
+        return trim($phone);
+    }
+
+    /**
+     * schema.org openingHours strings ("Mo-Fr 08:00-17:00") from the agency's
+     * free-text hours rows. Rows that cannot be read (or read "Closed") are
+     * dropped rather than guessed.
+     *
+     * @param  array<int, array{days?: string, hours?: string}>  $rows
+     * @return list<string>
+     */
+    public static function openingHours(array $rows): array
+    {
+        $days = ['mon' => 'Mo', 'tue' => 'Tu', 'wed' => 'We', 'thu' => 'Th', 'fri' => 'Fr', 'sat' => 'Sa', 'sun' => 'Su'];
+        $result = [];
+
+        foreach ($rows as $row) {
+            preg_match_all('/\d{1,2}:\d{2}/', (string) ($row['hours'] ?? ''), $times);
+
+            if (count($times[0]) !== 2) {
+                continue;
+            }
+
+            $parts = preg_split('/\s*[-–—]\s*|\s+to\s+/iu', trim((string) ($row['days'] ?? ''))) ?: [];
+            $codes = array_values(array_filter(array_map(
+                static fn (string $part): ?string => $days[strtolower(substr(trim($part), 0, 3))] ?? null,
+                $parts,
+            )));
+
+            if ($codes === [] || count($codes) !== count($parts)) {
+                continue;
+            }
+
+            $range = count($codes) === 1 ? $codes[0] : $codes[0].'-'.$codes[count($codes) - 1];
+            $open = str_pad($times[0][0], 5, '0', STR_PAD_LEFT);
+            $close = str_pad($times[0][1], 5, '0', STR_PAD_LEFT);
+            $result[] = "{$range} {$open}-{$close}";
+        }
+
+        return $result;
     }
 
     /**

@@ -3,7 +3,7 @@ import PublicLayout from '@/layouts/public-layout';
 import { attributionPayload, reportFormSubmit } from '@/lib/attribution';
 import { type SharedData } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
-import { Clock, Mail, MapPin, Phone } from 'lucide-react';
+import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 
 export default function Contact() {
@@ -11,6 +11,9 @@ export default function Contact() {
     const contact = agency?.contact;
     const openHours = agency?.openHours ?? [];
     const email = contact?.email;
+    // wa.me wants the international number with no "+" or leading zero.
+    const phoneDigits = (contact?.phoneHref ?? '').replace(/\D/g, '');
+    const whatsappNumber = phoneDigits.startsWith('0') && phoneDigits.length === 10 ? `27${phoneDigits.slice(1)}` : phoneDigits.startsWith('27') ? phoneDigits : null;
 
     const { data, setData, post, transform, processing, errors, reset, recentlySuccessful } = useForm({
         name: '',
@@ -112,6 +115,18 @@ export default function Contact() {
                         >
                             <Phone className="h-4 w-4" />
                             Call us
+                        </a>
+                    )}
+
+                    {whatsappNumber && (
+                        <a
+                            href={`https://wa.me/${whatsappNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border-navy/40 text-navy hover:bg-navy/5 ml-3 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold tracking-wide transition-colors"
+                        >
+                            <MessageCircle className="h-4 w-4" />
+                            WhatsApp us
                         </a>
                     )}
                 </div>

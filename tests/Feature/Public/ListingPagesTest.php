@@ -230,9 +230,36 @@ class ListingPagesTest extends TestCase
     {
         Http::fake([
             '*/listings/*' => Http::response(['message' => 'Not found.'], 404),
+            '*/sold*' => Http::response(['data' => [], 'meta' => ['last_page' => 1]]),
         ]);
 
         $this->get(route('property.show', 'missing'))->assertNotFound();
+    }
+
+    public function test_a_sold_listing_url_redirects_to_the_sold_page_instead_of_404(): void
+    {
+        Http::fake([
+            '*/listings/100' => Http::response(['message' => 'Not found.'], 404),
+            '*/sold*' => Http::response(['data' => [
+                ['id' => 1, 'property_id' => 100, 'title' => 'Sold Villa', 'sold_at' => '2026-10-20'],
+            ], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('property.show', 'old-sold-villa-100'))
+            ->assertRedirect(route('sold'))
+            ->assertStatus(301);
+    }
+
+    public function test_a_listing_that_is_neither_live_nor_sold_is_still_a_404(): void
+    {
+        Http::fake([
+            '*/listings/999' => Http::response(['message' => 'Not found.'], 404),
+            '*/sold*' => Http::response(['data' => [
+                ['id' => 1, 'property_id' => 100, 'title' => 'Sold Villa', 'sold_at' => '2026-10-20'],
+            ], 'meta' => ['last_page' => 1]]),
+        ]);
+
+        $this->get(route('property.show', 'never-existed-999'))->assertNotFound();
     }
 
     public function test_property_detail_renders_spaces_grouped_features_and_video(): void

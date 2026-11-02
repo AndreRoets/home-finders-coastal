@@ -223,8 +223,12 @@ class SeoFixesTest extends TestCase
         $this->assertSame('HFC Realty', $organization['name']);
         $this->assertSame(url('/'), $organization['url']);
         $this->assertSame('https://corex.test/logo.png', $organization['logo']);
-        $this->assertSame('039 315 0000', $organization['telephone']);
-        $this->assertSame('1 Marine Drive, Margate', $organization['address']['streetAddress']);
+        $this->assertSame('+27393150000', $organization['telephone']);
+        // The registered office is fixed in StructuredData, not taken from CoreX
+        // (which still serves the old "Shop 5 … King Rd" address).
+        $this->assertSame('Office 5, The Emporium, cnr Kings Road & Marine Drive', $organization['address']['streetAddress']);
+        $this->assertSame('Shelly Beach', $organization['address']['addressLocality']);
+        $this->assertSame('4265', $organization['address']['postalCode']);
         $this->assertSame('KwaZulu-Natal South Coast', $organization['areaServed']['name']);
         $this->assertSame(['https://facebook.com/hfcoastal'], $organization['sameAs']);
     }

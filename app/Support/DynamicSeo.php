@@ -103,7 +103,7 @@ class DynamicSeo
             'name' => $headline,
             'meta_title' => self::listingTitle($property),
             'meta_description' => self::clip(
-                Arr::get($property, 'description') ?: self::listingSummary($property),
+                self::cleanListingText((string) Arr::get($property, 'description')) ?: self::listingSummary($property),
                 self::DESCRIPTION_LIMIT,
             ),
             'canonical_url' => $canonical,
@@ -404,6 +404,42 @@ class DynamicSeo
         }
 
         return Str::ucfirst($summary).'.';
+    }
+
+    /**
+     * Agent-written listing text made fit for a search snippet: HTML and emoji
+     * removed, the "??" CoreX leaves where an emoji was dropped, backticks
+     * turned into apostrophes, "Authority to sell/rent" boilerplate stripped
+     * and ALL-CAPS runs title-cased. Returns '' when nothing readable is left.
+     */
+    public static function cleanListingText(string $text): string
+    {
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5);
+        $text = str_replace(['`', '´', '’'], "'", $text);
+        $text = (string) preg_replace('/[\x{1F000}-\x{1FFFF}\x{2190}-\x{2BFF}\x{FE0F}\x{200D}]/u', ' ', $text);
+        $text = (string) preg_replace('/\?{2,}/u', ' ', $text);
+        $text = (string) preg_replace('/\b(?:exclusive |sole |open )?(?:mandate|authority to (?:sell|rent|let))\b[.!:\s-]*/i', ' ', $text);
+
+        $text = (string) preg_replace_callback(
+            '/\b[A-Z][A-Z\'&-]*(?:[\s,]+[A-Z][A-Z\'&-]*)+\b(\s+(?=\p{Lu}\p{Ll}))?/u',
+            static function (array $run): string {
+                $titled = mb_convert_case(rtrim($run[0]), MB_CASE_TITLE, 'UTF-8');
+                $titled = (string) preg_replace_callback(
+                    '/\b(?:Kzn|Bic|Dstv|Ats|Wc|Sa|Gps|Hoa|Tv)\b/',
+                    static fn (array $acronym): string => strtoupper($acronym[0]),
+                    $titled,
+                );
+
+                // A caps headline followed by a normal sentence reads as a heading.
+                return ($run[1] ?? '') !== '' ? $titled.' — ' : $titled;
+            },
+            $text,
+        );
+
+        $text = (string) preg_replace('/\s+/', ' ', $text);
+        $text = (string) preg_replace('/(?:\s*[—-])+\s*(?=[—.!,]|$)/u', '', $text);
+
+        return trim($text, " \t\n\r\0\x0B—-");
     }
 
     /**

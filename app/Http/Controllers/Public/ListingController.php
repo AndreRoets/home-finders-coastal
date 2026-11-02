@@ -40,9 +40,16 @@ class ListingController extends Controller
      */
     public function show(Request $request, string $idOrRef): Response|RedirectResponse
     {
-        $listing = $this->corex->listing(ListingMapper::idFromSlug($idOrRef));
+        $id = ListingMapper::idFromSlug($idOrRef);
+        $listing = $this->corex->listing($id);
 
         if ($listing === []) {
+            // A sold listing leaves /listings but its old URL stays indexed:
+            // send it to the sold page instead of a 404 to keep the equity.
+            if ($this->wasSold($id)) {
+                return redirect()->route('sold', [], 301);
+            }
+
             throw new NotFoundHttpException('Listing not found.');
         }
 
@@ -75,6 +82,25 @@ class ListingController extends Controller
         return Inertia::render('property-detail', [
             'property' => $property,
         ]);
+    }
+
+    /**
+     * Whether a listing id appears in the CoreX /sold feed (matched on the
+     * sold item's `property_id`, which is the listing id it was marketed under).
+     */
+    protected function wasSold(string $id): bool
+    {
+        if ($id === '') {
+            return false;
+        }
+
+        foreach ($this->corex->sold() as $item) {
+            if ((string) Arr::get($item, 'property_id', '') === $id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

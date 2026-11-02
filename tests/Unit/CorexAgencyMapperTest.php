@@ -12,6 +12,17 @@ use PHPUnit\Framework\TestCase;
  */
 class CorexAgencyMapperTest extends TestCase
 {
+    public function test_it_drops_a_stray_domain_pasted_into_a_social_handle(): void
+    {
+        $mapped = AgencyMapper::map(['data' => ['name' => 'HFC', 'social' => [
+            'instagram' => 'tagram.com/homefinderscoastalkzn/', // truncated "instagram.com/…" paste
+            'facebook' => 'https://facebook.com/instagram.com/hfc', // stray domain inside a full URL
+        ]]]);
+
+        $this->assertSame('https://instagram.com/homefinderscoastalkzn/', $mapped['socials']['instagram']);
+        $this->assertSame('https://facebook.com/hfc', $mapped['socials']['facebook']);
+    }
+
     public function test_it_maps_a_full_agency_payload(): void
     {
         $mapped = AgencyMapper::map([
